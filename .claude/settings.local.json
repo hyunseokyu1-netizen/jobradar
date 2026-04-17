@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npx create-next-app@latest *)",
+      "Bash(cp jobradar/PLAN.md /tmp/jobradar_PLAN.md)",
+      "Bash(cp jobradar/TODO.md /tmp/jobradar_TODO.md)",
+      "Bash(rm jobradar/PLAN.md jobradar/TODO.md)"
+    ]
+  }
+}
