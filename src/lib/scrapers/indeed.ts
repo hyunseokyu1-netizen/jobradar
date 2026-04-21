@@ -130,7 +130,10 @@ export async function scrapeIndeed(): Promise<{ inserted: number; duplicates: nu
 
   const isVercel = !!process.env.VERCEL
   const browser = await chromium.launch({
-    args: isVercel ? chromiumBin.args : [],
+    args: [
+      ...(isVercel ? chromiumBin.args : []),
+      '--disable-blink-features=AutomationControlled',
+    ],
     executablePath: isVercel ? await chromiumBin.executablePath() : undefined,
     headless: true,
   })
@@ -138,8 +141,12 @@ export async function scrapeIndeed(): Promise<{ inserted: number; duplicates: nu
   let duplicates = 0
   let errors = 0
 
+  const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+
   try {
     const page = await browser.newPage()
+    await page.setExtraHTTPHeaders({ 'User-Agent': UA })
+    await page.addInitScript(() => { Object.defineProperty(navigator, 'webdriver', { get: () => false }) })
 
     for (const { keyword, location } of targets) {
       let url: string | null = buildSearchUrl(keyword, location)
