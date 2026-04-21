@@ -9,10 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^147.0.2",
     "@supabase/supabase-js": "^2.104.0",
     "is-plain-object": "^2.0.4",
     "next": "16.2.4",
-    "playwright": "^1.59.1",
+    "playwright-core": "^1.59.1",
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "react": "19.2.4",
