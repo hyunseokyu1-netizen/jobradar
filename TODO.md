@@ -7,22 +7,22 @@
 ## ⚙️ Week 1 — 프로젝트 세팅 + 스크래퍼
 
 ### 프로젝트 초기 세팅
-- [ ] Next.js 프로젝트 생성 (TypeScript + Tailwind + ESLint + App Router)
-- [ ] GitHub 레포 생성 및 연결
-- [ ] `.gitignore` 설정 (`.env.local` 포함)
-- [ ] `.env.example` 파일 작성
-- [ ] `PLAN.md` 루트에 추가
-- [ ] `CLAUDE.md` 작성 (프로젝트 컨텍스트, 규칙)
-- [ ] Vercel 프로젝트 연결
+- [x] Next.js 프로젝트 생성 (TypeScript + Tailwind + ESLint + App Router)
+- [x] GitHub 레포 생성 및 연결
+- [x] `.gitignore` 설정 (`.env.local` 포함)
+- [x] `.env.example` 파일 작성
+- [x] `PLAN.md` 루트에 추가
+- [x] `CLAUDE.md` 작성 (프로젝트 컨텍스트, 규칙)
+- [x] Vercel 프로젝트 연결
 
 ### Supabase 세팅
-- [ ] Supabase 프로젝트 생성
+- [x] Supabase 프로젝트 생성
 - [ ] `jobs` 테이블 스키마 생성
 - [ ] `matches` 테이블 스키마 생성
 - [ ] `my_profile` 테이블 스키마 생성
 - [ ] `cover_letters` 테이블 스키마 생성
-- [ ] Supabase 클라이언트 연결 (`/src/lib/supabase.ts`)
-- [ ] 환경변수 설정 (`SUPABASE_URL`, `SUPABASE_ANON_KEY`)
+- [x] Supabase 클라이언트 연결 (`/src/lib/supabase.ts`)
+- [x] 환경변수 설정 (`SUPABASE_URL`, `SUPABASE_ANON_KEY`)
 
 ### Indeed 스크래퍼
 - [ ] Playwright 설치 및 기본 설정
@@ -154,4 +154,4 @@
 
 ---
 
-*Last updated: 2026-04-17*
+*Last updated: 2026-04-17 (프로젝트 초기 세팅 완료)*
