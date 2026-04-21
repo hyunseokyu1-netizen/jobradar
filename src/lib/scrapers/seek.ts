@@ -1,6 +1,6 @@
 import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin'
 
 chromium.use(stealth())
 
