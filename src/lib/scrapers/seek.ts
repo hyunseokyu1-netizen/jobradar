@@ -1,8 +1,6 @@
-import { chromium } from 'playwright-extra'
-import stealth from 'puppeteer-extra-plugin-stealth'
+import { chromium } from 'playwright-core'
+import chromiumBin from '@sparticuz/chromium'
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin'
-
-chromium.use(stealth())
 
 const DAYS_AGO = 7
 
@@ -98,7 +96,7 @@ interface ListingRaw {
   url: string
 }
 
-async function scrapeJobsFromListPage(page: import('playwright').Page): Promise<ListingRaw[]> {
+async function scrapeJobsFromListPage(page: import('playwright-core').Page): Promise<ListingRaw[]> {
   return page.evaluate(() => {
     const cards = document.querySelectorAll('article[data-testid="job-card"]')
     return Array.from(cards).map(card => {
@@ -118,7 +116,7 @@ async function scrapeJobsFromListPage(page: import('playwright').Page): Promise<
   })
 }
 
-async function fetchJobDescription(page: import('playwright').Page, url: string): Promise<string | null> {
+async function fetchJobDescription(page: import('playwright-core').Page, url: string): Promise<string | null> {
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 })
     await page.waitForTimeout(1500)
@@ -131,7 +129,7 @@ async function fetchJobDescription(page: import('playwright').Page, url: string)
   }
 }
 
-async function getNextPageNumber(page: import('playwright').Page): Promise<number | null> {
+async function getNextPageNumber(page: import('playwright-core').Page): Promise<number | null> {
   const href = await page.$eval(
     '[data-automation="page-next"] a, [aria-label="Next"]',
     el => el.getAttribute('href')
@@ -145,7 +143,12 @@ export async function scrapeSeek(): Promise<{ inserted: number; duplicates: numb
   const targets = await collectScrapeTargets()
   if (targets.length === 0) return { inserted: 0, duplicates: 0, errors: 0, targets: 0 }
 
-  const browser = await chromium.launch({ headless: true })
+  const isVercel = !!process.env.VERCEL
+  const browser = await chromium.launch({
+    args: isVercel ? chromiumBin.args : [],
+    executablePath: isVercel ? await chromiumBin.executablePath() : undefined,
+    headless: true,
+  })
   let inserted = 0
   let duplicates = 0
   let errors = 0

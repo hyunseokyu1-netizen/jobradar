@@ -1,8 +1,6 @@
-import { chromium } from 'playwright-extra'
-import stealth from 'puppeteer-extra-plugin-stealth'
+import { chromium } from 'playwright-core'
+import chromiumBin from '@sparticuz/chromium'
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin'
-
-chromium.use(stealth())
 
 const DAYS_AGO = 7
 
@@ -59,7 +57,7 @@ function buildSearchUrl(keyword: string, location: string): string {
   return `https://au.indeed.com/jobs?q=${q}&l=${l}&fromage=${DAYS_AGO}&sort=date`
 }
 
-async function scrapeJobsFromPage(page: import('playwright').Page): Promise<JobData[]> {
+async function scrapeJobsFromPage(page: import('playwright-core').Page): Promise<JobData[]> {
   const jobs: JobData[] = []
 
   const cards = await page.$$('div.job_seen_beacon')
@@ -119,7 +117,7 @@ async function scrapeJobsFromPage(page: import('playwright').Page): Promise<JobD
   return jobs
 }
 
-async function getNextPageUrl(page: import('playwright').Page): Promise<string | null> {
+async function getNextPageUrl(page: import('playwright-core').Page): Promise<string | null> {
   return page.$eval('a[data-testid="pagination-page-next"]', el => (el as HTMLAnchorElement).href).catch(() => null)
 }
 
@@ -130,7 +128,12 @@ export async function scrapeIndeed(): Promise<{ inserted: number; duplicates: nu
     return { inserted: 0, duplicates: 0, errors: 0, targets: 0 }
   }
 
-  const browser = await chromium.launch({ headless: true })
+  const isVercel = !!process.env.VERCEL
+  const browser = await chromium.launch({
+    args: isVercel ? chromiumBin.args : [],
+    executablePath: isVercel ? await chromiumBin.executablePath() : undefined,
+    headless: true,
+  })
   let inserted = 0
   let duplicates = 0
   let errors = 0
