@@ -25,13 +25,13 @@
 - [x] 환경변수 설정 (`SUPABASE_URL`, `SUPABASE_ANON_KEY`)
 
 ### Indeed 스크래퍼
-- [ ] Playwright 설치 및 기본 설정
-- [ ] Indeed 페이지 접근 테스트
-- [ ] 키워드/위치 필터 적용 (React Native, Fullstack, Node.js / Sydney, Melbourne, Auckland)
-- [ ] 채용공고 데이터 파싱 (제목, 회사, JD, URL, 위치, 연봉, 게시일)
-- [ ] 중복 제거 로직 (URL 기반)
-- [ ] Supabase `jobs` 테이블에 저장
-- [ ] 스크래퍼 API Route 생성 (`/api/scrape/route.ts`)
+- [x] Playwright 설치 및 기본 설정
+- [x] Indeed 페이지 접근 테스트 (stealth 모드로 Cloudflare 우회)
+- [x] 키워드/위치 필터 적용 (React Native, Fullstack, Node.js / Sydney, Melbourne, Auckland)
+- [x] 채용공고 데이터 파싱 (제목, 회사, JD, URL, 위치, 연봉, 게시일)
+- [x] 중복 제거 로직 (URL 기반 upsert)
+- [x] Supabase `jobs` 테이블에 저장
+- [x] 스크래퍼 API Route 생성 (`/api/scrape/route.ts`)
 
 ### Glassdoor 스크래퍼
 - [ ] Glassdoor 페이지 접근 테스트
