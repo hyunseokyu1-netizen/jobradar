@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { scrapeIndeed } from '@/lib/scrapers/indeed'
+import { scrapeSeek } from '@/lib/scrapers/seek'
 
 // Vercel Cron 또는 수동 호출용
 export async function GET(request: Request) {
@@ -9,8 +10,13 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await scrapeIndeed()
-    return NextResponse.json({ ok: true, ...result })
+    const [indeed, seek] = await Promise.allSettled([scrapeIndeed(), scrapeSeek()])
+
+    return NextResponse.json({
+      ok: true,
+      indeed: indeed.status === 'fulfilled' ? indeed.value : { error: String(indeed.reason) },
+      seek: seek.status === 'fulfilled' ? seek.value : { error: String(seek.reason) },
+    })
   } catch (error) {
     console.error('Scrape error:', error)
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 })

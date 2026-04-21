@@ -33,10 +33,10 @@
 - [x] Supabase `jobs` 테이블에 저장
 - [x] 스크래퍼 API Route 생성 (`/api/scrape/route.ts`)
 
-### Glassdoor 스크래퍼
-- [ ] Glassdoor 페이지 접근 테스트
-- [ ] 채용공고 데이터 파싱
-- [ ] Supabase 저장 연결
+### Seek 스크래퍼 (Glassdoor → Seek.com.au로 대체)
+- [x] Seek 페이지 접근 테스트 (Glassdoor는 Cloudflare로 완전 차단, Seek이 AU/NZ 1위)
+- [x] 채용공고 데이터 파싱 (제목/회사/위치/연봉/날짜/JD)
+- [x] Supabase 저장 연결
 
 ### 자동화
 - [ ] Vercel Cron 설정 (`vercel.json`)

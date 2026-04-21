@@ -2,7 +2,7 @@
 ALTER TABLE profiles
   ADD COLUMN IF NOT EXISTS name              TEXT,
   ADD COLUMN IF NOT EXISTS desired_positions TEXT[],
-  ADD COLUMN IF NOT EXISTS desired_sources   TEXT[] DEFAULT ARRAY['indeed'],
+  ADD COLUMN IF NOT EXISTS desired_sources   TEXT[] DEFAULT ARRAY['indeed'],  -- ['indeed', 'seek']
   ADD COLUMN IF NOT EXISTS desired_locations TEXT[] DEFAULT ARRAY['Sydney NSW'];
 
 -- preferences JSONB에서 locations, keywords 제거 (새 컬럼으로 이관)

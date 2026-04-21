@@ -13,7 +13,7 @@ CREATE TABLE profiles (
   name              TEXT,
   skills            TEXT[],
   desired_positions TEXT[],          -- 검색 키워드 ['React Native', 'Fullstack developer']
-  desired_sources   TEXT[] DEFAULT ARRAY['indeed'],  -- ['indeed', 'glassdoor']
+  desired_sources   TEXT[] DEFAULT ARRAY['indeed'],  -- ['indeed', 'seek']
   desired_locations TEXT[] DEFAULT ARRAY['Sydney NSW'],  -- ['Sydney NSW', 'Melbourne VIC', 'Auckland']
   career_summary    TEXT,
   story             TEXT,            -- 커버레터에 재사용할 커리어 스토리
