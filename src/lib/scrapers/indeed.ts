@@ -48,7 +48,8 @@ async function collectScrapeTargets(): Promise<ScrapeTarget[]> {
     }
   }
 
-  return targets
+  const limit = parseInt(process.env.SCRAPE_TARGET_LIMIT ?? '2')
+  return targets.slice(0, limit)
 }
 
 function buildSearchUrl(keyword: string, location: string): string {
