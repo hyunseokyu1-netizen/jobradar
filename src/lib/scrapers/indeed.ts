@@ -4,8 +4,6 @@ import { supabase } from '@/lib/supabase'
 
 chromium.use(stealth())
 
-const KEYWORDS = ['React Native', 'Fullstack developer', 'Node.js developer', 'TypeScript developer']
-const LOCATIONS = ['Sydney NSW', 'Melbourne VIC', 'Auckland']
 const DAYS_AGO = 7
 
 interface JobData {
@@ -17,6 +15,42 @@ interface JobData {
   description: string | null
   url: string
   posted_at: string | null
+}
+
+interface ScrapeTarget {
+  keyword: string
+  location: string
+}
+
+/** 모든 유저 프로파일에서 스크래핑 대상 조합을 수집 (중복 제거) */
+async function collectScrapeTargets(): Promise<ScrapeTarget[]> {
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('desired_positions, desired_locations, desired_sources')
+    .not('desired_positions', 'is', null)
+    .contains('desired_sources', ['indeed'])
+
+  if (error || !profiles?.length) return []
+
+  const seen = new Set<string>()
+  const targets: ScrapeTarget[] = []
+
+  for (const profile of profiles) {
+    const positions: string[] = profile.desired_positions ?? []
+    const locations: string[] = profile.desired_locations ?? ['Sydney NSW']
+
+    for (const keyword of positions) {
+      for (const location of locations) {
+        const key = `${keyword}|${location}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          targets.push({ keyword, location })
+        }
+      }
+    }
+  }
+
+  return targets
 }
 
 function buildSearchUrl(keyword: string, location: string): string {
@@ -31,10 +65,8 @@ async function scrapeJobsFromPage(page: import('playwright').Page): Promise<JobD
   const cards = await page.$$('div.job_seen_beacon')
   if (cards.length === 0) return jobs
 
-  for (let i = 0; i < cards.length; i++) {
+  for (const card of cards) {
     try {
-      // 카드 기본 정보 수집
-      const card = cards[i]
       const jobKey = await card.$eval('h2.jobTitle a[data-jk]', el => el.getAttribute('data-jk')).catch(() => null)
       if (!jobKey) continue
 
@@ -55,7 +87,6 @@ async function scrapeJobsFromPage(page: import('playwright').Page): Promise<JobD
       const salary = await page.$eval('[data-testid="attribute_snippet_testid"]', el => el.textContent?.trim() ?? null).catch(() => null)
       const dateText = await page.$eval('[data-testid="job-age"], .date', el => el.textContent?.trim() ?? null).catch(() => null)
 
-      // "X days ago" → ISO 날짜 변환
       let posted_at: string | null = null
       if (dateText) {
         const match = dateText.match(/(\d+)\s*day/)
@@ -92,7 +123,13 @@ async function getNextPageUrl(page: import('playwright').Page): Promise<string |
   return page.$eval('a[data-testid="pagination-page-next"]', el => (el as HTMLAnchorElement).href).catch(() => null)
 }
 
-export async function scrapeIndeed(): Promise<{ inserted: number; duplicates: number; errors: number }> {
+export async function scrapeIndeed(): Promise<{ inserted: number; duplicates: number; errors: number; targets: number }> {
+  const targets = await collectScrapeTargets()
+
+  if (targets.length === 0) {
+    return { inserted: 0, duplicates: 0, errors: 0, targets: 0 }
+  }
+
   const browser = await chromium.launch({ headless: true })
   let inserted = 0
   let duplicates = 0
@@ -101,37 +138,35 @@ export async function scrapeIndeed(): Promise<{ inserted: number; duplicates: nu
   try {
     const page = await browser.newPage()
 
-    for (const keyword of KEYWORDS) {
-      for (const location of LOCATIONS) {
-        let url: string | null = buildSearchUrl(keyword, location)
+    for (const { keyword, location } of targets) {
+      let url: string | null = buildSearchUrl(keyword, location)
 
-        while (url) {
-          await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
-          await page.waitForTimeout(2000)
+      while (url) {
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
+        await page.waitForTimeout(2000)
 
-          const title = await page.title()
-          if (title.toLowerCase().includes('blocked')) break
+        const title = await page.title()
+        if (title.toLowerCase().includes('blocked')) break
 
-          const jobs = await scrapeJobsFromPage(page)
+        const jobs = await scrapeJobsFromPage(page)
 
-          for (const job of jobs) {
-            const { error } = await supabase.from('jobs').upsert(job, { onConflict: 'url', ignoreDuplicates: true })
-            if (error) {
-              if (error.code === '23505') duplicates++
-              else errors++
-            } else {
-              inserted++
-            }
+        for (const job of jobs) {
+          const { error } = await supabase.from('jobs').upsert(job, { onConflict: 'url', ignoreDuplicates: true })
+          if (error) {
+            if (error.code === '23505') duplicates++
+            else errors++
+          } else {
+            inserted++
           }
-
-          url = await getNextPageUrl(page)
-          if (url) await page.waitForTimeout(2000)
         }
+
+        url = await getNextPageUrl(page)
+        if (url) await page.waitForTimeout(2000)
       }
     }
   } finally {
     await browser.close()
   }
 
-  return { inserted, duplicates, errors }
+  return { inserted, duplicates, errors, targets: targets.length }
 }

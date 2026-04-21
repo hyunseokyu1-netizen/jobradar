@@ -8,15 +8,19 @@
 -- 1. profiles (유저 프로파일 — auth.users 1:1 연결)
 -- ============================================================
 CREATE TABLE profiles (
-  id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email       TEXT,
-  skills      TEXT[],
-  career_summary TEXT,
-  story       TEXT,         -- 커버레터에 재사용할 커리어 스토리
-  resume_text TEXT,         -- 이력서 파싱 텍스트
-  preferences JSONB,        -- { salary_min, salary_max, locations[], company_size, keywords[] }
-  created_at  TIMESTAMPTZ DEFAULT NOW(),
-  updated_at  TIMESTAMPTZ DEFAULT NOW()
+  id                UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email             TEXT,
+  name              TEXT,
+  skills            TEXT[],
+  desired_positions TEXT[],          -- 검색 키워드 ['React Native', 'Fullstack developer']
+  desired_sources   TEXT[] DEFAULT ARRAY['indeed'],  -- ['indeed', 'glassdoor']
+  desired_locations TEXT[] DEFAULT ARRAY['Sydney NSW'],  -- ['Sydney NSW', 'Melbourne VIC', 'Auckland']
+  career_summary    TEXT,
+  story             TEXT,            -- 커버레터에 재사용할 커리어 스토리
+  resume_text       TEXT,            -- 이력서 파싱 텍스트
+  preferences       JSONB,           -- { salary_min, salary_max, company_size }
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 신규 가입 시 profiles 행 자동 생성
