@@ -39,7 +39,7 @@
 - [x] Supabase 저장 연결
 
 ### 자동화
-- [ ] Vercel Cron 설정 (`vercel.json`)
+- [x] Vercel Cron 설정 (`vercel.json`)
 - [ ] 매일 자동 실행 테스트
 
 ---

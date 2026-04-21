@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { scrapeIndeed } from '@/lib/scrapers/indeed'
 import { scrapeSeek } from '@/lib/scrapers/seek'
 
+// Vercel Pro 최대 300s, Hobby 최대 60s
+export const maxDuration = 300
+
 // Vercel Cron 또는 수동 호출용
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
