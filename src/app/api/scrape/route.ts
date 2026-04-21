@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { scrapeIndeed } from '@/lib/scrapers/indeed'
-import { scrapeSeek } from '@/lib/scrapers/seek'
 
+export const dynamic = 'force-dynamic'
 // Vercel Pro 최대 300s, Hobby 최대 60s
 export const maxDuration = 300
 
@@ -13,6 +12,8 @@ export async function GET(request: Request) {
   }
 
   try {
+    const { scrapeIndeed } = await import('@/lib/scrapers/indeed')
+    const { scrapeSeek } = await import('@/lib/scrapers/seek')
     const [indeed, seek] = await Promise.allSettled([scrapeIndeed(), scrapeSeek()])
 
     return NextResponse.json({
