@@ -145,7 +145,10 @@ export async function scrapeSeek(): Promise<{ inserted: number; duplicates: numb
 
   const isVercel = !!process.env.VERCEL
   const browser = await chromium.launch({
-    args: isVercel ? chromiumBin.args : [],
+    args: [
+      ...(isVercel ? chromiumBin.args : []),
+      '--disable-blink-features=AutomationControlled',
+    ],
     executablePath: isVercel ? await chromiumBin.executablePath() : undefined,
     headless: true,
   })
@@ -153,9 +156,15 @@ export async function scrapeSeek(): Promise<{ inserted: number; duplicates: numb
   let duplicates = 0
   let errors = 0
 
+  const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+
   try {
     const listPage = await browser.newPage()
     const detailPage = await browser.newPage()
+    await listPage.setExtraHTTPHeaders({ 'User-Agent': UA })
+    await detailPage.setExtraHTTPHeaders({ 'User-Agent': UA })
+    await listPage.addInitScript(() => { Object.defineProperty(navigator, 'webdriver', { get: () => false }) })
+    await detailPage.addInitScript(() => { Object.defineProperty(navigator, 'webdriver', { get: () => false }) })
 
     for (const { keyword, location } of targets) {
       let pageNum = 1
