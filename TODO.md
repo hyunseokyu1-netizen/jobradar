@@ -17,10 +17,10 @@
 
 ### Supabase 세팅
 - [x] Supabase 프로젝트 생성
-- [ ] `jobs` 테이블 스키마 생성
-- [ ] `matches` 테이블 스키마 생성
-- [ ] `my_profile` 테이블 스키마 생성
-- [ ] `cover_letters` 테이블 스키마 생성
+- [x] `jobs` 테이블 스키마 생성
+- [x] `matches` 테이블 스키마 생성
+- [x] `my_profile` 테이블 스키마 생성 (→ `profiles` 멀티유저 구조)
+- [x] `cover_letters` 테이블 스키마 생성
 - [x] Supabase 클라이언트 연결 (`/src/lib/supabase.ts`)
 - [x] 환경변수 설정 (`SUPABASE_URL`, `SUPABASE_ANON_KEY`)
 
