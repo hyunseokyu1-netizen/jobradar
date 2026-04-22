@@ -3,13 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
-export async function saveProfile(formData: FormData) {
-  const toArray = (value: FormDataEntryValue | FormDataEntryValue[] | null): string[] => {
-    if (!value) return []
-    const raw = formData.getAll(typeof value === 'string' ? value : '')
-    return raw.map(v => String(v)).filter(Boolean)
-  }
-
+export async function saveProfile(formData: FormData): Promise<{ error?: string }> {
   const skillsRaw = formData.get('skills') as string
   const positionsRaw = formData.get('desired_positions') as string
   const locationsRaw = formData.get('desired_locations') as string
@@ -22,7 +16,7 @@ export async function saveProfile(formData: FormData) {
   const salary_min = parseInt(formData.get('salary_min') as string) || null
   const salary_max = parseInt(formData.get('salary_max') as string) || null
 
-  await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from('profiles')
     .update({
       name: formData.get('name') as string,
@@ -36,5 +30,11 @@ export async function saveProfile(formData: FormData) {
     })
     .eq('email', 'hyunseok.yu1@gmail.com')
 
+  if (error) {
+    console.error('Profile save error:', error)
+    return { error: error.message }
+  }
+
   revalidatePath('/profile')
+  return {}
 }
