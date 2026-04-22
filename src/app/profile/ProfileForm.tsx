@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { saveProfile } from './actions'
+import { useState, useRef } from 'react'
+import { saveProfile, uploadResume } from './actions'
 
 interface Profile {
   name: string | null
@@ -10,6 +10,7 @@ interface Profile {
   desired_sources: string[] | null
   desired_locations: string[] | null
   career_summary: string | null
+  resume_text: string | null
   preferences: { salary_min?: number; salary_max?: number } | null
 }
 
@@ -17,6 +18,12 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+
+  const [resumeUploading, setResumeUploading] = useState(false)
+  const [resumeStatus, setResumeStatus] = useState<'idle' | 'done' | 'error'>('idle')
+  const [resumeError, setResumeError] = useState('')
+  const [resumePreview, setResumePreview] = useState(initialData?.resume_text ?? '')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function handleSubmit(formData: FormData) {
     setSaving(true)
@@ -30,6 +37,25 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 3000)
     }
+  }
+
+  async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setResumeUploading(true)
+    setResumeStatus('idle')
+    const fd = new FormData()
+    fd.append('resume', file)
+    const result = await uploadResume(fd)
+    setResumeUploading(false)
+    if (result.error) {
+      setResumeStatus('error')
+      setResumeError(result.error)
+    } else {
+      setResumeStatus('done')
+      setResumePreview(result.text ?? '')
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   return (
@@ -112,6 +138,33 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
           className="input min-h-28"
           placeholder="10+ years backend/fullstack experience..."
         />
+      </Field>
+
+      <Field label="이력서 업로드" hint="PDF 또는 DOCX · 최대 5MB">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <label className={`cursor-pointer inline-flex items-center gap-2 text-sm border border-zinc-300 rounded-lg px-4 py-2 hover:bg-zinc-50 transition-colors ${resumeUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx"
+                className="hidden"
+                onChange={handleResumeUpload}
+                disabled={resumeUploading}
+              />
+              {resumeUploading ? '파싱 중...' : '파일 선택'}
+            </label>
+            {resumeStatus === 'done' && <span className="text-sm text-green-600">✓ 추출 완료</span>}
+            {resumeStatus === 'error' && <span className="text-sm text-red-500">{resumeError}</span>}
+          </div>
+          {resumePreview && (
+            <textarea
+              readOnly
+              value={resumePreview}
+              className="input min-h-36 text-xs text-zinc-500 bg-zinc-50 resize-y"
+            />
+          )}
+        </div>
       </Field>
 
       <div className="flex items-center gap-4">
