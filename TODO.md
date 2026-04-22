@@ -19,40 +19,45 @@
 - [x] Supabase 프로젝트 생성
 - [x] `jobs` 테이블 스키마 생성
 - [x] `matches` 테이블 스키마 생성
-- [x] `my_profile` 테이블 스키마 생성 (→ `profiles` 멀티유저 구조)
+- [x] `profiles` 테이블 스키마 생성 (멀티유저 SaaS 구조 + RLS)
 - [x] `cover_letters` 테이블 스키마 생성
 - [x] Supabase 클라이언트 연결 (`/src/lib/supabase.ts`)
-- [x] 환경변수 설정 (`SUPABASE_URL`, `SUPABASE_ANON_KEY`)
+- [x] Supabase Admin 클라이언트 연결 (`/src/lib/supabase-admin.ts`, service role)
+- [x] 환경변수 설정 (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
 
 ### Indeed 스크래퍼
 - [x] Playwright 설치 및 기본 설정
-- [x] Indeed 페이지 접근 테스트 (stealth 모드로 Cloudflare 우회)
-- [x] 키워드/위치 필터 적용 (React Native, Fullstack, Node.js / Sydney, Melbourne, Auckland)
+- [x] Indeed 페이지 접근 테스트
+- [x] 키워드/위치 필터 적용 (프로파일 기반 동적 타겟)
 - [x] 채용공고 데이터 파싱 (제목, 회사, JD, URL, 위치, 연봉, 게시일)
 - [x] 중복 제거 로직 (URL 기반 upsert)
 - [x] Supabase `jobs` 테이블에 저장
 - [x] 스크래퍼 API Route 생성 (`/api/scrape/route.ts`)
 
 ### Seek 스크래퍼 (Glassdoor → Seek.com.au로 대체)
-- [x] Seek 페이지 접근 테스트 (Glassdoor는 Cloudflare로 완전 차단, Seek이 AU/NZ 1위)
+- [x] Seek 페이지 접근 테스트 (Glassdoor는 Cloudflare로 완전 차단)
 - [x] 채용공고 데이터 파싱 (제목/회사/위치/연봉/날짜/JD)
 - [x] Supabase 저장 연결
+- [x] 실제 공고 38개 수집 확인
 
 ### 자동화
-- [x] Vercel Cron 설정 (`vercel.json`)
+- [x] Vercel Cron 설정 (`vercel.json`, 매일 22:00 UTC = 08:00 AEST)
 - [x] 매일 자동 실행 테스트
+- [x] Vercel 리전 시드니(syd1)로 변경
+- [x] `@sparticuz/chromium` + `playwright-core` 전환 (Lambda 호환)
+- [x] `SCRAPE_TARGET_LIMIT` 환경변수로 타임아웃 대응
 
 ---
 
 ## 🤖 Week 2 — AI 매칭 엔진
 
 ### 내 프로파일
-- [ ] 프로파일 입력 UI 페이지 (`/profile`)
-- [ ] 스킬 목록 입력/저장
-- [ ] 경력 요약 입력/저장
-- [ ] 선호 조건 입력/저장 (연봉, 위치, 회사 규모)
+- [x] 프로파일 입력 UI 페이지 (`/profile`)
+- [x] 스킬 목록 입력/저장
+- [x] 경력 요약 입력/저장
+- [x] 선호 조건 입력/저장 (연봉, 위치, 소스)
+- [x] Supabase `profiles` 테이블 저장 (Server Action)
 - [ ] 이력서 텍스트 업로드 + 파싱 (PDF/DOCX)
-- [ ] Supabase `my_profile` 테이블 저장
 
 ### Claude API 연동
 - [ ] Anthropic SDK 설치 (`@anthropic-ai/sdk`)
@@ -95,10 +100,10 @@
 ## 🖥️ Week 4 — 대시보드 + 이메일 + 배포
 
 ### 메인 대시보드
-- [ ] 오늘의 잡 리스트 UI (`/`)
+- [x] 잡 리스트 UI (`/`) — 소스 뱃지, 날짜, 연봉 표시
 - [ ] 매칭 점수 순 정렬
 - [ ] 필터 (국가 / 연봉 / 날짜 / 상태)
-- [ ] JobCard 컴포넌트
+- [ ] JobCard 컴포넌트 개선
 - [ ] MatchScore 컴포넌트
 
 ### 잡 상세 페이지
@@ -114,8 +119,8 @@
 - [ ] 테스트 발송 확인
 
 ### 배포
-- [ ] 환경변수 Vercel에 등록
-- [ ] 프로덕션 배포
+- [x] 환경변수 Vercel에 등록
+- [x] 프로덕션 배포
 - [ ] E2E 전체 플로우 테스트
 - [ ] README.md 작성
 
@@ -123,7 +128,7 @@
 
 ## 🐛 Week 5 — 버퍼 (버그 수정 + 마무리)
 
-- [ ] 스크래퍼 봇 차단 이슈 대응
+- [-] 스크래퍼 봇 차단 이슈 대응 (Indeed 차단 중, Seek 정상)
 - [ ] 모바일 반응형 UI 점검
 - [ ] 에러 핸들링 전체 점검
 - [ ] 성능 최적화 (API 응답 속도)
@@ -145,10 +150,10 @@
 
 ## 📝 블로그 연재
 
-- [ ] 1편: "내 취업을 위해 AI 툴을 직접 만들었다" (기획 배경)
-- [ ] 2편: "Indeed를 Playwright로 스크래핑하다 막힌 것들"
+- [x] 1편: "취업 준비가 귀찮아서 AI 툴을 직접 만들었다" (기획 + 스크래퍼)
+- [x] 2편: "Vercel Lambda에서 Playwright 실행하기" (배포 삽질)
 - [ ] 3편: "Claude API로 JD 분석하고 매칭 점수 만들기"
-- [ ] 4편: "내 PM→개발자 스토리를 커버레터에 녹이는 법"
+- [ ] 4편: "내 스토리를 커버레터에 녹이는 법"
 - [ ] 5편: "Vercel Cron + Resend로 매일 아침 이메일 자동화"
 - [ ] 6편: "완성! 실제로 써보니 어땠나"
 
