@@ -7,6 +7,6 @@ export async function triggerMatching() {
     const result = await runMatching()
     return result
   } catch (e) {
-    return { error: String(e), matched: 0, errors: 0 }
+    return { error: String(e), matched: 0, errors: 0, firstError: '' }
   }
 }
