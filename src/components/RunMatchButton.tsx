@@ -16,7 +16,7 @@ export default function RunMatchButton({ unmatchedCount }: { unmatchedCount: num
     if (res.error) {
       setResult(`오류: ${res.error}`)
     } else {
-      const errPart = res.errors ? ` (실패 ${res.errors}개)` : ''
+      const errPart = res.errors ? ` (실패 ${res.errors}개: ${res.firstError ?? ''})` : ''
       setResult(`${res.matched}개 매칭 완료${errPart}`)
       router.refresh()
     }
