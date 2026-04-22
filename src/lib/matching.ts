@@ -100,12 +100,12 @@ export async function runMatching() {
 
   if (!profile) return { error: 'Profile not found', matched: 0 }
 
-  // 아직 매칭 안 된 최신 공고 최대 20개
+  // 아직 매칭 안 된 최신 공고 최대 5개 (서버 액션 30초 타임아웃 대응)
   const { data: jobs } = await supabaseAdmin
     .from('jobs')
     .select('id, title, company, location, description')
     .order('scraped_at', { ascending: false })
-    .limit(20)
+    .limit(5)
 
   if (!jobs?.length) return { matched: 0, skipped: 0 }
 
@@ -136,8 +136,9 @@ export async function runMatching() {
       }, { onConflict: 'user_id,job_id' })
 
       matched++
-    } catch {
+    } catch (e) {
       errors++
+      console.error(`[matching] job ${job.id} failed:`, e)
     }
   }
 
