@@ -15,20 +15,25 @@ interface Profile {
 
 export default function ProfileForm({ initialData }: { initialData: Profile | null }) {
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
 
   async function handleSubmit(formData: FormData) {
     setSaving(true)
-    setSaved(false)
-    await saveProfile(formData)
+    setStatus('idle')
+    const result = await saveProfile(formData)
     setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    if (result.error) {
+      setStatus('error')
+      setErrorMsg(result.error)
+    } else {
+      setStatus('saved')
+      setTimeout(() => setStatus('idle'), 3000)
+    }
   }
 
   return (
     <form action={handleSubmit} className="space-y-6">
-      {/* 이름 */}
       <Field label="이름">
         <input
           name="name"
@@ -38,7 +43,6 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         />
       </Field>
 
-      {/* 스킬 */}
       <Field label="스킬" hint="쉼표로 구분">
         <textarea
           name="skills"
@@ -48,7 +52,6 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         />
       </Field>
 
-      {/* 원하는 포지션 */}
       <Field label="원하는 포지션" hint="쉼표로 구분 (스크래핑 키워드)">
         <textarea
           name="desired_positions"
@@ -58,7 +61,6 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         />
       </Field>
 
-      {/* 원하는 지역 */}
       <Field label="원하는 지역" hint="쉼표로 구분">
         <input
           name="desired_locations"
@@ -68,7 +70,6 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         />
       </Field>
 
-      {/* 소스 */}
       <Field label="스크래핑 소스">
         <div className="flex gap-4">
           {['indeed', 'seek'].map(source => (
@@ -86,7 +87,6 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         </div>
       </Field>
 
-      {/* 연봉 */}
       <Field label="희망 연봉 (AUD)">
         <div className="flex gap-3 items-center">
           <input
@@ -94,7 +94,6 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
             type="number"
             defaultValue={initialData?.preferences?.salary_min ?? 90000}
             className="input w-36"
-            placeholder="90000"
           />
           <span className="text-zinc-400">~</span>
           <input
@@ -102,12 +101,10 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
             type="number"
             defaultValue={initialData?.preferences?.salary_max ?? 150000}
             className="input w-36"
-            placeholder="150000"
           />
         </div>
       </Field>
 
-      {/* 경력 요약 */}
       <Field label="경력 요약" hint="AI 매칭 및 커버레터에 활용됩니다">
         <textarea
           name="career_summary"
@@ -125,7 +122,8 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         >
           {saving ? '저장 중...' : '저장'}
         </button>
-        {saved && <span className="text-sm text-green-600">✓ 저장됐습니다</span>}
+        {status === 'saved' && <span className="text-sm text-green-600">✓ 저장됐습니다</span>}
+        {status === 'error' && <span className="text-sm text-red-500">오류: {errorMsg}</span>}
       </div>
     </form>
   )
