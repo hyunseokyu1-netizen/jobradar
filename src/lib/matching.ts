@@ -120,6 +120,7 @@ export async function runMatching() {
 
   let matched = 0
   let errors = 0
+  let firstError = ''
 
   for (const job of unmatched) {
     try {
@@ -138,9 +139,10 @@ export async function runMatching() {
       matched++
     } catch (e) {
       errors++
+      if (!firstError) firstError = String(e)
       console.error(`[matching] job ${job.id} failed:`, e)
     }
   }
 
-  return { matched, skipped: matchedIds.size, errors }
+  return { matched, skipped: matchedIds.size, errors, firstError }
 }
