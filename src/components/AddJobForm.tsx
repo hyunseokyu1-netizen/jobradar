@@ -15,12 +15,23 @@ export default function AddJobForm() {
     const fd = new FormData()
     fd.append('url', url)
     const result = await addJobByUrl(fd)
-    setLoading(false)
     if (result.error) {
+      setLoading(false)
       setError(result.error)
-    } else {
-      setUrl('')
+      return
     }
+
+    // 저장 후 즉시 스크래핑 트리거
+    if (result.jobId) {
+      await fetch('/api/scrape-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: result.jobId }),
+      })
+    }
+
+    setLoading(false)
+    setUrl('')
   }
 
   return (

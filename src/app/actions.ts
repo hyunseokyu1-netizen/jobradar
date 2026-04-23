@@ -14,7 +14,7 @@ export async function triggerMatching() {
   }
 }
 
-export async function addJobByUrl(formData: FormData): Promise<{ error?: string }> {
+export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string; error?: string }> {
   const url = (formData.get('url') as string)?.trim()
   if (!url) return { error: 'URL을 입력해주세요.' }
 
@@ -22,7 +22,7 @@ export async function addJobByUrl(formData: FormData): Promise<{ error?: string 
 
   const source = detectPlatform(url)
 
-  const { error } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('jobs')
     .upsert({
       url,
@@ -32,9 +32,11 @@ export async function addJobByUrl(formData: FormData): Promise<{ error?: string 
       location: '',
       scraped_at: new Date().toISOString(),
     }, { onConflict: 'url' })
+    .select('id')
+    .single()
 
   if (error) return { error: error.message }
 
   revalidatePath('/')
-  return {}
+  return { jobId: data.id }
 }

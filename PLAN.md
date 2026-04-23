@@ -92,11 +92,12 @@ URL 붙여넣기 (대시보드 입력창)
 [x] 플랫폼 감지 유틸 (seek / indeed / linkedin / 기타)
 [x] 플랫폼별 뱃지 색상
 [x] URL 추가 시 jobs 테이블 저장
-[ ] cheerio 기반 JD 스크래퍼
-    [ ] Seek 파서
-    [ ] Indeed 파서
-    [ ] 범용 fallback 파서
-[ ] /api/scrape-url route (단건 on-demand)
+[x] cheerio 기반 JD 스크래퍼
+    [x] Seek 파서 (__NEXT_DATA__ JSON + cheerio fallback)
+    [x] Indeed 파서 (JSON-LD + cheerio fallback)
+    [x] 범용 fallback 파서 (JSON-LD → Open Graph → meta 태그)
+[x] /api/scrape-url route (단건 on-demand)
+[x] URL 추가 즉시 스크래핑 자동 실행
 [ ] URL 추가 즉시 AI 매칭 자동 실행
 ```
 
