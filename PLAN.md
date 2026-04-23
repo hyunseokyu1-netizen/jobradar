@@ -3,304 +3,149 @@
 
 ---
 
+## ⚠️ 방향 전환 (2026-04-23)
+
+**기존**: Vercel Cron으로 Indeed/Seek 자동 스크래핑  
+**변경**: 사용자가 URL을 직접 붙여넣으면 JD 스크래핑 + AI 분석
+
+### 변경 이유
+- Seek/Indeed 봇 차단으로 실제 공고 수집 불안정
+- Playwright on Vercel Lambda: 비용·타임아웃·ETXTBSY 등 제약 과다
+- 단건 on-demand 스크래핑이 현실적으로 더 신뢰성 높음
+
+---
+
+## 핵심 플로우 (변경 후)
+
+```
+이메일/링크로 받은 잡 공고 URL
+        ↓
+URL 붙여넣기 (대시보드 입력창)
+        ↓
+플랫폼 자동 감지 + JD 스크래핑 (fetch + cheerio)
+        ↓
+① 매칭 분석   — 내 이력서 vs JD (Claude API)
+② 커버레터    — 회사 맞춤형 자동 생성 (Claude API)
+        ↓
+지원 내역 트래킹 (상태, 메모, 지원일)
+```
+
+---
+
 ## 프로젝트 개요
 
 | 항목 | 내용 |
 |------|------|
-| 목적 | 호주/뉴질랜드 IT 채용공고 자동 수집 → AI 매칭 → 맞춤 커버레터 생성 |
-| 타겟 사이트 | Indeed, Glassdoor |
-| 출력 형태 | 웹 대시보드 (Next.js) + 매일 아침 이메일 다이제스트 |
+| 목적 | URL 붙여넣기 → AI 매칭 + 커버레터 자동화 |
+| 지원 플랫폼 | Seek, Indeed, LinkedIn, 기타 (범용 fallback) |
+| 출력 형태 | 웹 대시보드 (Next.js) |
 | AI 엔진 | Claude API (Anthropic) |
-| 배포 | Vercel (무료 tier) |
-| 예상 기간 | 4주 (MVP) |
+| 배포 | Vercel |
+| 예상 기간 | 3주 (MVP 재설계 기준) |
 
 ---
 
 ## 핵심 기능 (MVP)
 
-### 1. 잡 스크래핑
-- Indeed / Glassdoor에서 키워드 기반 채용공고 수집
-- 키워드 예시: `React Native`, `Fullstack`, `TypeScript`, `Node.js`, `Product Manager`
-- 수집 항목: 회사명, 직책, JD 전문, 위치, 연봉, 지원 URL, 게시일
-- 중복 제거 + Supabase에 저장
-- Vercel Cron으로 매일 자동 실행
+### 1. URL 입력 & JD 스크래핑
+- 대시보드에 URL 입력창
+- 플랫폼 자동 감지 (seek / indeed / linkedin / 기타)
+- fetch + cheerio로 JD 텍스트 추출
+- Supabase jobs 테이블에 저장
 
-### 2. AI 매칭 엔진
-- 내 프로파일 (스킬, 경력, 선호 조건) 저장
-- Claude API로 JD 분석 → 매칭 점수 (0~100) 계산
-- 매칭 근거 텍스트 생성 ("이 포지션은 당신의 React Native 경험과 PM 배경이 잘 맞습니다")
-- 상위 10개 자동 추출
+### 2. AI 매칭 분석
+- 내 이력서(resume_text) + 프로파일 vs JD
+- Claude API → 매칭 점수(0~100) + 근거 텍스트
+- matches 테이블에 저장
 
-### 3. 커버레터 생성
-- **이력서 업로드 방식**: PDF/DOCX 파싱 → 자동으로 내 경력 추출
-- **스토리 프리셋 방식**: 내 스토리를 미리 입력해두고 재사용
-  - 예: "40대, 미국 CS 학위, 풀스택 → PM → 개발 복귀, AI 툴 활용 개발자"
-- JD + 내 프로파일 조합 → 회사별 맞춤 커버레터 생성
-- 생성된 커버레터 편집 + 복사 + 다운로드 가능
+### 3. 커버레터 자동 생성
+- JD + 내 프로파일 + career_summary 조합
+- Claude API → 영문 커버레터 생성
+- 편집 + 복사 + 다운로드
 
-### 4. 웹 대시보드
-- 오늘의 매칭 잡 리스트 (점수순 정렬)
-- JD 원문 + 매칭 근거 + 커버레터 나란히 보기
-- "지원 완료" 체크 기능 (지원 현황 트래킹)
-- 필터: 국가 / 회사 규모 / 연봉 / 날짜
-
-### 5. 이메일 다이제스트
-- 매일 오전 8시 자동 발송 (Resend API)
-- 상위 5개 매칭 잡 요약
-- 각 잡별 "커버레터 생성하기" 링크 포함
+### 4. 지원 내역 트래킹
+- 상태 관리: new → bookmarked → applied → result
+- 메모 추가
+- 지원일 기록
 
 ---
 
 ## 기술 스택
 
-| 역할 | 기술 | 이유 |
+| 역할 | 기술 | 비고 |
 |------|------|------|
-| 프론트엔드 | Next.js 14 + TypeScript | 포트폴리오 사이트와 동일 스택 |
-| 스타일 | Tailwind CSS | 빠른 UI 개발 |
-| 스크래핑 | Playwright | JS 렌더링 페이지 대응 |
-| AI | Claude API (claude-sonnet-4-20250514) | 매칭 + 커버레터 생성 |
-| DB | Supabase (PostgreSQL) | 무료 tier, 실시간 기능 |
-| 이메일 | Resend | 무료 tier 3,000건/월 |
-| 배포 | Vercel | Next.js 최적화, 무료 |
-| 스케줄러 | Vercel Cron Jobs | 매일 자동 실행 |
-| 파일 파싱 | pdf-parse + mammoth | 이력서 파싱 |
-
-**비용: MVP 기간 무료** (모든 서비스 무료 tier 사용 가능)
+| 프론트엔드 | Next.js 14 + TypeScript | |
+| 스타일 | Tailwind CSS | |
+| 스크래핑 | fetch + cheerio | Playwright 제거 |
+| AI | Claude API (Haiku/Sonnet) | 매칭 + 커버레터 |
+| DB | Supabase (PostgreSQL) | |
+| 파일 파싱 | pdf-parse + mammoth | 이력서 업로드 |
+| 배포 | Vercel | Cron 제거 |
 
 ---
 
-## 개발 로드맵
+## 개발 로드맵 (재설계)
 
-### Week 1 — 데이터 수집 기반 구축
+### Phase 1 — URL 입력 + JD 스크래핑 ← 다음 작업
 ```
-[ ] Next.js 프로젝트 초기 세팅 (TypeScript, Tailwind, ESLint)
-[ ] Supabase 연결 + jobs 테이블 스키마 설계
-[ ] Playwright 스크래퍼 기본 구현
-    [ ] Indeed 스크래퍼
-    [ ] Glassdoor 스크래퍼
-[ ] 키워드 / 위치 필터 설정
-[ ] 중복 제거 로직 (URL 기반)
-[ ] Vercel Cron API Route 연결
-[ ] 스크래핑 결과 Supabase 저장 확인
-```
-
-### Week 2 — AI 매칭 엔진
-```
-[ ] 내 프로파일 스키마 설계 + 입력 UI
-    [ ] 스킬 목록
-    [ ] 경력 요약
-    [ ] 선호 조건 (연봉, 위치, 회사 규모)
-[ ] 이력서 업로드 + 파싱 (PDF/DOCX)
-[ ] Claude API 연동
-    [ ] JD 분석 프롬프트 작성
-    [ ] 매칭 점수 계산 로직
-    [ ] 매칭 근거 텍스트 생성
-[ ] 상위 N개 추출 API 구현
-[ ] 매칭 결과 Supabase 저장
+[ ] URL 입력 UI (대시보드 상단)
+[ ] 플랫폼 감지 유틸 (seek / indeed / linkedin / 기타)
+[ ] cheerio 기반 JD 스크래퍼
+    [ ] Seek 파서
+    [ ] Indeed 파서
+    [ ] 범용 fallback 파서
+[ ] /api/scrape-url route (단건 on-demand)
+[ ] 스크래핑 결과 jobs 테이블 저장
 ```
 
-### Week 3 — 커버레터 생성
+### Phase 2 — AI 분석 파이프라인
 ```
-[ ] 내 스토리 프리셋 입력 UI
-    [ ] 커리어 스토리
-    [ ] 강점 / 차별점
-    [ ] 지원 동기 템플릿
-[ ] 커버레터 생성 프롬프트 작성 (영문)
-[ ] JD + 프로파일 + 스토리 조합 로직
-[ ] 생성된 커버레터 편집 UI (텍스트 에디터)
-[ ] 복사 / TXT 다운로드 기능
-[ ] 지원 현황 트래킹 (applied / bookmarked / pass)
+[ ] URL 추가 즉시 매칭 분석 자동 실행
+[ ] 매칭 결과 대시보드 표시 (이미 구현됨)
+[ ] 커버레터 생성 API (/api/cover)
+[ ] 커버레터 편집 UI
 ```
 
-### Week 4 — UI 완성 + 이메일 + 배포
+### Phase 3 — 트래킹 + 마무리
 ```
-[ ] 메인 대시보드 UI 완성
-    [ ] 오늘의 잡 리스트
-    [ ] 상세 보기 (JD + 매칭 + 커버레터)
-    [ ] 필터 / 정렬
-[ ] Resend 이메일 템플릿 제작
-[ ] 매일 오전 8시 이메일 발송 Cron 연결
-[ ] 환경변수 정리 (.env.local → Vercel)
-[ ] Vercel 프로덕션 배포
-[ ] README 작성
-[ ] 블로그 글 초안 작성
+[ ] 지원 상태 변경 UI (new/bookmarked/applied)
+[ ] 잡 상세 페이지 (/jobs/[id])
+[ ] 메모 기능
+[ ] 모바일 반응형
 ```
 
 ---
 
-## Supabase 스키마
+## Supabase 스키마 (현재)
 
 ```sql
--- 채용공고
-CREATE TABLE jobs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  source TEXT,              -- 'indeed' | 'glassdoor'
-  title TEXT,
-  company TEXT,
-  location TEXT,
-  salary TEXT,
-  description TEXT,
-  url TEXT UNIQUE,
-  posted_at TIMESTAMPTZ,
-  scraped_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 매칭 결과
-CREATE TABLE matches (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  job_id UUID REFERENCES jobs(id),
-  score INTEGER,            -- 0~100
-  reason TEXT,
-  status TEXT DEFAULT 'new', -- 'new' | 'bookmarked' | 'applied' | 'pass'
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 내 프로파일
-CREATE TABLE my_profile (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  skills TEXT[],
-  career_summary TEXT,
-  story TEXT,
-  resume_text TEXT,
-  preferences JSONB,        -- { salary, location, company_size }
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 커버레터
-CREATE TABLE cover_letters (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  job_id UUID REFERENCES jobs(id),
-  content TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- jobs: source 컬럼이 플랫폼 구분 (seek/indeed/linkedin/other)
+-- matches: score, reason, highlights, status
+-- profiles: skills, desired_positions, career_summary, resume_text
+-- cover_letters: job_id, content
 ```
 
 ---
 
-## Claude API 프롬프트 설계
-
-### 매칭 프롬프트
-```
-You are a job matching expert.
-
-My Profile:
-- Skills: {skills}
-- Career Summary: {career_summary}
-- Preferences: {preferences}
-
-Job Description:
-{jd_text}
-
-Return a JSON object:
-{
-  "score": 0-100,
-  "reason": "2-3 sentences explaining why this is or isn't a good match",
-  "highlights": ["matching point 1", "matching point 2"]
-}
-```
-
-### 커버레터 프롬프트
-```
-Write a professional cover letter in English for the following job.
-
-My Background:
-{career_summary}
-
-My Story:
-{story}
-
-Job Title: {title}
-Company: {company}
-Job Description: {jd_text}
-
-Requirements:
-- 3 paragraphs, under 300 words
-- Highlight career transition story (PM → Developer) as a strength
-- Mention specific skills from JD
-- Professional but warm tone
-- Do NOT use generic phrases like "I am writing to apply for..."
-```
+## 보류된 기능 (SaaS 전환 시)
+- Vercel Cron 자동 스크래핑
+- 이메일 다이제스트 (Resend)
+- 회원가입 / 로그인 (Supabase Auth)
+- Stripe 결제
 
 ---
 
-## 프로젝트 구조
+## 블로그 연재
 
-```
-jobradar/
-├── app/
-│   ├── page.tsx              # 메인 대시보드
-│   ├── jobs/[id]/page.tsx    # 잡 상세 + 커버레터
-│   ├── profile/page.tsx      # 내 프로파일 설정
-│   ├── api/
-│   │   ├── scrape/route.ts   # 스크래핑 API (Cron 트리거)
-│   │   ├── match/route.ts    # 매칭 실행 API
-│   │   ├── cover/route.ts    # 커버레터 생성 API
-│   │   └── digest/route.ts   # 이메일 발송 API (Cron 트리거)
-├── lib/
-│   ├── scrapers/
-│   │   ├── indeed.ts
-│   │   └── glassdoor.ts
-│   ├── claude.ts             # Claude API 클라이언트
-│   ├── supabase.ts           # Supabase 클라이언트
-│   └── email.ts              # Resend 이메일
-├── components/
-│   ├── JobCard.tsx
-│   ├── CoverLetterEditor.tsx
-│   └── MatchScore.tsx
-├── vercel.json               # Cron 설정
-└── PLAN.md                   # 이 파일
-```
+| 편 | 제목 | 상태 |
+|----|------|------|
+| 1편 | 기획 + 스크래퍼 자동화 시도 | ✅ 작성 완료 |
+| 2편 | Vercel Lambda에서 Playwright 실행하기 | ✅ 작성 완료 |
+| 3편 | 방향 전환: URL 붙여넣기 방식으로 | 예정 |
+| 4편 | Claude API로 JD 분석 + 커버레터 생성 | 예정 |
+| 5편 | 완성 + 회고 | 예정 |
 
 ---
 
-## 블로그 연재 계획
-
-| 편 | 제목 | 핵심 내용 |
-|----|------|-----------|
-| 1편 | "40대 개발자가 AI로 취업툴을 만든 이유" | 프로젝트 기획 배경 |
-| 2편 | "Indeed를 Playwright로 스크래핑하다 막힌 것들" | 스크래퍼 구현기 |
-| 3편 | "Claude API로 JD 분석하고 매칭 점수 만들기" | AI 매칭 구현 |
-| 4편 | "내 PM→개발자 스토리를 커버레터에 녹이는 법" | 프롬프트 엔지니어링 |
-| 5편 | "Vercel Cron + Resend로 매일 아침 이메일 자동화" | 자동화 구현 |
-| 6편 | "완성! 실제로 써보니 어땠나" | 결과 + 회고 |
-
----
-
-## 향후 수익화 로드맵
-
-```
-MVP (나만 씀)
-    ↓
-베타 (지인 5~10명 무료 테스트)
-    ↓
-퍼블릭 런칭 - $9/월 구독
-  타겟: 커리어 전환자, 이민 준비 개발자
-    ↓
-기능 확장
-  - LinkedIn 추가
-  - 면접 준비 AI
-  - 비자 요건 필터
-```
-
----
-
-## 시작하기
-
-```bash
-# 1. 프로젝트 생성
-npx create-next-app@latest jobradar --typescript --tailwind --eslint
-
-# 2. 의존성 설치
-npm install @supabase/supabase-js @anthropic-ai/sdk playwright resend pdf-parse mammoth
-
-# 3. 환경변수 설정
-cp .env.example .env.local
-# ANTHROPIC_API_KEY=
-# SUPABASE_URL=
-# SUPABASE_ANON_KEY=
-# RESEND_API_KEY=
-```
-
----
-
-*Made by 현석 — "내 취업을 위해 직접 만든 AI 툴"*
+*Made by 현석 — "내 취업을 위해 직접 만든 AI 툴"*  
+*Last updated: 2026-04-23*

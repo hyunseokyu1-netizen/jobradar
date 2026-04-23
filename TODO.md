@@ -4,7 +4,13 @@
 
 ---
 
-## ⚙️ Week 1 — 프로젝트 세팅 + 스크래퍼
+## ⚠️ 방향 전환 (2026-04-23)
+자동 스크래핑 → **URL 붙여넣기 방식**으로 변경.  
+Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
+
+---
+
+## ✅ Week 1 — 프로젝트 세팅 + 스크래퍼 (완료)
 
 ### 프로젝트 초기 세팅
 - [x] Next.js 프로젝트 생성 (TypeScript + Tailwind + ESLint + App Router)
@@ -25,31 +31,16 @@
 - [x] Supabase Admin 클라이언트 연결 (`/src/lib/supabase-admin.ts`, service role)
 - [x] 환경변수 설정 (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
 
-### Indeed 스크래퍼
-- [x] Playwright 설치 및 기본 설정
-- [x] Indeed 페이지 접근 테스트
-- [x] 키워드/위치 필터 적용 (프로파일 기반 동적 타겟)
-- [x] 채용공고 데이터 파싱 (제목, 회사, JD, URL, 위치, 연봉, 게시일)
-- [x] 중복 제거 로직 (URL 기반 upsert)
-- [x] Supabase `jobs` 테이블에 저장
-- [x] 스크래퍼 API Route 생성 (`/api/scrape/route.ts`)
-
-### Seek 스크래퍼 (Glassdoor → Seek.com.au로 대체)
-- [x] Seek 페이지 접근 테스트 (Glassdoor는 Cloudflare로 완전 차단)
-- [x] 채용공고 데이터 파싱 (제목/회사/위치/연봉/날짜/JD)
-- [x] Supabase 저장 연결
-- [x] 실제 공고 38개 수집 확인
-
-### 자동화
-- [x] Vercel Cron 설정 (`vercel.json`, 매일 22:00 UTC = 08:00 AEST)
-- [x] 매일 자동 실행 테스트
+### 스크래퍼 (자동화 방식 — 보류)
+- [x] Indeed 스크래퍼 구현 (봇 차단으로 실용성 한계)
+- [x] Seek 스크래퍼 구현 (38개 공고 수집 확인)
+- [x] Vercel Cron 설정 (매일 22:00 UTC)
 - [x] Vercel 리전 시드니(syd1)로 변경
-- [x] `@sparticuz/chromium` + `playwright-core` 전환 (Lambda 호환)
-- [x] `SCRAPE_TARGET_LIMIT` 환경변수로 타임아웃 대응
+- [~] 자동 스크래핑 안정화 — **방향 전환으로 보류**
 
 ---
 
-## 🤖 Week 2 — AI 매칭 엔진
+## ✅ Week 2 — AI 매칭 엔진 (완료)
 
 ### 내 프로파일
 - [x] 프로파일 입력 UI 페이지 (`/profile`)
@@ -57,115 +48,88 @@
 - [x] 경력 요약 입력/저장
 - [x] 선호 조건 입력/저장 (연봉, 위치, 소스)
 - [x] Supabase `profiles` 테이블 저장 (Server Action)
-- [ ] 이력서 텍스트 업로드 + 파싱 (PDF/DOCX)
+- [x] 이력서 PDF/DOCX 업로드 + 텍스트 파싱
 
 ### Claude API 연동
-- [ ] Anthropic SDK 설치 (`@anthropic-ai/sdk`)
-- [ ] Claude 클라이언트 설정 (`/src/lib/claude.ts`)
-- [ ] 환경변수 설정 (`ANTHROPIC_API_KEY`)
+- [x] Anthropic SDK 설치 (`@anthropic-ai/sdk`)
+- [x] Claude 클라이언트 설정 (`/src/lib/claude.ts`)
+- [x] 환경변수 설정 (`ANTHROPIC_API_KEY`)
 
 ### 매칭 엔진
-- [ ] JD 분석 프롬프트 작성
-- [ ] 매칭 점수 계산 로직 (0~100)
-- [ ] 매칭 근거 텍스트 생성
-- [ ] 상위 10개 추출 API (`/api/match/route.ts`)
-- [ ] Supabase `matches` 테이블 저장
-- [ ] 전체 플로우 테스트
+- [x] JD 분석 프롬프트 작성
+- [x] 매칭 점수 계산 로직 (0~100)
+- [x] 매칭 근거 텍스트 생성
+- [x] 매칭 API (`/api/match/route.ts`)
+- [x] Supabase `matches` 테이블 저장
+- [ ] 전체 플로우 테스트 (API 크레딧 충전 후)
 
 ---
 
-## ✍️ Week 3 — 커버레터 생성
+## 🔄 Phase 1 — URL 입력 + JD 스크래핑 (재설계) ← 현재
 
-### 내 스토리 프리셋
-- [ ] 스토리 입력 UI (커리어 스토리, 강점, 지원 동기)
-- [ ] 프리셋 저장/불러오기
+- [ ] URL 입력 UI (대시보드 상단 입력창)
+- [ ] 플랫폼 자동 감지 유틸 (seek / indeed / linkedin / 기타)
+- [ ] cheerio 기반 JD 스크래퍼
+  - [ ] Seek 파서
+  - [ ] Indeed 파서
+  - [ ] 범용 fallback 파서 (Open Graph + meta 태그)
+- [ ] `/api/scrape-url` API Route (단건 on-demand)
+- [ ] URL 추가 시 jobs 테이블 저장
+- [ ] URL 추가 즉시 AI 매칭 자동 실행
 
-### 커버레터 생성
+---
+
+## 📝 Phase 2 — 커버레터 생성
+
 - [ ] 커버레터 생성 프롬프트 작성
-- [ ] JD + 프로파일 + 스토리 조합 로직
+- [ ] JD + 프로파일 + resume_text 조합 로직
 - [ ] 커버레터 생성 API (`/api/cover/route.ts`)
 - [ ] Supabase `cover_letters` 테이블 저장
-
-### 편집 UI
 - [ ] 텍스트 에디터 컴포넌트
 - [ ] 클립보드 복사 기능
 - [ ] TXT 다운로드 기능
 
-### 지원 현황 트래킹
-- [ ] 상태 변경 UI (new / bookmarked / applied / pass)
-- [ ] Supabase `matches` status 업데이트
-
 ---
 
-## 🖥️ Week 4 — 대시보드 + 이메일 + 배포
+## 📊 Phase 3 — 트래킹 + 대시보드 완성
 
-### 메인 대시보드
-- [x] 잡 리스트 UI (`/`) — 소스 뱃지, 날짜, 연봉 표시
+- [ ] 지원 상태 변경 UI (new / bookmarked / applied / pass)
+- [ ] Supabase `matches.status` 업데이트
+- [ ] 잡 상세 페이지 (`/jobs/[id]`) — JD + 매칭 + 커버레터
 - [ ] 매칭 점수 순 정렬
-- [ ] 필터 (국가 / 연봉 / 날짜 / 상태)
-- [ ] JobCard 컴포넌트 개선
-- [ ] MatchScore 컴포넌트
-
-### 잡 상세 페이지
-- [ ] JD 원문 + 매칭 근거 + 커버레터 나란히 보기 (`/jobs/[id]`)
-- [ ] 커버레터 생성 버튼
-- [ ] 지원 완료 체크 버튼
-
-### 이메일 다이제스트
-- [ ] Resend 계정 + API 키 설정
-- [ ] 이메일 템플릿 작성 (상위 5개 잡 요약)
-- [ ] 이메일 발송 API (`/api/digest/route.ts`)
-- [ ] 매일 오전 8시 Cron 연결
-- [ ] 테스트 발송 확인
-
-### 배포
-- [x] 환경변수 Vercel에 등록
-- [x] 프로덕션 배포
-- [ ] E2E 전체 플로우 테스트
-- [ ] README.md 작성
+- [ ] 메모 입력 기능
+- [ ] 모바일 반응형 점검
 
 ---
 
-## 🐛 Week 5 — 버퍼 (버그 수정 + 마무리)
-
-- [-] 스크래퍼 봇 차단 이슈 대응 (Indeed 차단 중, Seek 정상)
-- [ ] 모바일 반응형 UI 점검
-- [ ] 에러 핸들링 전체 점검
-- [ ] 성능 최적화 (API 응답 속도)
-- [ ] 블로그 연재 초안 정리 (1~4편)
-
----
-
-## 💰 SaaS 전환 (MVP 이후)
+## 💰 SaaS 전환 (MVP 이후 — 보류)
 
 ### 인증 & 보안
 - [ ] 회원가입 / 로그인 (Supabase Auth)
-- [ ] `/profile` 로그인 유저만 접근 가능하도록 보호 (현재 하드코딩 + 누구나 접근 가능)
+- [ ] `/profile` 로그인 유저만 접근 가능하도록 보호
 - [ ] `supabaseAdmin` → 인증된 유저 세션 기반 클라이언트로 교체
-- [ ] 이메일 하드코딩 제거 → `auth.uid()` 기반으로 프로파일 조회
+- [ ] 이메일 하드코딩 제거 → `auth.uid()` 기반 프로파일 조회
 - [ ] RLS 정책 실제 적용 검증
 
 ### 결제 & 플랜
 - [ ] Stripe 결제 연동
 - [ ] 플랜 설계 (Free / Pro $9/월)
-- [ ] 사용자별 데이터 분리
 
-### 런칭
-- [ ] 랜딩 페이지 제작
-- [ ] 베타 오픈 (커뮤니티 공유)
-- [ ] 첫 유료 구독자 10명 목표
+### 이메일 다이제스트 (보류)
+- [ ] Resend 계정 + API 키 설정
+- [ ] 이메일 템플릿 (상위 5개 잡 요약)
+- [ ] 매일 오전 8시 Cron 연결
 
 ---
 
 ## 📝 블로그 연재
 
-- [x] 1편: "취업 준비가 귀찮아서 AI 툴을 직접 만들었다" (기획 + 스크래퍼)
-- [x] 2편: "Vercel Lambda에서 Playwright 실행하기" (배포 삽질)
-- [ ] 3편: "Claude API로 JD 분석하고 매칭 점수 만들기"
-- [ ] 4편: "내 스토리를 커버레터에 녹이는 법"
-- [ ] 5편: "Vercel Cron + Resend로 매일 아침 이메일 자동화"
-- [ ] 6편: "완성! 실제로 써보니 어땠나"
+- [x] 1편: 기획 + 스크래퍼 자동화 시도
+- [x] 2편: Vercel Lambda에서 Playwright 실행하기
+- [ ] 3편: 방향 전환 — URL 붙여넣기 방식으로 바꾼 이유
+- [ ] 4편: Claude API로 JD 분석 + 커버레터 생성
+- [ ] 5편: 완성 + 회고
 
 ---
 
-*Last updated: 2026-04-21*
+*Last updated: 2026-04-23*
