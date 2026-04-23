@@ -68,14 +68,15 @@ Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
 
 ## 🔄 Phase 1 — URL 입력 + JD 스크래핑 (재설계) ← 현재
 
-- [ ] URL 입력 UI (대시보드 상단 입력창)
-- [ ] 플랫폼 자동 감지 유틸 (seek / indeed / linkedin / 기타)
+- [x] URL 입력 UI (대시보드 상단 입력창)
+- [x] 플랫폼 자동 감지 유틸 (seek / indeed / linkedin / 기타)
+- [x] 플랫폼별 뱃지 색상 (Seek 파랑 / Indeed 주황 / LinkedIn 하늘 / Other 회색)
+- [x] URL 추가 시 jobs 테이블 저장
 - [ ] cheerio 기반 JD 스크래퍼
   - [ ] Seek 파서
   - [ ] Indeed 파서
   - [ ] 범용 fallback 파서 (Open Graph + meta 태그)
 - [ ] `/api/scrape-url` API Route (단건 on-demand)
-- [ ] URL 추가 시 jobs 테이블 저장
 - [ ] URL 추가 즉시 AI 매칭 자동 실행
 
 ---
