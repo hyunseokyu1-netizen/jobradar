@@ -1,5 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import RunMatchButton from '@/components/RunMatchButton'
+import AddJobForm from '@/components/AddJobForm'
+import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
 interface JobWithMatch {
   id: string
@@ -63,6 +65,7 @@ export default async function JobsPage() {
 
   return (
     <div>
+      <AddJobForm />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">채용 공고</h1>
@@ -83,10 +86,8 @@ export default async function JobsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                      job.source === 'seek' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                    }`}>
-                      {job.source}
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${PLATFORM_STYLE[job.source as Platform]?.className ?? PLATFORM_STYLE.other.className}`}>
+                      {PLATFORM_STYLE[job.source as Platform]?.label ?? job.source}
                     </span>
                     <ScoreBadge score={job.match_score} />
                     <span className="text-xs text-zinc-400">
