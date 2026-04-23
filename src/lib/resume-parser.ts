@@ -4,7 +4,7 @@ export async function parseResumeFile(file: File): Promise<string> {
 
   if (ext === 'pdf') {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse')
+    const pdfParse = require('pdf-parse/lib/pdf-parse')
     const result = await pdfParse(buffer)
     return (result.text as string).trim()
   }
