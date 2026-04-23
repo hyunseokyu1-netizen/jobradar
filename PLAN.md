@@ -127,8 +127,14 @@ URL 붙여넣기 (대시보드 입력창)
 
 ---
 
+## 🚫 제외된 기능 — 스크래퍼 자동화
+> Playwright 봇 차단·Lambda 제약으로 방향 전환. 코드는 보존하되 더 이상 개발하지 않음.
+
+- ~~Playwright 기반 Indeed/Seek 자동 스크래핑~~
+- ~~Vercel Cron 스케줄 스크래핑~~
+- ~~@sparticuz/chromium Lambda 실행~~
+
 ## 보류된 기능 (SaaS 전환 시)
-- Vercel Cron 자동 스크래핑
 - 이메일 다이제스트 (Resend)
 - 회원가입 / 로그인 (Supabase Auth)
 - Stripe 결제

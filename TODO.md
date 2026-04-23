@@ -31,12 +31,13 @@ Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
 - [x] Supabase Admin 클라이언트 연결 (`/src/lib/supabase-admin.ts`, service role)
 - [x] 환경변수 설정 (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
 
-### 스크래퍼 (자동화 방식 — 보류)
-- [x] Indeed 스크래퍼 구현 (봇 차단으로 실용성 한계)
-- [x] Seek 스크래퍼 구현 (38개 공고 수집 확인)
-- [x] Vercel Cron 설정 (매일 22:00 UTC)
-- [x] Vercel 리전 시드니(syd1)로 변경
-- [~] 자동 스크래핑 안정화 — **방향 전환으로 보류**
+### ~~스크래퍼 (자동화 방식)~~ — 🚫 제외 (방향 전환)
+> Playwright 봇 차단·Lambda 제약으로 방향 전환. 코드는 유지하되 더 이상 개발하지 않음.
+- [x] ~~Indeed 스크래퍼 구현~~ (봇 차단으로 실용성 한계)
+- [x] ~~Seek 스크래퍼 구현~~ (38개 공고 수집 확인)
+- [x] ~~Vercel Cron 설정~~ (매일 22:00 UTC)
+- [x] ~~Vercel 리전 시드니(syd1)로 변경~~
+- [~] ~~자동 스크래핑 안정화~~
 
 ---
 
