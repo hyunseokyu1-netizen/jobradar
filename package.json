@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.90.0",
     "@sparticuz/chromium": "^147.0.2",
     "@supabase/supabase-js": "^2.104.0",
+    "cheerio": "^1.2.0",
     "is-plain-object": "^2.0.4",
     "mammoth": "^1.12.0",
     "next": "16.2.4",
