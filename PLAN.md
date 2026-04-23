@@ -86,16 +86,18 @@ URL 붙여넣기 (대시보드 입력창)
 
 ## 개발 로드맵 (재설계)
 
-### Phase 1 — URL 입력 + JD 스크래핑 ← 다음 작업
+### Phase 1 — URL 입력 + JD 스크래핑 ← 진행중
 ```
-[ ] URL 입력 UI (대시보드 상단)
-[ ] 플랫폼 감지 유틸 (seek / indeed / linkedin / 기타)
+[x] URL 입력 UI (대시보드 상단)
+[x] 플랫폼 감지 유틸 (seek / indeed / linkedin / 기타)
+[x] 플랫폼별 뱃지 색상
+[x] URL 추가 시 jobs 테이블 저장
 [ ] cheerio 기반 JD 스크래퍼
     [ ] Seek 파서
     [ ] Indeed 파서
     [ ] 범용 fallback 파서
 [ ] /api/scrape-url route (단건 on-demand)
-[ ] 스크래핑 결과 jobs 테이블 저장
+[ ] URL 추가 즉시 AI 매칭 자동 실행
 ```
 
 ### Phase 2 — AI 분석 파이프라인
