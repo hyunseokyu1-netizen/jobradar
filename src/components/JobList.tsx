@@ -12,6 +12,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import StatusButton from './StatusButton'
+import CoverLetterModal from './CoverLetterModal'
 import { deleteJob, matchSingleJob } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
@@ -77,6 +78,7 @@ function ScoreBadge({ score, jobId, onMatched }: { score: number | null; jobId: 
 function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: (id: string) => void; onUpdate: (id: string, patch: Partial<JobItem>) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: job.id })
   const [deleting, setDeleting] = useState(false)
+  const [showCoverLetter, setShowCoverLetter] = useState(false)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -150,6 +152,12 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowCoverLetter(true)}
+            className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 hover:bg-zinc-50 transition-colors"
+          >
+            커버레터
+          </button>
           <a
             href={job.url}
             target="_blank"
@@ -168,6 +176,15 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
           </button>
         </div>
       </div>
+
+      {showCoverLetter && (
+        <CoverLetterModal
+          jobId={job.id}
+          jobTitle={job.title}
+          company={job.company}
+          onClose={() => setShowCoverLetter(false)}
+        />
+      )}
     </li>
   )
 }

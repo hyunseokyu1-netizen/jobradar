@@ -84,12 +84,12 @@ Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
 
 ## 📝 Phase 2 — 커버레터 생성
 
-- [ ] 커버레터 생성 프롬프트 작성
-- [ ] JD + 프로파일 + resume_text 조합 로직
-- [ ] 커버레터 생성 API (`/api/cover/route.ts`)
-- [ ] Supabase `cover_letters` 테이블 저장
-- [ ] 텍스트 에디터 컴포넌트
-- [ ] 클립보드 복사 기능
+- [x] 커버레터 생성 프롬프트 작성
+- [x] JD + 프로파일 + resume_text 조합 로직
+- [x] Supabase `cover_letters` 테이블 저장
+- [x] 텍스트 에디터 컴포넌트 (모달)
+- [x] 클립보드 복사 기능
+- [x] 재생성 버튼
 - [ ] TXT 다운로드 기능
 
 ---
