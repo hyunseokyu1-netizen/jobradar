@@ -14,6 +14,7 @@ interface JobWithMatch {
   location: string
   salary: string | null
   url: string
+  description: string | null
   posted_at: string | null
   scraped_at: string
   match_score: number | null
@@ -46,7 +47,7 @@ export default async function JobsPage() {
   const { data: jobs, error } = await supabaseAdmin
     .from('jobs')
     .select(`
-      id, source, title, company, location, salary, url, posted_at, scraped_at,
+      id, source, title, company, location, salary, url, description, posted_at, scraped_at,
       matches!left ( score, reason, status, user_id )
     `)
     .order('scraped_at', { ascending: false })
@@ -125,6 +126,9 @@ export default async function JobsPage() {
                   </p>
                   {job.match_reason && (
                     <p className="text-xs text-zinc-400 mt-1.5 line-clamp-2">{job.match_reason}</p>
+                  )}
+                  {job.title === '스크래핑 실패' && job.description && (
+                    <p className="text-xs text-red-400 mt-1.5 line-clamp-2">오류: {job.description}</p>
                   )}
                 </div>
                 <a
