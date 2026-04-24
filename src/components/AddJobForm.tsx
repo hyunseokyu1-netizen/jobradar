@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { addJobByUrl, matchSingleJob } from '@/app/actions'
 
 export default function AddJobForm() {
@@ -8,6 +9,7 @@ export default function AddJobForm() {
   const [error, setError] = useState('')
   const [url, setUrl] = useState('')
 
+  const router = useRouter()
   const loading = status !== 'idle'
 
   async function handleSubmit(e: React.FormEvent) {
@@ -34,6 +36,7 @@ export default function AddJobForm() {
 
     setStatus('idle')
     setUrl('')
+    router.refresh()
   }
 
   const label = status === 'scraping' ? 'JD 분석 중...' : status === 'matching' ? 'AI 매칭 중...' : status === 'saving' ? '저장 중...' : '추가'
