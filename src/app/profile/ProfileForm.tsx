@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { saveProfile, uploadResume } from './actions'
+import { saveProfile, uploadResume, generateCareerSummary } from './actions'
 
 interface Profile {
   name: string | null
@@ -19,6 +19,8 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
   const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
+  const [summaryGenerating, setSummaryGenerating] = useState(false)
+  const [summaryValue, setSummaryValue] = useState(initialData?.career_summary ?? '')
   const [resumeUploading, setResumeUploading] = useState(false)
   const [resumeStatus, setResumeStatus] = useState<'idle' | 'done' | 'error'>('idle')
   const [resumeError, setResumeError] = useState('')
@@ -56,6 +58,14 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
       setResumePreview(result.text ?? '')
     }
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  async function handleGenerateSummary() {
+    setSummaryGenerating(true)
+    const result = await generateCareerSummary()
+    setSummaryGenerating(false)
+    if (result.error) alert(result.error)
+    else if (result.summary) setSummaryValue(result.summary)
   }
 
   return (
@@ -131,10 +141,24 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         </div>
       </Field>
 
-      <Field label="경력 요약" hint="AI 매칭 및 커버레터에 활용됩니다">
+      <Field
+        label="경력 요약"
+        hint="AI 매칭 및 커버레터에 활용됩니다"
+        action={
+          <button
+            type="button"
+            onClick={handleGenerateSummary}
+            disabled={summaryGenerating}
+            className="text-xs text-blue-500 hover:text-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {summaryGenerating ? '생성 중...' : '✦ AI 자동 입력'}
+          </button>
+        }
+      >
         <textarea
           name="career_summary"
-          defaultValue={initialData?.career_summary ?? ''}
+          value={summaryValue}
+          onChange={e => setSummaryValue(e.target.value)}
           className="input min-h-28"
           placeholder="10+ years backend/fullstack experience..."
         />
@@ -182,13 +206,16 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
   )
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, hint, action, children }: { label: string; hint?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-zinc-700 mb-1">
-        {label}
-        {hint && <span className="ml-2 text-xs text-zinc-400 font-normal">{hint}</span>}
-      </label>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-sm font-medium text-zinc-700">
+          {label}
+          {hint && <span className="ml-2 text-xs text-zinc-400 font-normal">{hint}</span>}
+        </label>
+        {action}
+      </div>
       {children}
     </div>
   )
