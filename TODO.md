@@ -78,7 +78,7 @@ Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
   - [x] 범용 fallback 파서 (JSON-LD → Open Graph → meta 태그)
 - [x] `/api/scrape-url` API Route (단건 on-demand)
 - [x] URL 추가 즉시 스크래핑 자동 실행
-- [ ] URL 추가 즉시 AI 매칭 자동 실행
+- [x] URL 추가 즉시 AI 매칭 자동 실행 (스크래핑 → 매칭 순차 실행)
 
 ---
 
@@ -98,8 +98,10 @@ Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
 
 - [x] 지원 상태 변경 UI (new / bookmarked / applied / pass)
 - [x] Supabase `matches.status` 업데이트
+- [x] 매칭 점수 순 정렬
+- [x] 잡 목록 삭제 기능
+- [x] 드래그 순서 변경 (@dnd-kit)
 - [ ] 잡 상세 페이지 (`/jobs/[id]`) — JD + 매칭 + 커버레터
-- [ ] 매칭 점수 순 정렬
 - [ ] 메모 입력 기능
 - [ ] 모바일 반응형 점검
 
