@@ -61,8 +61,17 @@ function ScoreBadge({ score, jobId, onMatched }: { score: number | null; jobId: 
       </button>
     )
   }
-  const color = score >= 70 ? 'bg-green-100 text-green-700' : score >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-zinc-100 text-zinc-500'
-  return <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${color}`}>{score}점</span>
+  const color = score >= 70 ? 'bg-green-100 text-green-700 hover:bg-green-200' : score >= 50 ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
+  return (
+    <button
+      onClick={handleMatch}
+      disabled={matching}
+      title="클릭해서 재매칭"
+      className={`text-xs font-bold px-2 py-0.5 rounded-full transition-colors disabled:opacity-50 ${matching ? 'bg-zinc-100 text-zinc-400' : color}`}
+    >
+      {matching ? '매칭 중...' : `${score}점`}
+    </button>
+  )
 }
 
 function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: (id: string) => void; onUpdate: (id: string, patch: Partial<JobItem>) => void }) {
