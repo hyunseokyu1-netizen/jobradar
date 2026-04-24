@@ -96,8 +96,8 @@ Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
 
 ## 📊 Phase 3 — 트래킹 + 대시보드 완성
 
-- [ ] 지원 상태 변경 UI (new / bookmarked / applied / pass)
-- [ ] Supabase `matches.status` 업데이트
+- [x] 지원 상태 변경 UI (new / bookmarked / applied / pass)
+- [x] Supabase `matches.status` 업데이트
 - [ ] 잡 상세 페이지 (`/jobs/[id]`) — JD + 매칭 + 커버레터
 - [ ] 매칭 점수 순 정렬
 - [ ] 메모 입력 기능
