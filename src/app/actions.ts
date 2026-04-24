@@ -14,6 +14,26 @@ export async function triggerMatching() {
   }
 }
 
+export async function deleteJob(jobId: string): Promise<{ error?: string }> {
+  await supabaseAdmin.from('matches').delete().eq('job_id', jobId)
+  const { error } = await supabaseAdmin.from('jobs').delete().eq('id', jobId)
+  if (error) return { error: error.message }
+  revalidatePath('/')
+  return {}
+}
+
+export async function matchSingleJob(jobId: string): Promise<{ error?: string; score?: number }> {
+  try {
+    const { matchJob } = await import('@/lib/matching')
+    const result = await matchJob(jobId)
+    if ('error' in result) return { error: result.error }
+    revalidatePath('/')
+    return { score: result.score }
+  } catch (e) {
+    return { error: String(e) }
+  }
+}
+
 export async function updateMatchStatus(jobId: string, status: string): Promise<{ error?: string }> {
   const { data: profile } = await supabaseAdmin
     .from('profiles')
