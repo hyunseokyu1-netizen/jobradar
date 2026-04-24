@@ -111,7 +111,7 @@ URL 붙여넣기 (대시보드 입력창)
 
 ### Phase 3 — 트래킹 + 마무리
 ```
-[ ] 지원 상태 변경 UI (new/bookmarked/applied)
+[x] 지원 상태 변경 UI (new/bookmarked/applied/pass)
 [ ] 잡 상세 페이지 (/jobs/[id])
 [ ] 메모 기능
 [ ] 모바일 반응형

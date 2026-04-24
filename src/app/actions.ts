@@ -14,6 +14,27 @@ export async function triggerMatching() {
   }
 }
 
+export async function updateMatchStatus(jobId: string, status: string): Promise<{ error?: string }> {
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('id')
+    .eq('email', 'hyunseok.yu1@gmail.com')
+    .single()
+
+  if (!profile) return { error: 'Profile not found' }
+
+  const { error } = await supabaseAdmin
+    .from('matches')
+    .update({ status })
+    .eq('job_id', jobId)
+    .eq('user_id', profile.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/')
+  return {}
+}
+
 export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string; error?: string }> {
   const url = (formData.get('url') as string)?.trim()
   if (!url) return { error: 'URL을 입력해주세요.' }
