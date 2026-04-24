@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { scrapeSeekUrl } from '@/lib/scrapers/seek-url'
 import { scrapeIndeedUrl } from '@/lib/scrapers/indeed-url'
 import { scrapeGenericUrl } from '@/lib/scrapers/generic-url'
+import { parseGlassdoorUrl } from '@/lib/scrapers/glassdoor-url'
 import type { Platform } from '@/lib/detect-platform'
 
 export const dynamic = 'force-dynamic'
@@ -23,9 +24,10 @@ export async function POST(request: Request) {
   try {
     const source = job.source as Platform
     const scraped =
-      source === 'seek'    ? await scrapeSeekUrl(job.url) :
-      source === 'indeed'  ? await scrapeIndeedUrl(job.url) :
-                             await scrapeGenericUrl(job.url)
+      source === 'seek'      ? await scrapeSeekUrl(job.url) :
+      source === 'indeed'    ? await scrapeIndeedUrl(job.url) :
+      source === 'glassdoor' ? parseGlassdoorUrl(job.url) :
+                               await scrapeGenericUrl(job.url)
 
     await supabaseAdmin
       .from('jobs')
