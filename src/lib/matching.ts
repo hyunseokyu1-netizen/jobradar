@@ -141,6 +141,15 @@ export async function runMatching() {
       errors++
       if (!firstError) firstError = String(e)
       console.error(`[matching] job ${job.id} failed:`, e)
+      // 실패해도 score=0으로 저장 → 재시도 대상에서 제외
+      await supabaseAdmin.from('matches').upsert({
+        user_id: profile.id,
+        job_id: job.id,
+        score: 0,
+        reason: `매칭 실패: ${String(e).slice(0, 200)}`,
+        highlights: [],
+        status: 'new',
+      }, { onConflict: 'user_id,job_id' })
     }
   }
 

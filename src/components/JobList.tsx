@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
@@ -11,7 +12,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import StatusButton from './StatusButton'
-import { deleteJob } from '@/app/actions'
+import { deleteJob, matchSingleJob } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
 export interface JobItem {
@@ -39,13 +40,32 @@ function timeAgo(dateStr: string): string {
   return '방금'
 }
 
-function ScoreBadge({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-xs text-zinc-300">미매칭</span>
+function ScoreBadge({ score, jobId, onMatched }: { score: number | null; jobId: string; onMatched: (score: number) => void }) {
+  const [matching, setMatching] = useState(false)
+
+  async function handleMatch() {
+    setMatching(true)
+    const res = await matchSingleJob(jobId)
+    if (res.score !== undefined) onMatched(res.score)
+    setMatching(false)
+  }
+
+  if (score === null) {
+    return (
+      <button
+        onClick={handleMatch}
+        disabled={matching}
+        className="text-xs text-zinc-400 hover:text-blue-500 hover:underline disabled:opacity-50 transition-colors"
+      >
+        {matching ? '매칭 중...' : '미매칭'}
+      </button>
+    )
+  }
   const color = score >= 70 ? 'bg-green-100 text-green-700' : score >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-zinc-100 text-zinc-500'
   return <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${color}`}>{score}점</span>
 }
 
-function SortableJobCard({ job, onDelete }: { job: JobItem; onDelete: (id: string) => void }) {
+function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: (id: string) => void; onUpdate: (id: string, patch: Partial<JobItem>) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: job.id })
   const [deleting, setDeleting] = useState(false)
 
@@ -86,7 +106,11 @@ function SortableJobCard({ job, onDelete }: { job: JobItem; onDelete: (id: strin
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${PLATFORM_STYLE[job.source as Platform]?.className ?? PLATFORM_STYLE.other.className}`}>
               {PLATFORM_STYLE[job.source as Platform]?.label ?? job.source}
             </span>
-            <ScoreBadge score={job.match_score} />
+            <ScoreBadge
+              score={job.match_score}
+              jobId={job.id}
+              onMatched={score => onUpdate(job.id, { match_score: score, match_status: 'new' })}
+            />
             {job.match_score !== null && (
               <StatusButton jobId={job.id} initialStatus={job.match_status} />
             )}
@@ -142,6 +166,9 @@ function SortableJobCard({ job, onDelete }: { job: JobItem; onDelete: (id: strin
 export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
   const [jobs, setJobs] = useState(initialJobs)
 
+  // 서버 재렌더링 시 최신 데이터 동기화
+  useEffect(() => { setJobs(initialJobs) }, [initialJobs])
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   function handleDragEnd(event: DragEndEvent) {
@@ -159,6 +186,10 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
     setJobs(prev => prev.filter(j => j.id !== id))
   }
 
+  function handleUpdate(id: string, patch: Partial<JobItem>) {
+    setJobs(prev => prev.map(j => j.id === id ? { ...j, ...patch } : j))
+  }
+
   if (!jobs.length) return <p className="text-zinc-400 text-center py-20">아직 공고가 없습니다.</p>
 
   return (
@@ -166,7 +197,7 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
       <SortableContext items={jobs.map(j => j.id)} strategy={verticalListSortingStrategy}>
         <ul className="space-y-3">
           {jobs.map(job => (
-            <SortableJobCard key={job.id} job={job} onDelete={handleDelete} />
+            <SortableJobCard key={job.id} job={job} onDelete={handleDelete} onUpdate={handleUpdate} />
           ))}
         </ul>
       </SortableContext>
