@@ -40,6 +40,38 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
   return {}
 }
 
+export async function generateCareerSummary(): Promise<{ summary?: string; error?: string }> {
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('resume_text')
+    .eq('email', 'hyunseok.yu1@gmail.com')
+    .single()
+
+  if (!profile?.resume_text) return { error: '이력서를 먼저 업로드해주세요.' }
+
+  const { anthropic } = await import('@/lib/claude')
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 400,
+    messages: [{
+      role: 'user',
+      content: `아래 이력서를 바탕으로 AI 채용 매칭 및 커버레터 생성에 활용될 경력 요약을 영어로 작성해주세요.
+
+요구사항:
+- 3~5문장, 150단어 이내
+- 총 경력 연수, 핵심 기술 스택, 주요 도메인/산업 포함
+- 강점과 차별점 강조
+- 평문(plain text)으로만 작성, 마크다운 없이
+
+이력서:
+${profile.resume_text.slice(0, 4000)}`,
+    }],
+  })
+
+  const summary = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+  return { summary }
+}
+
 export async function uploadResume(formData: FormData): Promise<{ text?: string; error?: string }> {
   const file = formData.get('resume') as File | null
   if (!file || file.size === 0) return { error: '파일을 선택해주세요.' }
