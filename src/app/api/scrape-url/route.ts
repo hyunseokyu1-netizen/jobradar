@@ -42,11 +42,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, title: scraped.title })
   } catch (e) {
+    const errMsg = String(e)
+    console.error(`[scrape-url] ${job.url}:`, errMsg)
     await supabaseAdmin
       .from('jobs')
-      .update({ title: '스크래핑 실패' })
+      .update({ title: '스크래핑 실패', description: errMsg })
       .eq('id', job.id)
 
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return NextResponse.json({ error: errMsg }, { status: 500 })
   }
 }
