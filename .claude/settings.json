@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm run build *)",
+      "Bash(npm run dev *)",
+      "Bash(npm run lint *)",
+      "Bash(npm install *)",
+      "Bash(npm uninstall *)",
+      "Bash(npm list *)",
+      "Bash(npx tsc *)",
+      "Bash(vercel ls *)",
+      "Bash(vercel logs *)",
+      "Bash(vercel env *)"
+    ]
+  }
+}

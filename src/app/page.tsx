@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import RunMatchButton from '@/components/RunMatchButton'
 import AddJobForm from '@/components/AddJobForm'
 import JobList from '@/components/JobList'
@@ -8,11 +9,8 @@ export const dynamic = 'force-dynamic'
 import type { JobItem } from '@/components/JobList'
 
 export default async function JobsPage() {
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('id')
-    .eq('email', 'hyunseok.yu1@gmail.com')
-    .single()
+  const email = await getAuthUserEmail()
+  const profile = email ? await getOrCreateProfile(email) : null
 
   const { data: jobs, error } = await supabaseAdmin
     .from('jobs')

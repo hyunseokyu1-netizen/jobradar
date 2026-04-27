@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { runMatching } from '@/lib/matching'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { detectPlatform } from '@/lib/detect-platform'
+import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 
 export async function triggerMatching() {
   try {
@@ -15,6 +16,9 @@ export async function triggerMatching() {
 }
 
 export async function generateCoverLetter(jobId: string): Promise<{ content?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
   const { data: job } = await supabaseAdmin
     .from('jobs')
     .select('title, company, location, description')
@@ -23,12 +27,7 @@ export async function generateCoverLetter(jobId: string): Promise<{ content?: st
 
   if (!job) return { error: 'Job not found' }
 
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('name, skills, career_summary, resume_text, desired_positions')
-    .eq('email', 'hyunseok.yu1@gmail.com')
-    .single()
-
+  const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }
 
   const { anthropic } = await import('@/lib/claude')
@@ -160,12 +159,10 @@ export async function matchSingleJob(jobId: string): Promise<{ error?: string; s
 }
 
 export async function updateMatchStatus(jobId: string, status: string): Promise<{ error?: string }> {
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('id')
-    .eq('email', 'hyunseok.yu1@gmail.com')
-    .single()
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
 
+  const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }
 
   const { error } = await supabaseAdmin
@@ -191,6 +188,9 @@ export async function updateJobMemo(jobId: string, memo: string): Promise<{ erro
 }
 
 export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
   const url = (formData.get('url') as string)?.trim()
   if (!url) return { error: 'URL을 입력해주세요.' }
 
