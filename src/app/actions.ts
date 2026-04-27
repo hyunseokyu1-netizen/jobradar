@@ -120,6 +120,16 @@ export async function updateMatchStatus(jobId: string, status: string): Promise<
   return {}
 }
 
+export async function updateJobMemo(jobId: string, memo: string): Promise<{ error?: string }> {
+  const { error } = await supabaseAdmin
+    .from('jobs')
+    .update({ memo })
+    .eq('id', jobId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
 export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string; error?: string }> {
   const url = (formData.get('url') as string)?.trim()
   if (!url) return { error: 'URL을 입력해주세요.' }

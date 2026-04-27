@@ -17,7 +17,7 @@ export default async function JobsPage() {
   const { data: jobs, error } = await supabaseAdmin
     .from('jobs')
     .select(`
-      id, source, title, company, location, salary, url, description, posted_at, scraped_at,
+      id, source, title, company, location, salary, url, description, posted_at, scraped_at, memo,
       matches!left ( score, reason, status, user_id )
     `)
     .order('scraped_at', { ascending: false })
@@ -32,6 +32,7 @@ export default async function JobsPage() {
       match_score: myMatch?.score ?? null,
       match_reason: myMatch?.reason ?? null,
       match_status: myMatch?.status ?? 'new',
+      memo: j.memo ?? null,
     }
   })
 

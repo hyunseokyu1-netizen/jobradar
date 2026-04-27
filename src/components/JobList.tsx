@@ -13,7 +13,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import StatusButton from './StatusButton'
 import CoverLetterModal from './CoverLetterModal'
-import { deleteJob, matchSingleJob } from '@/app/actions'
+import { deleteJob, matchSingleJob, updateJobMemo } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
 export interface JobItem {
@@ -29,7 +29,8 @@ export interface JobItem {
   scraped_at: string
   match_score: number | null
   match_reason: string | null
-  match_status: 'new' | 'bookmarked' | 'applied' | 'pass'
+  match_status: string
+  memo: string | null
 }
 
 function timeAgo(dateStr: string): string {
@@ -79,6 +80,9 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: job.id })
   const [deleting, setDeleting] = useState(false)
   const [showCoverLetter, setShowCoverLetter] = useState(false)
+  const [showMemo, setShowMemo] = useState(false)
+  const [memo, setMemo] = useState(job.memo ?? '')
+  const [savingMemo, setSavingMemo] = useState(false)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -91,6 +95,13 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
     setDeleting(true)
     await deleteJob(job.id)
     onDelete(job.id)
+  }
+
+  async function handleSaveMemo() {
+    setSavingMemo(true)
+    await updateJobMemo(job.id, memo)
+    setSavingMemo(false)
+    setShowMemo(false)
   }
 
   return (
@@ -153,6 +164,12 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
 
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={() => setShowMemo(prev => !prev)}
+            className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${memo ? 'border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100' : 'border-zinc-200 hover:bg-zinc-50'}`}
+          >
+            {memo ? '📝 메모' : '메모'}
+          </button>
+          <button
             onClick={() => setShowCoverLetter(true)}
             className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 hover:bg-zinc-50 transition-colors"
           >
@@ -176,6 +193,34 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
           </button>
         </div>
       </div>
+
+      {showMemo && (
+        <div className="mt-3 ml-8 space-y-2">
+          <textarea
+            value={memo}
+            onChange={e => setMemo(e.target.value)}
+            placeholder="메모를 입력하세요..."
+            className="w-full text-sm border border-zinc-200 rounded-lg p-3 outline-none focus:border-zinc-400 resize-none text-zinc-700 placeholder:text-zinc-300"
+            rows={3}
+            autoFocus
+          />
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => { setMemo(job.memo ?? ''); setShowMemo(false) }}
+              className="text-xs text-zinc-400 hover:text-zinc-600 px-3 py-1.5"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleSaveMemo}
+              disabled={savingMemo}
+              className="text-xs bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+            >
+              {savingMemo ? '저장 중...' : '저장'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showCoverLetter && (
         <CoverLetterModal
