@@ -10,11 +10,48 @@ interface Props {
   onClose: () => void
 }
 
+async function downloadTxt(content: string, filename: string) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${filename}.txt`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+async function downloadDocx(content: string, filename: string) {
+  const { Document, Packer, Paragraph, TextRun } = await import('docx')
+  const paragraphs = content.split('\n').map(line =>
+    new Paragraph({ children: [new TextRun(line)] })
+  )
+  const doc = new Document({ sections: [{ children: paragraphs }] })
+  const blob = await Packer.toBlob(doc)
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${filename}.docx`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+async function downloadPdf(content: string, filename: string) {
+  const { jsPDF } = await import('jspdf')
+  const doc = new jsPDF()
+  const lines = doc.splitTextToSize(content, 180)
+  doc.setFontSize(11)
+  doc.text(lines, 15, 20)
+  doc.save(`${filename}.pdf`)
+}
+
 export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: Props) {
   const [content, setContent] = useState('')
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [downloading, setDownloading] = useState<'txt' | 'docx' | 'pdf' | null>(null)
+
+  const filename = `cover_letter_${company.replace(/\s+/g, '_')}_${jobTitle.replace(/\s+/g, '_')}`.slice(0, 60)
 
   async function handleGenerate() {
     setGenerating(true)
@@ -29,6 +66,17 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
     await navigator.clipboard.writeText(content)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleDownload(type: 'txt' | 'docx' | 'pdf') {
+    setDownloading(type)
+    try {
+      if (type === 'txt') await downloadTxt(content, filename)
+      else if (type === 'docx') await downloadDocx(content, filename)
+      else await downloadPdf(content, filename)
+    } finally {
+      setDownloading(null)
+    }
   }
 
   return (
@@ -87,9 +135,30 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
             <div className="flex gap-2">
               <button
                 onClick={handleCopy}
-                className="text-sm border border-zinc-200 px-4 py-2 rounded-lg hover:bg-zinc-50 transition-colors"
+                className="text-sm border border-zinc-200 px-3 py-2 rounded-lg hover:bg-zinc-50 transition-colors"
               >
-                {copied ? '✓ 복사됨' : '클립보드 복사'}
+                {copied ? '✓ 복사됨' : '복사'}
+              </button>
+              <button
+                onClick={() => handleDownload('txt')}
+                disabled={!!downloading}
+                className="text-sm border border-zinc-200 px-3 py-2 rounded-lg hover:bg-zinc-50 transition-colors disabled:opacity-50"
+              >
+                {downloading === 'txt' ? '...' : 'TXT'}
+              </button>
+              <button
+                onClick={() => handleDownload('docx')}
+                disabled={!!downloading}
+                className="text-sm border border-zinc-200 px-3 py-2 rounded-lg hover:bg-zinc-50 transition-colors disabled:opacity-50"
+              >
+                {downloading === 'docx' ? '...' : 'DOCX'}
+              </button>
+              <button
+                onClick={() => handleDownload('pdf')}
+                disabled={!!downloading}
+                className="text-sm border border-zinc-200 px-3 py-2 rounded-lg hover:bg-zinc-50 transition-colors disabled:opacity-50"
+              >
+                {downloading === 'pdf' ? '...' : 'PDF'}
               </button>
             </div>
           </div>

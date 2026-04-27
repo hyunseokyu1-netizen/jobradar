@@ -86,32 +86,41 @@ URL 붙여넣기 (대시보드 입력창)
 
 ## 개발 로드맵 (재설계)
 
-### Phase 1 — URL 입력 + JD 스크래핑 ← 진행중
+### Phase 1 — URL 입력 + JD 스크래핑 ✅ 완료
 ```
 [x] URL 입력 UI (대시보드 상단)
-[x] 플랫폼 감지 유틸 (seek / indeed / linkedin / 기타)
+[x] 플랫폼 감지 유틸 (seek / indeed / linkedin / glassdoor / 기타)
 [x] 플랫폼별 뱃지 색상
 [x] URL 추가 시 jobs 테이블 저장
 [x] cheerio 기반 JD 스크래퍼
     [x] Seek 파서 (__NEXT_DATA__ JSON + cheerio fallback)
     [x] Indeed 파서 (JSON-LD + cheerio fallback)
+    [x] Glassdoor 파서 (URL 슬러그 KO/KE 인덱스 파싱)
     [x] 범용 fallback 파서 (JSON-LD → Open Graph → meta 태그)
 [x] /api/scrape-url route (단건 on-demand)
 [x] URL 추가 즉시 스크래핑 자동 실행
-[ ] URL 추가 즉시 AI 매칭 자동 실행
+[x] URL 추가 즉시 AI 매칭 자동 실행
 ```
 
-### Phase 2 — AI 분석 파이프라인
+### Phase 2 — AI 분석 파이프라인 ✅ 완료
 ```
-[ ] URL 추가 즉시 매칭 분석 자동 실행
-[ ] 매칭 결과 대시보드 표시 (이미 구현됨)
-[ ] 커버레터 생성 API (/api/cover)
-[ ] 커버레터 편집 UI
+[x] URL 추가 즉시 매칭 분석 자동 실행
+[x] 매칭 결과 대시보드 표시
+[x] 매칭 점수 클릭 재매칭
+[x] 커버레터 생성 (JD + 이력서 기반 Claude Haiku)
+[x] 커버레터 편집 UI (모달)
+[x] 클립보드 복사
+[x] 이력서 PDF/DOCX 업로드 + 텍스트 파싱
+[x] 경력 요약 AI 자동 입력
+[ ] TXT 다운로드
 ```
 
 ### Phase 3 — 트래킹 + 마무리
 ```
 [x] 지원 상태 변경 UI (new/bookmarked/applied/pass)
+[x] 매칭 점수 순 정렬
+[x] 잡 목록 삭제 기능
+[x] 드래그 순서 변경 (@dnd-kit)
 [ ] 잡 상세 페이지 (/jobs/[id])
 [ ] 메모 기능
 [ ] 모바일 반응형
@@ -150,11 +159,10 @@ URL 붙여넣기 (대시보드 입력창)
 |----|------|------|
 | 1편 | 기획 + 스크래퍼 자동화 시도 | ✅ 작성 완료 |
 | 2편 | Vercel Lambda에서 Playwright 실행하기 | ✅ 작성 완료 |
-| 3편 | 방향 전환: URL 붙여넣기 방식으로 | 예정 |
-| 4편 | Claude API로 JD 분석 + 커버레터 생성 | 예정 |
-| 5편 | 완성 + 회고 | 예정 |
+| 3편 | 방향 전환 + AI 매칭 & 커버레터 파이프라인 완성 | ✅ 초안 작성 완료 (배포 예정 4/27) |
+| 4편 | 완성 + 회고 | 예정 |
 
 ---
 
 *Made by 현석 — "내 취업을 위해 직접 만든 AI 툴"*  
-*Last updated: 2026-04-23*
+*Last updated: 2026-04-27*
