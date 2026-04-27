@@ -1,5 +1,6 @@
 import { anthropic } from '@/lib/claude'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 
 interface MatchResult {
   score: number
@@ -68,12 +69,10 @@ export async function matchJob(jobId: string) {
 
   if (!job) return { error: 'Job not found' }
 
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('id, name, skills, desired_positions, career_summary, preferences')
-    .eq('email', 'hyunseok.yu1@gmail.com')
-    .single()
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
 
+  const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }
 
   const jd = job.description ?? `${job.title} at ${job.company}. Location: ${job.location}`
@@ -100,12 +99,10 @@ export async function matchJob(jobId: string) {
 }
 
 export async function runMatching() {
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('id, name, skills, desired_positions, career_summary, preferences')
-    .eq('email', 'hyunseok.yu1@gmail.com')
-    .single()
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.', matched: 0 }
 
+  const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found', matched: 0 }
 
   // 아직 매칭 안 된 최신 공고 최대 5개 (서버 액션 30초 타임아웃 대응)

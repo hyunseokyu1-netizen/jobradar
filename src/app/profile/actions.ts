@@ -3,8 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { parseResumeFile } from '@/lib/resume-parser'
+import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 
 export async function saveProfile(formData: FormData): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
   const skillsRaw = formData.get('skills') as string
   const positionsRaw = formData.get('desired_positions') as string
   const locationsRaw = formData.get('desired_locations') as string
@@ -29,7 +33,7 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
       preferences: { salary_min, salary_max },
       updated_at: new Date().toISOString(),
     })
-    .eq('email', 'hyunseok.yu1@gmail.com')
+    .eq('email', email)
 
   if (error) {
     console.error('Profile save error:', error)
@@ -41,12 +45,10 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
 }
 
 export async function generateCareerSummary(): Promise<{ summary?: string; error?: string }> {
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('resume_text')
-    .eq('email', 'hyunseok.yu1@gmail.com')
-    .single()
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
 
+  const profile = await getOrCreateProfile(email)
   if (!profile?.resume_text) return { error: '이력서를 먼저 업로드해주세요.' }
 
   const { anthropic } = await import('@/lib/claude')
@@ -73,6 +75,9 @@ ${profile.resume_text.slice(0, 4000)}`,
 }
 
 export async function uploadResume(formData: FormData): Promise<{ text?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
   const file = formData.get('resume') as File | null
   if (!file || file.size === 0) return { error: '파일을 선택해주세요.' }
   if (file.size > 5 * 1024 * 1024) return { error: '파일 크기는 5MB 이하여야 합니다.' }
@@ -84,7 +89,7 @@ export async function uploadResume(formData: FormData): Promise<{ text?: string;
     const { error } = await supabaseAdmin
       .from('profiles')
       .update({ resume_text: text, updated_at: new Date().toISOString() })
-      .eq('email', 'hyunseok.yu1@gmail.com')
+      .eq('email', email)
 
     if (error) return { error: error.message }
 
