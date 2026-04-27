@@ -70,13 +70,73 @@ ${(job.description ?? `${job.title} at ${job.company}`).slice(0, 2000)}
 
   const content = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
 
-  // cover_letters 테이블에 저장
   await supabaseAdmin.from('cover_letters').upsert({
     job_id: jobId,
     content,
   }, { onConflict: 'job_id' })
 
   return { content }
+}
+
+export async function getCoverLetter(jobId: string): Promise<{ content?: string }> {
+  const { data } = await supabaseAdmin
+    .from('cover_letters')
+    .select('content')
+    .eq('job_id', jobId)
+    .single()
+  return { content: data?.content ?? undefined }
+}
+
+export async function saveCoverLetter(jobId: string, content: string): Promise<{ error?: string }> {
+  const { error } = await supabaseAdmin
+    .from('cover_letters')
+    .upsert({ job_id: jobId, content }, { onConflict: 'job_id' })
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function reviewCoverLetter(jobId: string, content: string): Promise<{ content?: string; error?: string }> {
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('title, company, description')
+    .eq('id', jobId)
+    .single()
+
+  if (!job) return { error: 'Job not found' }
+
+  const { anthropic } = await import('@/lib/claude')
+
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1000,
+    messages: [{
+      role: 'user',
+      content: `아래는 ${job.title} at ${job.company} 포지션에 지원하기 위해 작성한 커버레터입니다.
+내용과 구조는 최대한 유지하면서, 어색한 표현이나 반복, 어법 오류를 다듬어주세요.
+개선된 버전만 출력해주세요.
+
+## 현재 커버레터
+${content}`,
+    }],
+  })
+
+  const reviewed = message.content[0].type === 'text' ? message.content[0].text.trim() : content
+
+  await supabaseAdmin.from('cover_letters').upsert(
+    { job_id: jobId, content: reviewed },
+    { onConflict: 'job_id' }
+  )
+
+  return { content: reviewed }
+}
+
+export async function updateJobDescription(jobId: string, description: string): Promise<{ error?: string }> {
+  const { error } = await supabaseAdmin
+    .from('jobs')
+    .update({ description })
+    .eq('id', jobId)
+  if (error) return { error: error.message }
+  return {}
 }
 
 export async function deleteJob(jobId: string): Promise<{ error?: string }> {

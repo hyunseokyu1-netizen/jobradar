@@ -13,6 +13,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import StatusButton from './StatusButton'
 import CoverLetterModal from './CoverLetterModal'
+import JdInputModal from './JdInputModal'
 import { deleteJob, matchSingleJob, updateJobMemo } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
@@ -24,7 +25,7 @@ export interface JobItem {
   location: string
   salary: string | null
   url: string
-  description: string | null
+  description: string | null | undefined
   posted_at: string | null
   scraped_at: string
   match_score: number | null
@@ -80,6 +81,7 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: job.id })
   const [deleting, setDeleting] = useState(false)
   const [showCoverLetter, setShowCoverLetter] = useState(false)
+  const [showJdInput, setShowJdInput] = useState(false)
   const [showMemo, setShowMemo] = useState(false)
   const [memo, setMemo] = useState(job.memo ?? '')
   const [savingMemo, setSavingMemo] = useState(false)
@@ -163,6 +165,14 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {!job.description && (
+            <button
+              onClick={() => setShowJdInput(true)}
+              className="text-xs border border-orange-200 text-orange-600 rounded-lg px-3 py-1.5 hover:bg-orange-50 transition-colors"
+            >
+              JD 입력
+            </button>
+          )}
           <button
             onClick={() => setShowMemo(prev => !prev)}
             className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${memo ? 'border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100' : 'border-zinc-200 hover:bg-zinc-50'}`}
@@ -220,6 +230,19 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
             </button>
           </div>
         </div>
+      )}
+
+      {showJdInput && (
+        <JdInputModal
+          jobId={job.id}
+          jobTitle={job.title}
+          company={job.company}
+          onClose={() => setShowJdInput(false)}
+          onMatched={score => {
+            onUpdate(job.id, { match_score: score, description: 'updated' })
+            setShowJdInput(false)
+          }}
+        />
       )}
 
       {showCoverLetter && (
