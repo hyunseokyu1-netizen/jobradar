@@ -79,13 +79,21 @@ export async function matchJob(jobId: string) {
   const jd = job.description ?? `${job.title} at ${job.company}. Location: ${job.location}`
   const result = await analyzeMatch(jd, profile)
 
+  // 기존 status 유지 (재매칭 시 사용자가 설정한 상태 덮어쓰지 않음)
+  const { data: existing } = await supabaseAdmin
+    .from('matches')
+    .select('status')
+    .eq('user_id', profile.id)
+    .eq('job_id', job.id)
+    .single()
+
   await supabaseAdmin.from('matches').upsert({
     user_id: profile.id,
     job_id: job.id,
     score: result.score,
     reason: result.reason,
     highlights: result.highlights,
-    status: 'new',
+    status: existing?.status ?? 'new',
   }, { onConflict: 'user_id,job_id' })
 
   return { jobId, score: result.score, reason: result.reason }
@@ -133,7 +141,7 @@ export async function runMatching() {
         score: result.score,
         reason: result.reason,
         highlights: result.highlights,
-        status: 'new',
+        status: 'new',  // 배치 매칭은 신규 공고만 대상이므로 항상 new
       }, { onConflict: 'user_id,job_id' })
 
       matched++
@@ -141,7 +149,6 @@ export async function runMatching() {
       errors++
       if (!firstError) firstError = String(e)
       console.error(`[matching] job ${job.id} failed:`, e)
-      // 실패해도 score=0으로 저장 → 재시도 대상에서 제외
       await supabaseAdmin.from('matches').upsert({
         user_id: profile.id,
         job_id: job.id,

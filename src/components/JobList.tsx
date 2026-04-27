@@ -165,7 +165,7 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {!job.description && (
+          {(job.source === 'glassdoor' || !job.description || job.description.length < 200) && (
             <button
               onClick={() => setShowJdInput(true)}
               className="text-xs border border-orange-200 text-orange-600 rounded-lg px-3 py-1.5 hover:bg-orange-50 transition-colors"
