@@ -37,9 +37,9 @@ export default function LoginForm() {
     setMessage('')
 
     if (mode === 'login') {
-      console.log('[Login] signInWithPassword 시도:', email)
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-      console.log('[Login] 결과 - error:', error, '| session:', data.session ? '있음' : '없음', '| user:', data.user?.email)
+      const log = { error: error?.message ?? null, hasSession: !!data.session, userEmail: data.user?.email ?? null, confirmedAt: data.user?.email_confirmed_at ?? null }
+      localStorage.setItem('__login_debug__', JSON.stringify(log))
       if (error) {
         setError(error.message === 'Invalid login credentials'
           ? '이메일 또는 비밀번호가 올바르지 않습니다.'
@@ -47,7 +47,6 @@ export default function LoginForm() {
       } else if (!data.session) {
         setError('이메일 인증이 필요합니다. 받은편지함을 확인하거나 Supabase에서 이메일 인증을 비활성화해주세요.')
       } else {
-        console.log('[Login] 성공 → / 로 이동')
         router.push('/')
         router.refresh()
       }
