@@ -62,58 +62,74 @@ Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
 - [x] 매칭 근거 텍스트 생성
 - [x] 매칭 API (`/api/match/route.ts`)
 - [x] Supabase `matches` 테이블 저장
-- [ ] 전체 플로우 테스트 (API 크레딧 충전 후)
+- [x] 전체 플로우 테스트 완료
 
 ---
 
 ## ✅ Phase 1 — URL 입력 + JD 스크래핑 (완료)
 
 - [x] URL 입력 UI (대시보드 상단 입력창)
-- [x] 플랫폼 자동 감지 유틸 (seek / indeed / linkedin / 기타)
+- [x] 플랫폼 자동 감지 유틸 (seek / indeed / linkedin / glassdoor / 기타)
 - [x] 플랫폼별 뱃지 색상 (Seek 파랑 / Indeed 주황 / LinkedIn 하늘 / Other 회색)
 - [x] URL 추가 시 jobs 테이블 저장
 - [x] cheerio 기반 JD 스크래퍼
   - [x] Seek 파서 (`__NEXT_DATA__` JSON + cheerio fallback)
   - [x] Indeed 파서 (JSON-LD + cheerio fallback)
+  - [x] Glassdoor 파서 (URL 슬러그 KO/KE 인덱스 파싱)
   - [x] 범용 fallback 파서 (JSON-LD → Open Graph → meta 태그)
 - [x] `/api/scrape-url` API Route (단건 on-demand)
 - [x] URL 추가 즉시 스크래핑 자동 실행
 - [x] URL 추가 즉시 AI 매칭 자동 실행 (스크래핑 → 매칭 순차 실행)
+- [x] JD 직접 입력 (description 없는 공고용 — Glassdoor 등)
 
 ---
 
-## 📝 Phase 2 — 커버레터 생성
+## ✅ Phase 2 — 커버레터 생성 (완료)
 
 - [x] 커버레터 생성 프롬프트 작성
 - [x] JD + 프로파일 + resume_text 조합 로직
 - [x] Supabase `cover_letters` 테이블 저장
 - [x] 텍스트 에디터 컴포넌트 (모달)
+- [x] 기존 커버레터 자동 로드 (새로고침해도 유지)
+- [x] 편집 후 저장 기능
 - [x] 클립보드 복사 기능
 - [x] 재생성 버튼
+- [x] AI 재검토 버튼 (현재 내용 기반 표현 개선)
 - [x] TXT / DOCX / PDF 다운로드 기능
 
 ---
 
-## 📊 Phase 3 — 트래킹 + 대시보드 완성
+## ✅ Phase 3 — 트래킹 + 대시보드 (완료)
 
 - [x] 지원 상태 변경 UI (미분류 / 관심있음 / 고민중 / 지원완료 / 패스)
 - [x] Supabase `matches.status` 업데이트
+- [x] 재매칭 시 기존 상태 보존 (덮어쓰기 버그 수정)
 - [x] 매칭 점수 순 정렬
 - [x] 잡 목록 삭제 기능
 - [x] 드래그 순서 변경 (@dnd-kit)
-- [ ] 잡 상세 페이지 (`/jobs/[id]`) — JD + 매칭 + 커버레터
 - [x] 메모 입력 기능
+- [ ] 잡 상세 페이지 (`/jobs/[id]`) — JD + 매칭 + 커버레터
 - [ ] 모바일 반응형 점검
 
 ---
 
-## 💰 SaaS 전환 (MVP 이후 — 보류)
+## ✅ Phase 4 — 인증 (완료)
 
-### 인증 & 보안
-- [ ] 회원가입 / 로그인 (Supabase Auth)
-- [ ] `/profile` 로그인 유저만 접근 가능하도록 보호
+- [x] 회원가입 / 로그인 (Supabase Auth)
+- [x] Google OAuth 로그인
+- [x] `/auth/callback` 라우트 (OAuth 세션 교환)
+- [x] 미들웨어 라우트 보호 (미로그인 → /login)
+- [x] 이메일 하드코딩 제거 → 세션 기반 유저 조회
+- [x] 첫 로그인 시 프로파일 자동 생성
+- [x] 헤더 로그아웃 버튼
+- [ ] RLS 정책 실제 적용 검증
+
+---
+
+## 💰 SaaS 전환 (보류)
+
+### 보안 강화
 - [ ] `supabaseAdmin` → 인증된 유저 세션 기반 클라이언트로 교체
-- [ ] 이메일 하드코딩 제거 → `auth.uid()` 기반 프로파일 조회
 - [ ] RLS 정책 실제 적용 검증
 
 ### 결제 & 플랜
@@ -131,9 +147,10 @@ Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
 
 - [x] 1편: 기획 + 스크래퍼 자동화 시도
 - [x] 2편: Vercel Lambda에서 Playwright 실행하기
-- [x] 3편: 방향 전환 + AI 매칭 & 커버레터 파이프라인 완성 (초안 완료, 배포 예정 4/27)
-- [ ] 4편: 완성 + 회고
+- [x] 3편: 방향 전환 + AI 매칭 & 커버레터 파이프라인 완성 (초안 완료)
+- [x] 4편: 커버레터 완성, UX 개선, Supabase Auth (초안 완료 4/28)
+- [ ] 5편: 완성 + 회고
 
 ---
 
-*Last updated: 2026-04-27*
+*Last updated: 2026-04-28*
