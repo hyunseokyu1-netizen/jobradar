@@ -42,7 +42,7 @@ export default function AddJobForm() {
   const label = status === 'scraping' ? 'JD 분석 중...' : status === 'matching' ? 'AI 매칭 중...' : status === 'saving' ? '저장 중...' : '추가'
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 mb-6 relative">
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 mb-6">
       <input
         type="url"
         value={url}
@@ -54,11 +54,11 @@ export default function AddJobForm() {
       <button
         type="submit"
         disabled={loading || !url}
-        className="text-sm bg-zinc-900 text-white px-4 py-2.5 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors whitespace-nowrap min-w-28 text-center"
+        className="text-sm bg-zinc-900 text-white px-4 py-2.5 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors whitespace-nowrap sm:min-w-28 text-center"
       >
         {label}
       </button>
-      {error && <p className="text-xs text-red-500 absolute -bottom-5 left-0">{error}</p>}
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </form>
   )
 }
