@@ -129,14 +129,14 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
             name="salary_min"
             type="number"
             defaultValue={initialData?.preferences?.salary_min ?? 90000}
-            className="input w-36"
+            className="input flex-1 min-w-0"
           />
-          <span className="text-zinc-400">~</span>
+          <span className="text-zinc-400 shrink-0">~</span>
           <input
             name="salary_max"
             type="number"
             defaultValue={initialData?.preferences?.salary_max ?? 150000}
-            className="input w-36"
+            className="input flex-1 min-w-0"
           />
         </div>
       </Field>

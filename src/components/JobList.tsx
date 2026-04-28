@@ -162,41 +162,46 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
           {job.title === '스크래핑 실패' && job.description && (
             <p className="text-xs text-red-400 mt-1.5 line-clamp-1">오류: {job.description}</p>
           )}
+
+          {/* 액션 버튼 — 컨텐츠 아래 (모바일/데스크톱 공통) */}
+          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+            {(job.source === 'glassdoor' || !job.description || job.description.length < 200) && (
+              <button
+                onClick={() => setShowJdInput(true)}
+                className="text-xs border border-orange-200 text-orange-600 rounded-lg px-3 py-1.5 hover:bg-orange-50 transition-colors"
+              >
+                JD 입력
+              </button>
+            )}
+            <button
+              onClick={() => setShowMemo(prev => !prev)}
+              className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${memo ? 'border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100' : 'border-zinc-200 hover:bg-zinc-50'}`}
+            >
+              {memo ? '📝 메모' : '메모'}
+            </button>
+            <button
+              onClick={() => setShowCoverLetter(true)}
+              className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 hover:bg-zinc-50 transition-colors"
+            >
+              커버레터
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          {(job.source === 'glassdoor' || !job.description || job.description.length < 200) && (
-            <button
-              onClick={() => setShowJdInput(true)}
-              className="text-xs border border-orange-200 text-orange-600 rounded-lg px-3 py-1.5 hover:bg-orange-50 transition-colors"
-            >
-              JD 입력
-            </button>
-          )}
-          <button
-            onClick={() => setShowMemo(prev => !prev)}
-            className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${memo ? 'border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100' : 'border-zinc-200 hover:bg-zinc-50'}`}
-          >
-            {memo ? '📝 메모' : '메모'}
-          </button>
-          <button
-            onClick={() => setShowCoverLetter(true)}
-            className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 hover:bg-zinc-50 transition-colors"
-          >
-            커버레터
-          </button>
+        {/* 우측 — 보기, 삭제만 */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <a
             href={job.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 hover:bg-zinc-50"
+            className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 hover:bg-zinc-50 whitespace-nowrap"
           >
             보기 →
           </a>
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="text-xs text-zinc-300 hover:text-red-400 transition-colors px-1"
+            className="text-xs text-zinc-300 hover:text-red-400 transition-colors px-1.5 py-1.5"
             aria-label="삭제"
           >
             ✕
@@ -205,7 +210,7 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
       </div>
 
       {showMemo && (
-        <div className="mt-3 ml-8 space-y-2">
+        <div className="mt-3 ml-7 space-y-2">
           <textarea
             value={memo}
             onChange={e => setMemo(e.target.value)}

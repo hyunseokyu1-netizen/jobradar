@@ -23,12 +23,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               📡 JobRadar
             </Link>
             {user ? (
-              <div className="flex items-center gap-5 text-sm font-medium text-zinc-600">
+              <div className="flex items-center gap-4 text-sm font-medium text-zinc-600">
                 <Link href="/" className="hover:text-zinc-900">Jobs</Link>
                 <Link href="/profile" className="hover:text-zinc-900">Profile</Link>
-                <span className="text-zinc-400 text-xs hidden sm:block">{user.email}</span>
+                <span className="text-zinc-300 hidden sm:block">|</span>
+                <span className="text-zinc-400 text-xs hidden sm:block truncate max-w-40">{user.email}</span>
                 <form action={signOut}>
-                  <button type="submit" className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">
+                  <button type="submit" className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors whitespace-nowrap">
                     로그아웃
                   </button>
                 </form>
