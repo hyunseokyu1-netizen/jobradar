@@ -70,31 +70,51 @@ ${(job.description ?? `${job.title} at ${job.company}`).slice(0, 2000)}
   const content = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
 
   await supabaseAdmin.from('cover_letters').upsert({
+    user_id: profile.id,
     job_id: jobId,
     content,
-  }, { onConflict: 'job_id' })
+  }, { onConflict: 'user_id,job_id' })
 
   return { content }
 }
 
 export async function getCoverLetter(jobId: string): Promise<{ content?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return {}
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return {}
+
   const { data } = await supabaseAdmin
     .from('cover_letters')
     .select('content')
     .eq('job_id', jobId)
+    .eq('user_id', profile.id)
     .single()
   return { content: data?.content ?? undefined }
 }
 
 export async function saveCoverLetter(jobId: string, content: string): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
   const { error } = await supabaseAdmin
     .from('cover_letters')
-    .upsert({ job_id: jobId, content }, { onConflict: 'job_id' })
+    .upsert({ user_id: profile.id, job_id: jobId, content }, { onConflict: 'user_id,job_id' })
   if (error) return { error: error.message }
   return {}
 }
 
 export async function reviewCoverLetter(jobId: string, content: string): Promise<{ content?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
   const { data: job } = await supabaseAdmin
     .from('jobs')
     .select('title, company, description')
@@ -122,8 +142,8 @@ ${content}`,
   const reviewed = message.content[0].type === 'text' ? message.content[0].text.trim() : content
 
   await supabaseAdmin.from('cover_letters').upsert(
-    { job_id: jobId, content: reviewed },
-    { onConflict: 'job_id' }
+    { user_id: profile.id, job_id: jobId, content: reviewed },
+    { onConflict: 'user_id,job_id' }
   )
 
   return { content: reviewed }
@@ -178,10 +198,18 @@ export async function updateMatchStatus(jobId: string, status: string): Promise<
 }
 
 export async function updateJobMemo(jobId: string, memo: string): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
   const { error } = await supabaseAdmin
-    .from('jobs')
-    .update({ memo })
-    .eq('id', jobId)
+    .from('matches')
+    .upsert(
+      { user_id: profile.id, job_id: jobId, memo },
+      { onConflict: 'user_id,job_id' }
+    )
 
   if (error) return { error: error.message }
   return {}
