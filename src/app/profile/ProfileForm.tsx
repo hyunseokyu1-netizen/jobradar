@@ -118,16 +118,7 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
       </Field>
 
       <Field label="희망 연봉">
-        <div className="flex gap-3 items-center">
-          <select
-            name="salary_currency"
-            defaultValue={initialData?.preferences?.salary_currency ?? 'AUD'}
-            className="input w-44 shrink-0"
-          >
-            {CURRENCIES.map(c => (
-              <option key={c.code} value={c.code}>{c.label}</option>
-            ))}
-          </select>
+        <div className="flex w-full gap-2 items-center">
           <input
             name="salary_min"
             type="number"
@@ -143,6 +134,15 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
             className="input flex-1 min-w-0"
             placeholder="최대"
           />
+          <select
+            name="salary_currency"
+            defaultValue={initialData?.preferences?.salary_currency ?? 'AUD'}
+            className="input w-28 shrink-0"
+          >
+            {CURRENCIES.map(c => (
+              <option key={c.code} value={c.code}>{c.code}</option>
+            ))}
+          </select>
         </div>
       </Field>
 
