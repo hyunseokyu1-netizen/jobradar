@@ -119,28 +119,31 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
 
       <Field label="희망 연봉">
         <div className="flex w-full gap-2 items-center">
-          <input
-            name="salary_min"
-            type="number"
-            defaultValue={initialData?.preferences?.salary_min ?? ''}
-            className="input flex-1 min-w-0"
-            placeholder="최소"
-          />
-          <span className="text-zinc-400 shrink-0">~</span>
-          <input
-            name="salary_max"
-            type="number"
-            defaultValue={initialData?.preferences?.salary_max ?? ''}
-            className="input flex-1 min-w-0"
-            placeholder="최대"
-          />
+          <div className="flex gap-2 items-center" style={{ width: '70%' }}>
+            <input
+              name="salary_min"
+              type="number"
+              defaultValue={initialData?.preferences?.salary_min ?? ''}
+              className="input flex-1 min-w-0"
+              placeholder="최소"
+            />
+            <span className="text-zinc-400 shrink-0">~</span>
+            <input
+              name="salary_max"
+              type="number"
+              defaultValue={initialData?.preferences?.salary_max ?? ''}
+              className="input flex-1 min-w-0"
+              placeholder="최대"
+            />
+          </div>
           <select
             name="salary_currency"
             defaultValue={initialData?.preferences?.salary_currency ?? 'AUD'}
-            className="input w-28 shrink-0"
+            className="input"
+            style={{ width: '30%' }}
           >
             {CURRENCIES.map(c => (
-              <option key={c.code} value={c.code}>{c.code}</option>
+              <option key={c.code} value={c.code}>{c.code} — {c.label.split('—')[1].trim()}</option>
             ))}
           </select>
         </div>
