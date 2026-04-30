@@ -12,25 +12,28 @@ export default async function JobsPage() {
   const email = await getAuthUserEmail()
   const profile = email ? await getOrCreateProfile(email) : null
 
+  if (!profile) return <p className="text-zinc-400 text-center py-20">로그인이 필요합니다.</p>
+
   const { data: jobs, error } = await supabaseAdmin
     .from('jobs')
     .select(`
       id, source, title, company, location, salary, url, description, posted_at, scraped_at,
-      matches!left ( score, reason, status, memo, user_id )
+      matches!inner ( score, reason, status, memo )
     `)
+    .eq('matches.user_id', profile.id)
     .order('scraped_at', { ascending: false })
     .limit(100)
 
   if (error) return <p className="text-red-500">DB 오류: {error.message}</p>
 
   const jobList: JobItem[] = (jobs ?? []).map((j: any) => {
-    const myMatch = j.matches?.find((m: any) => m.user_id === profile?.id)
+    const m = j.matches?.[0]
     return {
       ...j,
-      match_score: myMatch?.score ?? null,
-      match_reason: myMatch?.reason ?? null,
-      match_status: myMatch?.status ?? 'new',
-      memo: myMatch?.memo ?? null,
+      match_score: m?.score ?? null,
+      match_reason: m?.reason ?? null,
+      match_status: m?.status ?? 'new',
+      memo: m?.memo ?? null,
     }
   })
 

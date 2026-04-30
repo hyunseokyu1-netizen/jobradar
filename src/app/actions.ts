@@ -226,6 +226,9 @@ export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string;
 
   const source = detectPlatform(url)
 
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
   const { data, error } = await supabaseAdmin
     .from('jobs')
     .upsert({
@@ -240,6 +243,14 @@ export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string;
     .single()
 
   if (error) return { error: error.message }
+
+  // 해당 유저의 matches에 등록 (이미 있으면 무시)
+  await supabaseAdmin
+    .from('matches')
+    .upsert(
+      { user_id: profile.id, job_id: data.id, status: 'new' },
+      { onConflict: 'user_id,job_id' }
+    )
 
   revalidatePath('/')
   return { jobId: data.id }
