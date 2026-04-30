@@ -12,7 +12,6 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
   const skillsRaw = formData.get('skills') as string
   const positionsRaw = formData.get('desired_positions') as string
   const locationsRaw = formData.get('desired_locations') as string
-  const sources = formData.getAll('desired_sources') as string[]
 
   const skills = skillsRaw.split(',').map(s => s.trim()).filter(Boolean)
   const desired_positions = positionsRaw.split(',').map(s => s.trim()).filter(Boolean)
@@ -20,6 +19,7 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
 
   const salary_min = parseInt(formData.get('salary_min') as string) || null
   const salary_max = parseInt(formData.get('salary_max') as string) || null
+  const salary_currency = (formData.get('salary_currency') as string) || 'AUD'
 
   const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }
@@ -30,10 +30,9 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
       name: formData.get('name') as string,
       skills,
       desired_positions,
-      desired_sources: sources,
       desired_locations,
       career_summary: formData.get('career_summary') as string,
-      preferences: { salary_min, salary_max },
+      preferences: { salary_min, salary_max, salary_currency },
       updated_at: new Date().toISOString(),
     })
     .eq('id', profile.id)

@@ -3,6 +3,17 @@
 import { useState, useRef } from 'react'
 import { saveProfile, uploadResume, generateCareerSummary } from './actions'
 
+const CURRENCIES = [
+  { code: 'AUD', label: 'AUD — 호주달러' },
+  { code: 'USD', label: 'USD — 달러' },
+  { code: 'EUR', label: 'EUR — 유로' },
+  { code: 'KRW', label: 'KRW — 원화' },
+  { code: 'JPY', label: 'JPY — 엔화' },
+  { code: 'NZD', label: 'NZD — 뉴질랜드달러' },
+  { code: 'GBP', label: 'GBP — 파운드' },
+  { code: 'SGD', label: 'SGD — 싱가포르달러' },
+]
+
 interface Profile {
   name: string | null
   skills: string[] | null
@@ -11,7 +22,7 @@ interface Profile {
   desired_locations: string[] | null
   career_summary: string | null
   resume_text: string | null
-  preferences: { salary_min?: number; salary_max?: number } | null
+  preferences: { salary_min?: number; salary_max?: number; salary_currency?: string } | null
 }
 
 export default function ProfileForm({ initialData }: { initialData: Profile | null }) {
@@ -106,37 +117,31 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         />
       </Field>
 
-      <Field label="스크래핑 소스">
-        <div className="flex gap-4">
-          {['indeed', 'seek'].map(source => (
-            <label key={source} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                name="desired_sources"
-                value={source}
-                defaultChecked={initialData?.desired_sources?.includes(source) ?? source === 'indeed'}
-                className="w-4 h-4"
-              />
-              <span className="capitalize">{source}</span>
-            </label>
-          ))}
-        </div>
-      </Field>
-
-      <Field label="희망 연봉 (AUD)">
+      <Field label="희망 연봉">
         <div className="flex gap-3 items-center">
+          <select
+            name="salary_currency"
+            defaultValue={initialData?.preferences?.salary_currency ?? 'AUD'}
+            className="input w-44 shrink-0"
+          >
+            {CURRENCIES.map(c => (
+              <option key={c.code} value={c.code}>{c.label}</option>
+            ))}
+          </select>
           <input
             name="salary_min"
             type="number"
-            defaultValue={initialData?.preferences?.salary_min ?? 90000}
+            defaultValue={initialData?.preferences?.salary_min ?? ''}
             className="input flex-1 min-w-0"
+            placeholder="최소"
           />
           <span className="text-zinc-400 shrink-0">~</span>
           <input
             name="salary_max"
             type="number"
-            defaultValue={initialData?.preferences?.salary_max ?? 150000}
+            defaultValue={initialData?.preferences?.salary_max ?? ''}
             className="input flex-1 min-w-0"
+            placeholder="최대"
           />
         </div>
       </Field>
