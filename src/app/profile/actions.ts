@@ -21,6 +21,9 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
   const salary_min = parseInt(formData.get('salary_min') as string) || null
   const salary_max = parseInt(formData.get('salary_max') as string) || null
 
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
   const { error } = await supabaseAdmin
     .from('profiles')
     .update({
@@ -33,7 +36,7 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
       preferences: { salary_min, salary_max },
       updated_at: new Date().toISOString(),
     })
-    .eq('email', email)
+    .eq('id', profile.id)
 
   if (error) {
     console.error('Profile save error:', error)
@@ -86,10 +89,13 @@ export async function uploadResume(formData: FormData): Promise<{ text?: string;
     const text = await parseResumeFile(file)
     if (!text) return { error: '텍스트를 추출할 수 없습니다.' }
 
+    const profile = await getOrCreateProfile(email)
+    if (!profile) return { error: 'Profile not found' }
+
     const { error } = await supabaseAdmin
       .from('profiles')
       .update({ resume_text: text, updated_at: new Date().toISOString() })
-      .eq('email', email)
+      .eq('id', profile.id)
 
     if (error) return { error: error.message }
 

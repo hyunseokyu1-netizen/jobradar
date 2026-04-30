@@ -1,12 +1,12 @@
-import { supabaseAdmin } from '@/lib/supabase-admin'
 import ProfileForm from './ProfileForm'
+import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
+import { redirect } from 'next/navigation'
 
 export default async function ProfilePage() {
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('*')
-    .eq('email', 'hyunseok.yu1@gmail.com')
-    .single()
+  const email = await getAuthUserEmail()
+  if (!email) redirect('/login')
+
+  const profile = await getOrCreateProfile(email)
 
   return (
     <div className="max-w-2xl">
