@@ -7,12 +7,13 @@ interface Props {
   jobId: string
   jobTitle: string
   company: string
+  initialDescription?: string | null
   onClose: () => void
   onMatched: (score: number) => void
 }
 
-export default function JdInputModal({ jobId, jobTitle, company, onClose, onMatched }: Props) {
-  const [description, setDescription] = useState('')
+export default function JdInputModal({ jobId, jobTitle, company, initialDescription, onClose, onMatched }: Props) {
+  const [description, setDescription] = useState(initialDescription ?? '')
   const [status, setStatus] = useState<'idle' | 'saving' | 'matching'>('idle')
   const [error, setError] = useState('')
 
