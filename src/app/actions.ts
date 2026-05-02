@@ -149,6 +149,22 @@ ${content}`,
   return { content: reviewed }
 }
 
+export async function translateCoverLetter(content: string): Promise<{ translation?: string; error?: string }> {
+  const { anthropic } = await import('@/lib/claude')
+
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1500,
+    messages: [{
+      role: 'user',
+      content: `아래 영문 커버레터를 자연스러운 한국어로 번역해주세요. 번역문만 출력하고 다른 설명은 쓰지 마세요.\n\n${content}`,
+    }],
+  })
+
+  const translation = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+  return { translation }
+}
+
 export async function updateJobDescription(jobId: string, description: string): Promise<{ error?: string }> {
   const { error } = await supabaseAdmin
     .from('jobs')
