@@ -242,6 +242,7 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
           jobId={job.id}
           jobTitle={job.title}
           company={job.company}
+          initialDescription={job.description}
           onClose={() => setShowJdInput(false)}
           onMatched={score => {
             onUpdate(job.id, { match_score: score, description: 'updated' })
