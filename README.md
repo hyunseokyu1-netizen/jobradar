@@ -1,6 +1,6 @@
 # JobRadar
 
-**AI-powered job matching & cover letter automation for IT job seekers in Australia/NZ.**
+**AI-powered job matching & cover letter automation for IT job seekers across Australia, Europe, North America, and beyond.**
 
 > Paste a job URL → AI scores your fit → generates a tailored cover letter. All in one place.
 
@@ -149,7 +149,7 @@ ANTHROPIC_API_KEY=
 
 # JobRadar (한국어)
 
-**호주·뉴질랜드 IT 구직자를 위한 AI 채용 매칭 & 커버레터 자동화 웹앱.**
+**호주·유럽·북미 등 해외 취업을 준비하는 IT 개발자를 위한 AI 채용 매칭 & 커버레터 자동화 웹앱.**
 
 > 채용공고 URL만 붙여넣으면 AI가 내 이력서와 매칭해서 점수를 매기고, 맞춤 커버레터까지 자동으로 작성해준다.
 
@@ -157,7 +157,7 @@ ANTHROPIC_API_KEY=
 
 ## 왜 만들었나
 
-호주에서 취업 준비를 하면서 매번 반복되는 작업이 너무 비효율적이었다.
+해외 취업 준비를 하면서 매번 반복되는 작업이 너무 비효율적이었다.
 
 - Seek·Indeed·Glassdoor를 돌아다니며 공고를 일일이 확인
 - "이 공고가 나한테 맞나?" 직접 읽고 판단
