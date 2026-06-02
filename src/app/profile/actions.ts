@@ -76,7 +76,18 @@ ${profile.resume_text.slice(0, 4000)}`,
   return { summary }
 }
 
-export async function uploadResume(formData: FormData): Promise<{ text?: string; error?: string }> {
+interface ExtractedProfile {
+  name?: string
+  skills?: string[]
+  desired_positions?: string[]
+  desired_locations?: string[]
+}
+
+export async function uploadResume(formData: FormData): Promise<{
+  text?: string
+  extracted?: ExtractedProfile
+  error?: string
+}> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
 
@@ -91,6 +102,38 @@ export async function uploadResume(formData: FormData): Promise<{ text?: string;
     const profile = await getOrCreateProfile(email)
     if (!profile) return { error: 'Profile not found' }
 
+    const { anthropic } = await import('@/lib/claude')
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 600,
+      messages: [{
+        role: 'user',
+        content: `아래 이력서에서 정보를 추출해 JSON으로만 응답해주세요. 다른 텍스트는 절대 포함하지 마세요.
+
+JSON 형식:
+{
+  "name": "영문 full name (없으면 null)",
+  "skills": ["기술스택 배열, 최대 20개"],
+  "desired_positions": ["지원 가능한 직무 타이틀 배열, 최대 5개, 영문"],
+  "desired_locations": ["현재 거주지 또는 이력서에 나온 지역 배열, 최대 3개"]
+}
+
+이력서:
+${text.slice(0, 5000)}`,
+      }],
+    })
+
+    let extracted: ExtractedProfile = {}
+    if (message.content[0].type === 'text') {
+      try {
+        const raw = message.content[0].text.trim()
+        const jsonMatch = raw.match(/\{[\s\S]*\}/)
+        if (jsonMatch) extracted = JSON.parse(jsonMatch[0])
+      } catch {
+        // 파싱 실패 시 빈 객체로 진행
+      }
+    }
+
     const { error } = await supabaseAdmin
       .from('profiles')
       .update({ resume_text: text, updated_at: new Date().toISOString() })
@@ -99,7 +142,7 @@ export async function uploadResume(formData: FormData): Promise<{ text?: string;
     if (error) return { error: error.message }
 
     revalidatePath('/profile')
-    return { text }
+    return { text, extracted }
   } catch (e) {
     return { error: String(e) }
   }

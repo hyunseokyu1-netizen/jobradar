@@ -38,6 +38,11 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
   const [resumePreview, setResumePreview] = useState(initialData?.resume_text ?? '')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [nameValue, setNameValue] = useState(initialData?.name ?? '')
+  const [skillsValue, setSkillsValue] = useState(initialData?.skills?.join(', ') ?? '')
+  const [positionsValue, setPositionsValue] = useState(initialData?.desired_positions?.join(', ') ?? '')
+  const [locationsValue, setLocationsValue] = useState(initialData?.desired_locations?.join(', ') ?? '')
+
   async function handleSubmit(formData: FormData) {
     setSaving(true)
     setStatus('idle')
@@ -67,6 +72,13 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
     } else {
       setResumeStatus('done')
       setResumePreview(result.text ?? '')
+      if (result.extracted) {
+        const ex = result.extracted
+        if (ex.name) setNameValue(ex.name)
+        if (ex.skills?.length) setSkillsValue(ex.skills.join(', '))
+        if (ex.desired_positions?.length) setPositionsValue(ex.desired_positions.join(', '))
+        if (ex.desired_locations?.length) setLocationsValue(ex.desired_locations.join(', '))
+      }
     }
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -84,7 +96,8 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
       <Field label="이름">
         <input
           name="name"
-          defaultValue={initialData?.name ?? ''}
+          value={nameValue}
+          onChange={e => setNameValue(e.target.value)}
           className="input"
           placeholder="Hyunseok Yu"
         />
@@ -93,7 +106,8 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
       <Field label="스킬" hint="쉼표로 구분">
         <textarea
           name="skills"
-          defaultValue={initialData?.skills?.join(', ') ?? ''}
+          value={skillsValue}
+          onChange={e => setSkillsValue(e.target.value)}
           className="input min-h-24"
           placeholder="Node.js, React Native, TypeScript, ..."
         />
@@ -102,7 +116,8 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
       <Field label="원하는 포지션" hint="쉼표로 구분 (스크래핑 키워드)">
         <textarea
           name="desired_positions"
-          defaultValue={initialData?.desired_positions?.join(', ') ?? ''}
+          value={positionsValue}
+          onChange={e => setPositionsValue(e.target.value)}
           className="input min-h-20"
           placeholder="React Native developer, Fullstack developer, ..."
         />
@@ -111,7 +126,8 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
       <Field label="원하는 지역" hint="쉼표로 구분">
         <input
           name="desired_locations"
-          defaultValue={initialData?.desired_locations?.join(', ') ?? ''}
+          value={locationsValue}
+          onChange={e => setLocationsValue(e.target.value)}
           className="input"
           placeholder="Sydney NSW, Melbourne VIC, Auckland"
         />
@@ -184,7 +200,7 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
                 onChange={handleResumeUpload}
                 disabled={resumeUploading}
               />
-              {resumeUploading ? '파싱 중...' : '파일 선택'}
+              {resumeUploading ? 'AI 분석 중...' : '파일 선택'}
             </label>
             {resumeStatus === 'done' && <span className="text-sm text-green-600">✓ 추출 완료</span>}
             {resumeStatus === 'error' && <span className="text-sm text-red-500">{resumeError}</span>}
