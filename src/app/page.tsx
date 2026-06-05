@@ -17,7 +17,7 @@ export default async function JobsPage() {
   // 1단계: 유저의 matches 조회
   const { data: myMatches, error: matchError } = await supabaseAdmin
     .from('matches')
-    .select('job_id, score, reason, status, memo')
+    .select('job_id, score, reason, status, memo, applied_resume_text, applied_resume_filename')
     .eq('user_id', profile.id)
 
   if (matchError) return <p className="text-red-500">DB 오류: {matchError.message}</p>
@@ -55,6 +55,8 @@ export default async function JobsPage() {
       match_reason: m?.reason ?? null,
       match_status: m?.status ?? 'new',
       memo: m?.memo ?? null,
+      applied_resume_text: m?.applied_resume_text ?? null,
+      applied_resume_filename: m?.applied_resume_filename ?? null,
     }
   })
 

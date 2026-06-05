@@ -5,6 +5,7 @@ import { runMatching } from '@/lib/matching'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { detectPlatform } from '@/lib/detect-platform'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
+import { parseResumeFile } from '@/lib/resume-parser'
 
 export async function triggerMatching() {
   try {
@@ -211,6 +212,41 @@ export async function updateMatchStatus(jobId: string, status: string): Promise<
 
   revalidatePath('/')
   return {}
+}
+
+export async function uploadAppliedResume(formData: FormData): Promise<{ text?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const file = formData.get('resume') as File | null
+  const jobId = formData.get('jobId') as string
+  if (!file || file.size === 0) return { error: '파일을 선택해주세요.' }
+  if (file.size > 5 * 1024 * 1024) return { error: '파일 크기는 5MB 이하여야 합니다.' }
+  if (!jobId) return { error: 'Job ID가 없습니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  try {
+    const text = await parseResumeFile(file)
+    if (!text) return { error: '텍스트를 추출할 수 없습니다.' }
+
+    const { error } = await supabaseAdmin
+      .from('matches')
+      .update({
+        applied_resume_text: text,
+        applied_resume_filename: file.name,
+      })
+      .eq('user_id', profile.id)
+      .eq('job_id', jobId)
+
+    if (error) return { error: error.message }
+
+    revalidatePath('/')
+    return { text }
+  } catch (e) {
+    return { error: String(e) }
+  }
 }
 
 export async function updateJobMemo(jobId: string, memo: string): Promise<{ error?: string }> {

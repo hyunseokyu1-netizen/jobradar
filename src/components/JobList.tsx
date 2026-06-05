@@ -14,6 +14,7 @@ import { CSS } from '@dnd-kit/utilities'
 import StatusButton from './StatusButton'
 import CoverLetterModal from './CoverLetterModal'
 import JdInputModal from './JdInputModal'
+import AppliedResumeModal from './AppliedResumeModal'
 import { deleteJob, matchSingleJob, updateJobMemo } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
@@ -32,6 +33,8 @@ export interface JobItem {
   match_reason: string | null
   match_status: string
   memo: string | null
+  applied_resume_text: string | null
+  applied_resume_filename: string | null
 }
 
 function timeAgo(dateStr: string): string {
@@ -85,6 +88,9 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   const [showMemo, setShowMemo] = useState(false)
   const [memo, setMemo] = useState(job.memo ?? '')
   const [savingMemo, setSavingMemo] = useState(false)
+  const [showResume, setShowResume] = useState(false)
+  const [resumeFilename, setResumeFilename] = useState(job.applied_resume_filename ?? '')
+  const [resumeText, setResumeText] = useState(job.applied_resume_text ?? '')
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -185,6 +191,12 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
             >
               커버레터
             </button>
+            <button
+              onClick={() => setShowResume(true)}
+              className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${resumeFilename ? 'border-indigo-200 text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'border-zinc-200 hover:bg-zinc-50'}`}
+            >
+              {resumeFilename ? '📄 이력서' : '이력서'}
+            </button>
           </div>
         </div>
 
@@ -257,6 +269,21 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
           jobTitle={job.title}
           company={job.company}
           onClose={() => setShowCoverLetter(false)}
+        />
+      )}
+
+      {showResume && (
+        <AppliedResumeModal
+          jobId={job.id}
+          jobTitle={job.title}
+          company={job.company}
+          initialFilename={resumeFilename}
+          initialText={resumeText}
+          onClose={() => setShowResume(false)}
+          onUploaded={(fname, text) => {
+            setResumeFilename(fname)
+            setResumeText(text)
+          }}
         />
       )}
     </li>
