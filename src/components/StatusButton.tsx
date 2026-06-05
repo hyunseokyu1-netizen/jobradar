@@ -16,7 +16,11 @@ const STATUS_OPTIONS: { value: Status; label: string; pill: string; menu: string
   { value: 'pass',       label: '— 패스',        pill: 'text-zinc-300 border-zinc-200',                         menu: 'text-zinc-400 hover:bg-zinc-50' },
 ]
 
-export default function StatusButton({ jobId, initialStatus }: { jobId: string; initialStatus: string }) {
+export default function StatusButton({ jobId, initialStatus, onAppliedAt }: {
+  jobId: string
+  initialStatus: string
+  onAppliedAt?: (appliedAt: string) => void
+}) {
   const [status, setStatus] = useState<Status>((initialStatus as Status) ?? 'new')
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -37,7 +41,10 @@ export default function StatusButton({ jobId, initialStatus }: { jobId: string; 
     setLoading(true)
     setOpen(false)
     const res = await updateMatchStatus(jobId, next)
-    if (!res.error) setStatus(next)
+    if (!res.error) {
+      setStatus(next)
+      if (res.applied_at && onAppliedAt) onAppliedAt(res.applied_at)
+    }
     setLoading(false)
   }
 
