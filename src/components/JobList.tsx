@@ -15,7 +15,7 @@ import StatusButton from './StatusButton'
 import CoverLetterModal from './CoverLetterModal'
 import JdInputModal from './JdInputModal'
 import AppliedResumeModal from './AppliedResumeModal'
-import { deleteJob, matchSingleJob, updateJobMemo } from '@/app/actions'
+import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
 export interface JobItem {
@@ -35,6 +35,7 @@ export interface JobItem {
   memo: string | null
   applied_resume_text: string | null
   applied_resume_filename: string | null
+  applied_at: string | null
 }
 
 function timeAgo(dateStr: string): string {
@@ -91,6 +92,9 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   const [showResume, setShowResume] = useState(false)
   const [resumeFilename, setResumeFilename] = useState(job.applied_resume_filename ?? '')
   const [resumeText, setResumeText] = useState(job.applied_resume_text ?? '')
+  const [appliedAt, setAppliedAt] = useState(job.applied_at ?? '')
+  const [editingDate, setEditingDate] = useState(false)
+  const [dateInput, setDateInput] = useState('')
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -110,6 +114,23 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
     await updateJobMemo(job.id, memo)
     setSavingMemo(false)
     setShowMemo(false)
+  }
+
+  function startEditDate() {
+    const d = appliedAt ? new Date(appliedAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)
+    setDateInput(d)
+    setEditingDate(true)
+  }
+
+  async function handleSaveDate() {
+    const iso = dateInput ? new Date(dateInput).toISOString() : ''
+    await updateAppliedAt(job.id, iso)
+    setAppliedAt(iso)
+    setEditingDate(false)
+  }
+
+  function daysElapsed(iso: string) {
+    return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
   }
 
   return (
@@ -142,7 +163,41 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
               onMatched={score => onUpdate(job.id, { match_score: score, match_status: 'new' })}
             />
             {job.match_score !== null && (
-              <StatusButton jobId={job.id} initialStatus={job.match_status} />
+              <StatusButton
+                jobId={job.id}
+                initialStatus={job.match_status}
+                onAppliedAt={date => setAppliedAt(date)}
+              />
+            )}
+            {appliedAt && !editingDate && (
+              <button
+                onClick={startEditDate}
+                className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+                title="지원 날짜 수정"
+              >
+                지원 후 {daysElapsed(appliedAt)}일
+              </button>
+            )}
+            {!appliedAt && job.match_status === 'applied' && !editingDate && (
+              <button
+                onClick={startEditDate}
+                className="text-xs text-zinc-300 hover:text-zinc-500 transition-colors"
+              >
+                날짜 입력
+              </button>
+            )}
+            {editingDate && (
+              <span className="flex items-center gap-1">
+                <input
+                  type="date"
+                  value={dateInput}
+                  onChange={e => setDateInput(e.target.value)}
+                  className="text-xs border border-zinc-300 rounded px-1.5 py-0.5 outline-none focus:border-zinc-500"
+                  autoFocus
+                />
+                <button onClick={handleSaveDate} className="text-xs text-blue-500 hover:text-blue-700 px-1">저장</button>
+                <button onClick={() => setEditingDate(false)} className="text-xs text-zinc-400 hover:text-zinc-600 px-1">취소</button>
+              </span>
             )}
             <span className="text-xs text-zinc-400">
               {job.posted_at ? timeAgo(job.posted_at) : timeAgo(job.scraped_at)}

@@ -195,7 +195,40 @@ export async function matchSingleJob(jobId: string): Promise<{ error?: string; s
   }
 }
 
-export async function updateMatchStatus(jobId: string, status: string): Promise<{ error?: string }> {
+export async function updateMatchStatus(jobId: string, status: string): Promise<{ error?: string; applied_at?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const patch: Record<string, unknown> = { status }
+
+  if (status === 'applied') {
+    const { data: existing } = await supabaseAdmin
+      .from('matches')
+      .select('applied_at')
+      .eq('job_id', jobId)
+      .eq('user_id', profile.id)
+      .single()
+    if (!existing?.applied_at) {
+      patch.applied_at = new Date().toISOString()
+    }
+  }
+
+  const { error } = await supabaseAdmin
+    .from('matches')
+    .update(patch)
+    .eq('job_id', jobId)
+    .eq('user_id', profile.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/')
+  return { applied_at: patch.applied_at as string | undefined }
+}
+
+export async function updateAppliedAt(jobId: string, appliedAt: string): Promise<{ error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
 
@@ -204,13 +237,11 @@ export async function updateMatchStatus(jobId: string, status: string): Promise<
 
   const { error } = await supabaseAdmin
     .from('matches')
-    .update({ status })
+    .update({ applied_at: appliedAt || null })
     .eq('job_id', jobId)
     .eq('user_id', profile.id)
 
   if (error) return { error: error.message }
-
-  revalidatePath('/')
   return {}
 }
 
