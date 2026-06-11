@@ -3,9 +3,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { updateMatchStatus } from '@/app/actions'
 
-type Status = 'new' | 'interested' | 'considering' | 'applied' | 'interview' | 'accepted' | 'rejected' | 'pass'
+export type Status = 'new' | 'interested' | 'considering' | 'applied' | 'interview' | 'accepted' | 'rejected' | 'pass'
 
-const STATUS_OPTIONS: { value: Status; label: string; pill: string; menu: string }[] = [
+export const STATUS_OPTIONS: { value: Status; label: string; pill: string; menu: string }[] = [
   { value: 'new',        label: '미분류',       pill: 'text-zinc-400 border-zinc-200',                         menu: 'text-zinc-600 hover:bg-zinc-50' },
   { value: 'interested', label: '⭐ 관심있음',  pill: 'text-yellow-600 border-yellow-300 bg-yellow-50',        menu: 'text-yellow-700 hover:bg-yellow-50' },
   { value: 'considering',label: '🤔 고민중',    pill: 'text-blue-600 border-blue-300 bg-blue-50',              menu: 'text-blue-700 hover:bg-blue-50' },
@@ -16,10 +16,11 @@ const STATUS_OPTIONS: { value: Status; label: string; pill: string; menu: string
   { value: 'pass',       label: '— 패스',        pill: 'text-zinc-300 border-zinc-200',                         menu: 'text-zinc-400 hover:bg-zinc-50' },
 ]
 
-export default function StatusButton({ jobId, initialStatus, onAppliedAt }: {
+export default function StatusButton({ jobId, initialStatus, onAppliedAt, onStatusChange }: {
   jobId: string
   initialStatus: string
   onAppliedAt?: (appliedAt: string) => void
+  onStatusChange?: (status: Status) => void
 }) {
   const [status, setStatus] = useState<Status>((initialStatus as Status) ?? 'new')
   const [open, setOpen] = useState(false)
@@ -44,6 +45,7 @@ export default function StatusButton({ jobId, initialStatus, onAppliedAt }: {
     if (!res.error) {
       setStatus(next)
       if (res.applied_at && onAppliedAt) onAppliedAt(res.applied_at)
+      onStatusChange?.(next)
     }
     setLoading(false)
   }

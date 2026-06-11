@@ -22,13 +22,21 @@ export default function AddJobForm() {
     const result = await addJobByUrl(fd)
     if (result.error) { setStatus('idle'); setError(result.error); return }
 
+    if (result.duplicate) {
+      setStatus('idle')
+      alert('이미 등록된 공고입니다.')
+      return
+    }
+
     if (result.jobId) {
-      setStatus('scraping')
-      await fetch('/api/scrape-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: result.jobId }),
-      })
+      if (!result.alreadyScraped) {
+        setStatus('scraping')
+        await fetch('/api/scrape-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId: result.jobId }),
+        })
+      }
 
       setStatus('matching')
       await matchSingleJob(result.jobId)

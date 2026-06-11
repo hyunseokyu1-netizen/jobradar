@@ -298,7 +298,7 @@ export async function updateJobMemo(jobId: string, memo: string): Promise<{ erro
   return {}
 }
 
-export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string; error?: string }> {
+export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string; duplicate?: boolean; alreadyScraped?: boolean; error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
 
@@ -311,6 +311,36 @@ export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string;
 
   const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }
+
+  // 동일 URL이 이미 있는지 확인
+  const { data: existingJob } = await supabaseAdmin
+    .from('jobs')
+    .select('id, title')
+    .eq('url', url)
+    .maybeSingle()
+
+  if (existingJob) {
+    const { data: existingMatch } = await supabaseAdmin
+      .from('matches')
+      .select('job_id')
+      .eq('user_id', profile.id)
+      .eq('job_id', existingJob.id)
+      .maybeSingle()
+
+    if (existingMatch) return { duplicate: true }
+
+    // 공고는 있지만 내 목록에 없는 경우 → matches만 등록, 재스크래핑 생략
+    await supabaseAdmin
+      .from('matches')
+      .upsert(
+        { user_id: profile.id, job_id: existingJob.id, status: 'new' },
+        { onConflict: 'user_id,job_id' }
+      )
+
+    revalidatePath('/')
+    const alreadyScraped = existingJob.title !== '스크래핑 대기 중...' && existingJob.title !== '스크래핑 실패'
+    return { jobId: existingJob.id, alreadyScraped }
+  }
 
   const { data, error } = await supabaseAdmin
     .from('jobs')
