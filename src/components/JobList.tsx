@@ -11,7 +11,7 @@ import {
   useSortable, arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import StatusButton from './StatusButton'
+import StatusButton, { STATUS_OPTIONS } from './StatusButton'
 import CoverLetterModal from './CoverLetterModal'
 import JdInputModal from './JdInputModal'
 import AppliedResumeModal from './AppliedResumeModal'
@@ -167,6 +167,7 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
                 jobId={job.id}
                 initialStatus={job.match_status}
                 onAppliedAt={date => setAppliedAt(date)}
+                onStatusChange={next => onUpdate(job.id, { match_status: next })}
               />
             )}
             {appliedAt && !editingDate && (
@@ -347,6 +348,7 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
 
 export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
   const [jobs, setJobs] = useState(initialJobs)
+  const [filter, setFilter] = useState('all')
 
   // 서버 재렌더링 시 최신 데이터 동기화
   useEffect(() => { setJobs(initialJobs) }, [initialJobs])
@@ -374,15 +376,53 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
 
   if (!jobs.length) return <p className="text-zinc-400 text-center py-20">아직 공고가 없습니다.</p>
 
+  const statusCounts = jobs.reduce<Record<string, number>>((acc, j) => {
+    acc[j.match_status] = (acc[j.match_status] ?? 0) + 1
+    return acc
+  }, {})
+
+  const filteredJobs = filter === 'all' ? jobs : jobs.filter(j => j.match_status === filter)
+
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={jobs.map(j => j.id)} strategy={verticalListSortingStrategy}>
-        <ul className="space-y-3">
-          {jobs.map(job => (
-            <SortableJobCard key={job.id} job={job} onDelete={handleDelete} onUpdate={handleUpdate} />
-          ))}
-        </ul>
-      </SortableContext>
-    </DndContext>
+    <div>
+      {/* 상태 필터 */}
+      <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+        <button
+          onClick={() => setFilter('all')}
+          className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
+            filter === 'all'
+              ? 'bg-zinc-900 text-white border-zinc-900'
+              : 'text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+          }`}
+        >
+          전체 {jobs.length}
+        </button>
+        {STATUS_OPTIONS.filter(opt => (statusCounts[opt.value] ?? 0) > 0).map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => setFilter(prev => prev === opt.value ? 'all' : opt.value)}
+            className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
+              filter === opt.value ? opt.pill + ' ring-1 ring-current' : 'text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+            }`}
+          >
+            {opt.label} {statusCounts[opt.value]}
+          </button>
+        ))}
+      </div>
+
+      {filteredJobs.length === 0 ? (
+        <p className="text-zinc-400 text-center py-20">해당 상태의 공고가 없습니다.</p>
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={filteredJobs.map(j => j.id)} strategy={verticalListSortingStrategy}>
+            <ul className="space-y-3">
+              {filteredJobs.map(job => (
+                <SortableJobCard key={job.id} job={job} onDelete={handleDelete} onUpdate={handleUpdate} />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
+      )}
+    </div>
   )
 }
