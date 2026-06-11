@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import { addJobByUrl, matchSingleJob } from '@/app/actions'
 
 export default function AddJobForm() {
-  const [status, setStatus] = useState<'idle' | 'saving' | 'scraping' | 'matching'>('idle')
+  const [status, setStatus] = useState<'idle' | 'saving' | 'scraping' | 'matching' | 'done'>('idle')
   const [error, setError] = useState('')
   const [url, setUrl] = useState('')
 
   const router = useRouter()
-  const loading = status !== 'idle'
+  const loading = status !== 'idle' && status !== 'done'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -34,9 +34,10 @@ export default function AddJobForm() {
       await matchSingleJob(result.jobId)
     }
 
-    setStatus('idle')
     setUrl('')
     router.refresh()
+    setStatus('done')
+    setTimeout(() => setStatus('idle'), 3000)
   }
 
   const label = status === 'scraping' ? 'JD 분석 중...' : status === 'matching' ? 'AI 매칭 중...' : status === 'saving' ? '저장 중...' : '추가'
@@ -59,6 +60,9 @@ export default function AddJobForm() {
         {label}
       </button>
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {status === 'done' && (
+        <p className="text-xs text-green-600 mt-1">✓ 등록되었습니다.</p>
+      )}
     </form>
   )
 }
