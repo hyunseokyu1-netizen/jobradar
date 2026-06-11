@@ -261,6 +261,94 @@ export async function saveTailoredResume(jobId: string, content: string): Promis
   return {}
 }
 
+export async function generateTailoredResumeDocx(jobId: string): Promise<{ base64?: string; filename?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+  if (!profile.resume_file_path) {
+    return { error: '원본 DOCX가 없습니다. 프로필 페이지에서 DOCX 이력서를 다시 업로드해주세요.' }
+  }
+
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('title, company, description')
+    .eq('id', jobId)
+    .single()
+
+  if (!job) return { error: 'Job not found' }
+
+  // 원본 DOCX 다운로드
+  const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+    .from('resumes')
+    .download(profile.resume_file_path)
+  if (downloadError || !fileData) {
+    return { error: '원본 이력서 파일을 불러오지 못했습니다. 프로필에서 DOCX를 다시 업로드해주세요.' }
+  }
+
+  const { loadDocx, applyReplacements } = await import('@/lib/docx-rewrite')
+  const doc = await loadDocx(Buffer.from(await fileData.arrayBuffer()))
+
+  const numbered = doc.paragraphs
+    .filter(p => p.text.trim())
+    .map(p => `[${p.index}] ${p.text}`)
+    .join('\n')
+
+  const { anthropic } = await import('@/lib/claude')
+
+  const message = await anthropic.messages.create({
+    model: 'claude-opus-4-8',
+    max_tokens: 8000,
+    thinking: { type: 'adaptive' },
+    messages: [{
+      role: 'user',
+      content: `당신은 전문 이력서 컨설턴트입니다. 아래는 지원자의 이력서를 문단 단위로 번호를 붙여 나열한 것입니다.
+채용공고(JD)에 맞춰 일부 문단의 텍스트를 다시 쓴 결과를 JSON으로만 응답해주세요.
+
+## 지원 포지션
+- 직책: ${job.title}
+- 회사: ${job.company}
+
+## 채용공고 (JD)
+${(job.description ?? `${job.title} at ${job.company}`).slice(0, 3000)}
+
+## 이력서 문단 (번호 = 문단 인덱스)
+${numbered}
+
+## 규칙
+- 수정할 문단만 {"replacements": [{"i": 문단인덱스, "text": "새 텍스트"}]} 형식의 JSON으로 출력. JSON 외 다른 텍스트 금지
+- Professional Summary와 경력 bullet 위주로 JD의 키워드·요구사항에 맞춰 다시 쓸 것
+- 이름, 연락처, 회사명, 직책, 근무 기간, 학력, 섹션 제목 문단은 절대 수정하지 말 것 (replacements에 포함하지 말 것)
+- 원본에 있는 사실만 사용하고 경력·스킬·수치를 지어내지 말 것
+- 각 문단의 새 텍스트는 원본과 비슷한 길이로 유지할 것 (레이아웃이 깨지지 않도록 ±30% 이내)
+- 새 문단을 추가하거나 문단을 합치지 말 것. 영어로 작성할 것`,
+    }],
+  })
+
+  const textBlock = message.content.find(b => b.type === 'text')
+  const raw = textBlock?.type === 'text' ? textBlock.text : ''
+  const jsonMatch = raw.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) return { error: 'AI 응답을 해석하지 못했습니다. 다시 시도해주세요.' }
+
+  let replacements: Map<number, string>
+  try {
+    const parsed = JSON.parse(jsonMatch[0]) as { replacements: { i: number; text: string }[] }
+    replacements = new Map(parsed.replacements.map(r => [r.i, r.text]))
+  } catch {
+    return { error: 'AI 응답을 해석하지 못했습니다. 다시 시도해주세요.' }
+  }
+  if (replacements.size === 0) return { error: '수정할 문단을 찾지 못했습니다. JD를 확인해주세요.' }
+
+  const result = await applyReplacements(doc, replacements)
+
+  const safe = (s: string) => s.replace(/[^\w가-힣-]+/g, '_').slice(0, 30)
+  return {
+    base64: result.toString('base64'),
+    filename: `resume_${safe(job.company)}_${safe(job.title)}.docx`,
+  }
+}
+
 export async function updateJobDescription(jobId: string, description: string): Promise<{ error?: string }> {
   const { error } = await supabaseAdmin
     .from('jobs')
