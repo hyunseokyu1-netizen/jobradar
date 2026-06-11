@@ -102,6 +102,26 @@ export async function uploadResume(formData: FormData): Promise<{
     const profile = await getOrCreateProfile(email)
     if (!profile) return { error: 'Profile not found' }
 
+    // DOCX 원본 보관 — 양식 유지 맞춤 이력서 생성에 사용
+    let resumeFilePath: string | null = null
+    if (file.name.toLowerCase().endsWith('.docx')) {
+      const buffer = Buffer.from(await file.arrayBuffer())
+      const path = `${profile.id}/original.docx`
+      const doUpload = () =>
+        supabaseAdmin.storage.from('resumes').upload(path, buffer, {
+          upsert: true,
+          contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        })
+
+      let { error: uploadError } = await doUpload()
+      if (uploadError?.message?.includes('Bucket not found')) {
+        await supabaseAdmin.storage.createBucket('resumes', { public: false })
+        ;({ error: uploadError } = await doUpload())
+      }
+      if (!uploadError) resumeFilePath = path
+      else console.error('Resume file upload error:', uploadError)
+    }
+
     const { anthropic } = await import('@/lib/claude')
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -134,9 +154,15 @@ ${text.slice(0, 5000)}`,
       }
     }
 
+    const patch: Record<string, unknown> = { resume_text: text, updated_at: new Date().toISOString() }
+    if (resumeFilePath) {
+      patch.resume_file_path = resumeFilePath
+      patch.resume_file_name = file.name
+    }
+
     const { error } = await supabaseAdmin
       .from('profiles')
-      .update({ resume_text: text, updated_at: new Date().toISOString() })
+      .update(patch)
       .eq('id', profile.id)
 
     if (error) return { error: error.message }
