@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { generateTailoredResume, getTailoredResume, saveTailoredResume, applyTailoredTextToDocx } from '@/app/actions'
-import { downloadTxt, downloadPdf } from '@/lib/download'
+import { printPdfFromDocx } from '@/lib/download'
 
 interface Props {
   jobId: string
@@ -11,7 +11,7 @@ interface Props {
   onClose: () => void
 }
 
-type ActionState = 'idle' | 'loading' | 'saving' | 'generating' | 'applyingDocx'
+type ActionState = 'idle' | 'loading' | 'saving' | 'generating' | 'applyingDocx' | 'applyingPdf'
 
 function downloadBase64Docx(base64: string, filename: string) {
   const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -33,10 +33,10 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [downloading, setDownloading] = useState<'txt' | 'pdf' | null>(null)
 
   const filename = `resume_${company.replace(/\s+/g, '_')}_${jobTitle.replace(/\s+/g, '_')}`.slice(0, 60)
   const isDirty = content !== savedContent
+  const isLoading = state !== 'idle'
 
   useEffect(() => {
     getTailoredResume(jobId).then(res => {
@@ -81,23 +81,22 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
     else if (res.base64 && res.filename) downloadBase64Docx(res.base64, res.filename)
   }
 
+  async function handleDownloadPdf() {
+    setState('applyingPdf')
+    setError('')
+    const res = await applyTailoredTextToDocx(jobId)
+    setState('idle')
+    if (res.error) { setError(res.error); return }
+    if (res.base64 && res.filename) await printPdfFromDocx(res.base64, res.filename)
+  }
+
   async function handleCopy() {
     await navigator.clipboard.writeText(content)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  async function handleDownload(type: 'txt' | 'pdf') {
-    setDownloading(type)
-    try {
-      if (type === 'txt') await downloadTxt(content, filename)
-      else await downloadPdf(content, filename)
-    } finally {
-      setDownloading(null)
-    }
-  }
-
-  const isLoading = state !== 'idle'
+  const showTextarea = content && state !== 'generating' && state !== 'applyingDocx' && state !== 'applyingPdf'
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -117,7 +116,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
             <div className="text-center py-8 text-sm text-zinc-400">불러오는 중...</div>
           )}
 
-          {state !== 'loading' && state !== 'generating' && state !== 'applyingDocx' && !content && (
+          {state !== 'loading' && state !== 'generating' && !content && (
             <div className="text-center py-12">
               <p className="text-sm text-zinc-400 mb-6">
                 프로필의 원본 이력서를 이 공고의 JD에 맞춰 재구성한 이력서를 생성합니다.
@@ -136,12 +135,14 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
           {state === 'generating' && (
             <div className="text-center py-8 text-sm text-zinc-400">JD를 분석해 이력서 작성 중... (최대 1분)</div>
           )}
-
           {state === 'applyingDocx' && (
             <div className="text-center py-8 text-sm text-zinc-400">원본 양식에 내용 적용 중...</div>
           )}
+          {state === 'applyingPdf' && (
+            <div className="text-center py-8 text-sm text-zinc-400">PDF 준비 중...</div>
+          )}
 
-          {content && state !== 'generating' && state !== 'applyingDocx' && (
+          {showTextarea && (
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
@@ -156,7 +157,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
         </div>
 
         {/* 푸터 */}
-        {content && state !== 'generating' && state !== 'applyingDocx' && state !== 'loading' && (
+        {content && state !== 'generating' && state !== 'loading' && (
           <div className="p-5 border-t border-zinc-100 space-y-3">
             {/* 재생성 + 저장 */}
             <div className="flex items-center justify-between">
@@ -182,7 +183,8 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
               </div>
               <button
                 onClick={handleCopy}
-                className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 transition-colors"
+                disabled={isLoading}
+                className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
               >
                 {copied ? '✓ 복사됨' : '📋 복사'}
               </button>
@@ -191,25 +193,18 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
             {/* 다운로드 */}
             <div className="flex items-center justify-end gap-2">
               <button
-                onClick={() => handleDownload('txt')}
-                disabled={!!downloading || isLoading}
-                className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
-              >
-                {downloading === 'txt' ? '...' : 'TXT'}
-              </button>
-              <button
                 onClick={handleDownloadDocx}
                 disabled={isLoading}
                 className="text-xs border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 disabled:opacity-50 transition-colors"
               >
-                원본 양식 DOCX
+                {state === 'applyingDocx' ? '...' : '원본 양식 DOCX'}
               </button>
               <button
-                onClick={() => handleDownload('pdf')}
-                disabled={!!downloading || isLoading}
+                onClick={handleDownloadPdf}
+                disabled={isLoading}
                 className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
               >
-                {downloading === 'pdf' ? '...' : 'PDF'}
+                {state === 'applyingPdf' ? '...' : 'PDF'}
               </button>
             </div>
           </div>
