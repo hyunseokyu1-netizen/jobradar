@@ -15,6 +15,7 @@ import StatusButton, { STATUS_OPTIONS } from './StatusButton'
 import CoverLetterModal from './CoverLetterModal'
 import JdInputModal from './JdInputModal'
 import AppliedResumeModal from './AppliedResumeModal'
+import TailoredResumeModal from './TailoredResumeModal'
 import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
@@ -90,6 +91,7 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   const [memo, setMemo] = useState(job.memo ?? '')
   const [savingMemo, setSavingMemo] = useState(false)
   const [showResume, setShowResume] = useState(false)
+  const [showTailoredResume, setShowTailoredResume] = useState(false)
   const [resumeFilename, setResumeFilename] = useState(job.applied_resume_filename ?? '')
   const [resumeText, setResumeText] = useState(job.applied_resume_text ?? '')
   const [appliedAt, setAppliedAt] = useState(job.applied_at ?? '')
@@ -248,6 +250,12 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
               커버레터
             </button>
             <button
+              onClick={() => setShowTailoredResume(true)}
+              className="text-xs border border-emerald-200 text-emerald-600 rounded-lg px-3 py-1.5 hover:bg-emerald-50 transition-colors"
+            >
+              ✦ 맞춤 이력서
+            </button>
+            <button
               onClick={() => setShowResume(true)}
               className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${resumeFilename ? 'border-indigo-200 text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'border-zinc-200 hover:bg-zinc-50'}`}
             >
@@ -325,6 +333,15 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
           jobTitle={job.title}
           company={job.company}
           onClose={() => setShowCoverLetter(false)}
+        />
+      )}
+
+      {showTailoredResume && (
+        <TailoredResumeModal
+          jobId={job.id}
+          jobTitle={job.title}
+          company={job.company}
+          onClose={() => setShowTailoredResume(false)}
         />
       )}
 

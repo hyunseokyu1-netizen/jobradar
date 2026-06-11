@@ -166,6 +166,101 @@ export async function translateCoverLetter(content: string): Promise<{ translati
   return { translation }
 }
 
+export async function generateTailoredResume(jobId: string): Promise<{ content?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+  if (!profile.resume_text) return { error: '프로필 페이지에서 이력서를 먼저 업로드해주세요.' }
+
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('title, company, location, description')
+    .eq('id', jobId)
+    .single()
+
+  if (!job) return { error: 'Job not found' }
+
+  const { anthropic } = await import('@/lib/claude')
+
+  const message = await anthropic.messages.create({
+    model: 'claude-opus-4-8',
+    max_tokens: 4000,
+    thinking: { type: 'adaptive' },
+    messages: [{
+      role: 'user',
+      content: `당신은 전문 이력서 컨설턴트입니다. 아래 지원자의 원본 이력서를 채용공고(JD)에 맞춰 재구성한 맞춤 이력서를 영어로 작성해주세요.
+
+## 지원 포지션
+- 직책: ${job.title}
+- 회사: ${job.company}
+- 위치: ${job.location ?? ''}
+
+## 채용공고 (JD)
+${(job.description ?? `${job.title} at ${job.company}`).slice(0, 3000)}
+
+## 원본 이력서
+${profile.resume_text.slice(0, 6000)}
+
+## 작성 요구사항
+- 원본 이력서에 있는 사실만 사용할 것. 경력, 스킬, 수치, 회사명을 절대 지어내거나 과장하지 말 것
+- JD의 핵심 요구사항과 키워드에 맞춰 강조점과 항목 순서를 재구성할 것
+- 구성: 이름·연락처 → PROFESSIONAL SUMMARY (3~4줄, 이 포지션 맞춤) → KEY SKILLS (JD 관련 스킬 우선) → WORK EXPERIENCE (JD와 관련된 성과 중심 bullet, 액션 동사로 시작) → EDUCATION 및 기타
+- ATS 친화적인 평문 텍스트로 작성 (표나 마크다운 기호 없이, 섹션 제목은 대문자)
+- 맞춤 이력서 본문만 출력하고 다른 설명은 쓰지 말 것`,
+    }],
+  })
+
+  const textBlock = message.content.find(b => b.type === 'text')
+  const content = textBlock?.type === 'text' ? textBlock.text.trim() : ''
+  if (!content) return { error: '이력서 생성에 실패했습니다. 다시 시도해주세요.' }
+
+  const { error } = await supabaseAdmin.from('tailored_resumes').upsert({
+    user_id: profile.id,
+    job_id: jobId,
+    content,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,job_id' })
+
+  if (error) return { error: error.message }
+
+  return { content }
+}
+
+export async function getTailoredResume(jobId: string): Promise<{ content?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return {}
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return {}
+
+  const { data } = await supabaseAdmin
+    .from('tailored_resumes')
+    .select('content')
+    .eq('job_id', jobId)
+    .eq('user_id', profile.id)
+    .single()
+  return { content: data?.content ?? undefined }
+}
+
+export async function saveTailoredResume(jobId: string, content: string): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const { error } = await supabaseAdmin
+    .from('tailored_resumes')
+    .upsert(
+      { user_id: profile.id, job_id: jobId, content, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,job_id' }
+    )
+  if (error) return { error: error.message }
+  return {}
+}
+
 export async function updateJobDescription(jobId: string, description: string): Promise<{ error?: string }> {
   const { error } = await supabaseAdmin
     .from('jobs')
