@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { generateTailoredResume, getTailoredResume, saveTailoredResume, generateTailoredResumeDocx } from '@/app/actions'
-import { downloadTxt, downloadDocx, downloadPdf } from '@/lib/download'
+import { generateTailoredResume, getTailoredResume, saveTailoredResume, applyTailoredTextToDocx } from '@/app/actions'
+import { downloadTxt, downloadPdf } from '@/lib/download'
 
 interface Props {
   jobId: string
@@ -11,7 +11,7 @@ interface Props {
   onClose: () => void
 }
 
-type ActionState = 'idle' | 'loading' | 'saving' | 'generating' | 'generatingDocx'
+type ActionState = 'idle' | 'loading' | 'saving' | 'generating' | 'applyingDocx'
 
 function downloadBase64Docx(base64: string, filename: string) {
   const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -33,7 +33,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [downloading, setDownloading] = useState<'txt' | 'docx' | 'pdf' | null>(null)
+  const [downloading, setDownloading] = useState<'txt' | 'pdf' | null>(null)
 
   const filename = `resume_${company.replace(/\s+/g, '_')}_${jobTitle.replace(/\s+/g, '_')}`.slice(0, 60)
   const isDirty = content !== savedContent
@@ -72,10 +72,10 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
     }
   }
 
-  async function handleGenerateDocx() {
-    setState('generatingDocx')
+  async function handleDownloadDocx() {
+    setState('applyingDocx')
     setError('')
-    const res = await generateTailoredResumeDocx(jobId)
+    const res = await applyTailoredTextToDocx(jobId)
     setState('idle')
     if (res.error) setError(res.error)
     else if (res.base64 && res.filename) downloadBase64Docx(res.base64, res.filename)
@@ -87,11 +87,10 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
     setTimeout(() => setCopied(false), 2000)
   }
 
-  async function handleDownload(type: 'txt' | 'docx' | 'pdf') {
+  async function handleDownload(type: 'txt' | 'pdf') {
     setDownloading(type)
     try {
       if (type === 'txt') await downloadTxt(content, filename)
-      else if (type === 'docx') await downloadDocx(content, filename)
       else await downloadPdf(content, filename)
     } finally {
       setDownloading(null)
@@ -118,31 +117,19 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
             <div className="text-center py-8 text-sm text-zinc-400">불러오는 중...</div>
           )}
 
-          {state !== 'loading' && state !== 'generating' && state !== 'generatingDocx' && !content && (
-            <div className="text-center py-8">
-              <p className="text-sm text-zinc-400 mb-4">
+          {state !== 'loading' && state !== 'generating' && state !== 'applyingDocx' && !content && (
+            <div className="text-center py-12">
+              <p className="text-sm text-zinc-400 mb-6">
                 프로필의 원본 이력서를 이 공고의 JD에 맞춰 재구성한 이력서를 생성합니다.
               </p>
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  onClick={handleGenerate}
-                  disabled={isLoading}
-                  className="bg-zinc-900 text-white text-sm px-5 py-2.5 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-                >
-                  ✦ 텍스트로 생성
-                </button>
-                <button
-                  onClick={handleGenerateDocx}
-                  disabled={isLoading}
-                  className="border border-emerald-300 text-emerald-700 text-sm px-5 py-2.5 rounded-lg hover:bg-emerald-50 disabled:opacity-50 transition-colors"
-                >
-                  📄 원본 양식 유지 DOCX
-                </button>
-              </div>
-              <p className="text-xs text-zinc-400 mt-3">
-                DOCX 방식은 업로드한 원본 이력서의 서식·레이아웃을 그대로 두고 내용만 JD에 맞춰 수정합니다.
-              </p>
-              {error && <p className="text-xs text-red-500 mt-3">{error}</p>}
+              <button
+                onClick={handleGenerate}
+                disabled={isLoading}
+                className="bg-zinc-900 text-white text-sm px-6 py-3 rounded-xl hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+              >
+                ✦ 맞춤 이력서 생성
+              </button>
+              {error && <p className="text-xs text-red-500 mt-4">{error}</p>}
             </div>
           )}
 
@@ -150,11 +137,11 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
             <div className="text-center py-8 text-sm text-zinc-400">JD를 분석해 이력서 작성 중... (최대 1분)</div>
           )}
 
-          {state === 'generatingDocx' && (
-            <div className="text-center py-8 text-sm text-zinc-400">원본 양식을 유지하며 내용 수정 중... (최대 1분)</div>
+          {state === 'applyingDocx' && (
+            <div className="text-center py-8 text-sm text-zinc-400">원본 양식에 내용 적용 중...</div>
           )}
 
-          {content && state !== 'generating' && state !== 'generatingDocx' && (
+          {content && state !== 'generating' && state !== 'applyingDocx' && (
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
@@ -169,60 +156,61 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
         </div>
 
         {/* 푸터 */}
-        {content && state !== 'generating' && state !== 'generatingDocx' && state !== 'loading' && (
-          <div className="p-6 border-t border-zinc-100 space-y-3">
+        {content && state !== 'generating' && state !== 'applyingDocx' && state !== 'loading' && (
+          <div className="p-5 border-t border-zinc-100 space-y-3">
+            {/* 재생성 + 저장 */}
             <div className="flex items-center justify-between">
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleGenerate}
                   disabled={isLoading}
-                  className="text-xs text-zinc-400 hover:text-zinc-600 disabled:opacity-50 border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 transition-colors"
+                  className="text-xs text-zinc-500 hover:text-zinc-800 disabled:opacity-50 border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 transition-colors"
                 >
                   ↺ 재생성
                 </button>
-                <button
-                  onClick={handleGenerateDocx}
-                  disabled={isLoading}
-                  className="text-xs text-emerald-600 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-50 disabled:opacity-50 transition-colors"
-                >
-                  📄 원본 양식 DOCX
-                </button>
-              </div>
-              <div className="flex gap-2">
-                {isDirty && (
+                {isDirty ? (
                   <button
                     onClick={handleSave}
                     disabled={isLoading}
                     className="text-xs bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
                   >
-                    {state === 'saving' ? '저장 중...' : saved ? '✓ 저장됨' : '저장'}
+                    {state === 'saving' ? '저장 중...' : '저장'}
                   </button>
-                )}
-                {!isDirty && savedContent && (
-                  <span className="text-xs text-zinc-400 px-3 py-1.5">{saved ? '✓ 저장됨' : '저장됨'}</span>
+                ) : (
+                  <span className="text-xs text-zinc-400">{saved ? '✓ 저장됨' : '저장됨'}</span>
                 )}
               </div>
-            </div>
-
-            <div className="flex items-center justify-between">
               <button
                 onClick={handleCopy}
                 className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 transition-colors"
               >
-                {copied ? '✓ 복사됨' : '클립보드 복사'}
+                {copied ? '✓ 복사됨' : '📋 복사'}
               </button>
-              <div className="flex gap-2">
-                {(['txt', 'docx', 'pdf'] as const).map(type => (
-                  <button
-                    key={type}
-                    onClick={() => handleDownload(type)}
-                    disabled={!!downloading}
-                    className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors uppercase"
-                  >
-                    {downloading === type ? '...' : type}
-                  </button>
-                ))}
-              </div>
+            </div>
+
+            {/* 다운로드 */}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => handleDownload('txt')}
+                disabled={!!downloading || isLoading}
+                className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
+              >
+                {downloading === 'txt' ? '...' : 'TXT'}
+              </button>
+              <button
+                onClick={handleDownloadDocx}
+                disabled={isLoading}
+                className="text-xs border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 disabled:opacity-50 transition-colors"
+              >
+                원본 양식 DOCX
+              </button>
+              <button
+                onClick={() => handleDownload('pdf')}
+                disabled={!!downloading || isLoading}
+                className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
+              >
+                {downloading === 'pdf' ? '...' : 'PDF'}
+              </button>
             </div>
           </div>
         )}
