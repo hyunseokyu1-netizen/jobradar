@@ -2,46 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { generateCoverLetter, getCoverLetter, saveCoverLetter, reviewCoverLetter, translateCoverLetter } from '@/app/actions'
+import { downloadTxt, downloadDocx, downloadPdf } from '@/lib/download'
 
 interface Props {
   jobId: string
   jobTitle: string
   company: string
   onClose: () => void
-}
-
-async function downloadTxt(content: string, filename: string) {
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${filename}.txt`
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-async function downloadDocx(content: string, filename: string) {
-  const { Document, Packer, Paragraph, TextRun } = await import('docx')
-  const paragraphs = content.split('\n').map(line =>
-    new Paragraph({ children: [new TextRun(line)] })
-  )
-  const doc = new Document({ sections: [{ children: paragraphs }] })
-  const blob = await Packer.toBlob(doc)
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${filename}.docx`
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-async function downloadPdf(content: string, filename: string) {
-  const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF()
-  const lines = doc.splitTextToSize(content, 180)
-  doc.setFontSize(11)
-  doc.text(lines, 15, 20)
-  doc.save(`${filename}.pdf`)
 }
 
 type ActionState = 'idle' | 'loading' | 'saving' | 'reviewing' | 'generating' | 'downloading'
