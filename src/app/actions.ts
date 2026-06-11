@@ -349,6 +349,64 @@ ${numbered}
   }
 }
 
+// 저장된 맞춤 이력서 텍스트를 원본 DOCX 양식에 적용 (Claude 호출 없음)
+export async function applyTailoredTextToDocx(jobId: string): Promise<{ base64?: string; filename?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const { data: tailored } = await supabaseAdmin
+    .from('tailored_resumes')
+    .select('content')
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+    .single()
+
+  if (!tailored?.content) return { error: '먼저 맞춤 이력서를 생성해주세요.' }
+
+  if (!profile.resume_file_path) {
+    return { error: '원본 DOCX가 없습니다. 프로필 페이지에서 DOCX 이력서를 다시 업로드해주세요.' }
+  }
+
+  const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+    .from('resumes')
+    .download(profile.resume_file_path)
+  if (downloadError || !fileData) {
+    return { error: '원본 이력서 파일을 불러오지 못했습니다. 프로필에서 DOCX를 다시 업로드해주세요.' }
+  }
+
+  const { loadDocx, applyReplacements } = await import('@/lib/docx-rewrite')
+  const doc = await loadDocx(Buffer.from(await fileData.arrayBuffer()))
+
+  // 비어있지 않은 원본 문단과 맞춤 텍스트 줄을 위치 기반으로 매핑
+  const tailoredLines = tailored.content.split('\n').filter((l: string) => l.trim())
+  const nonEmptyParas = doc.paragraphs.filter(p => p.text.trim())
+
+  const replacements = new Map<number, string>()
+  const maxLen = Math.min(nonEmptyParas.length, tailoredLines.length)
+  for (let i = 0; i < maxLen; i++) {
+    const newText = tailoredLines[i].trim()
+    if (newText !== nonEmptyParas[i].text.trim()) {
+      replacements.set(nonEmptyParas[i].index, newText)
+    }
+  }
+
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('title, company')
+    .eq('id', jobId)
+    .single()
+
+  const result = await applyReplacements(doc, replacements)
+  const safe = (s: string) => (s ?? '').replace(/[^\w가-힣-]+/g, '_').slice(0, 30)
+  return {
+    base64: result.toString('base64'),
+    filename: `resume_${safe(job?.company ?? '')}_${safe(job?.title ?? '')}.docx`,
+  }
+}
+
 export async function updateJobDescription(jobId: string, description: string): Promise<{ error?: string }> {
   const { error } = await supabaseAdmin
     .from('jobs')
