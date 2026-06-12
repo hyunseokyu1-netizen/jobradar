@@ -1,0 +1,53 @@
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
+import AddSourceForm from '@/components/discover/AddSourceForm'
+import SourceList, { type SourceItem } from '@/components/discover/SourceList'
+import DiscoveredJobList, { type DiscoveredJobItem } from '@/components/discover/DiscoveredJobList'
+
+export const dynamic = 'force-dynamic'
+
+export default async function DiscoverPage() {
+  const email = await getAuthUserEmail()
+  const profile = email ? await getOrCreateProfile(email) : null
+
+  if (!profile) return <p className="text-zinc-400 text-center py-20">로그인이 필요합니다.</p>
+
+  const { data: sources, error: sourceError } = await supabaseAdmin
+    .from('job_sources')
+    .select('id, name, url, source_type, last_scraped_at')
+    .eq('user_id', profile.id)
+    .order('created_at', { ascending: true })
+
+  if (sourceError) return <p className="text-red-500">DB 오류: {sourceError.message}</p>
+
+  const { data: discovered, error: jobError } = await supabaseAdmin
+    .from('discovered_jobs')
+    .select('id, source_id, title, url, location, department, match_score, match_reason, status, scraped_at')
+    .eq('user_id', profile.id)
+    .neq('status', 'dismissed')
+    .order('match_score', { ascending: false, nullsFirst: false })
+    .limit(300)
+
+  if (jobError) return <p className="text-red-500">DB 오류: {jobError.message}</p>
+
+  const sourceNameMap = new Map((sources ?? []).map(s => [s.id, s.name]))
+  const jobs: DiscoveredJobItem[] = (discovered ?? []).map(j => ({
+    ...j,
+    source_name: sourceNameMap.get(j.source_id) ?? '?',
+  }))
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">잡 탐색</h1>
+        <p className="text-sm text-zinc-400 mt-0.5">
+          관심 회사의 채용 페이지를 등록하면 공고를 수집해 매칭 점수순으로 보여드립니다.
+        </p>
+      </div>
+
+      <AddSourceForm />
+      <SourceList sources={(sources ?? []) as SourceItem[]} />
+      <DiscoveredJobList jobs={jobs} />
+    </div>
+  )
+}
