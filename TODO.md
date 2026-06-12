@@ -117,6 +117,20 @@ Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
 
 ---
 
+## 🔭 Phase 5 — 잡 탐색 (Discover) (2026-06-12)
+
+- [x] `job_sources` / `discovered_jobs` 테이블 (migration 010) — ⚠️ SQL Editor 수동 적용 필요
+- [x] 네비게이션 분리: 지원 관리(/) · 잡 탐색(/discover) · 프로필
+- [x] ATS 어댑터: Greenhouse / Lever / Ashby / SmartRecruiters 공개 API
+- [x] generic 어댑터: 자체 구축 사이트 HTML + Claude Haiku 공고 추출 (Spotify, Apple 등)
+- [x] 2단계 매칭: 키워드 프리필터(무료) → Haiku 배치 채점 (회당 50건 상한)
+- [x] /discover UI: 소스 등록·수집, 점수순 공고 카드, 점수/회사 필터
+- [x] 지원 관리에 추가 → 기존 JD 스크래핑·정밀 매칭 플로우 연결
+- [ ] Spotify·Apple 등 자체 사이트 실전 테스트 (필요 시 전용 파서 추가)
+- [ ] Vercel Cron 자동 수집 + 신규 고득점 공고 표시
+
+---
+
 ## ✅ Phase 4 — 인증 (완료)
 
 - [x] 회원가입 / 로그인 (Supabase Auth)
@@ -157,4 +171,4 @@ Week 1~2 완료 항목은 그대로 유지. 이후 계획은 재설계.
 
 ---
 
-*Last updated: 2026-06-11*
+*Last updated: 2026-06-12*
