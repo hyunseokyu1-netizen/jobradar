@@ -24,8 +24,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </Link>
             {user ? (
               <div className="flex items-center gap-4 text-sm font-medium text-zinc-600">
-                <Link href="/" className="hover:text-zinc-900">Jobs</Link>
-                <Link href="/profile" className="hover:text-zinc-900">Profile</Link>
+                <Link href="/" className="hover:text-zinc-900">지원 관리</Link>
+                <Link href="/discover" className="hover:text-zinc-900">잡 탐색</Link>
+                <Link href="/profile" className="hover:text-zinc-900">프로필</Link>
                 <span className="text-zinc-300 hidden sm:block">|</span>
                 <span className="text-zinc-400 text-xs hidden sm:block truncate max-w-40">{user.email}</span>
                 <form action={signOut}>
