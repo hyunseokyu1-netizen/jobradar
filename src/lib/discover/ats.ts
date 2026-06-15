@@ -2,7 +2,7 @@
 // 주요 ATS(Greenhouse, Lever, Ashby, SmartRecruiters)는 공개 JSON API를 쓰고,
 // 자체 구축 사이트(Spotify, Apple 등)는 generic 어댑터(HTML + Claude 추출)로 폴백한다.
 
-export type AtsType = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters' | 'generic'
+export type AtsType = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters' | 'apple' | 'generic'
 
 export interface DiscoveredPosting {
   title: string
@@ -38,6 +38,9 @@ export function detectAtsType(url: string): { type: AtsType; board?: string } {
   }
   if (host === 'careers.smartrecruiters.com' || host === 'jobs.smartrecruiters.com') {
     return { type: 'smartrecruiters', board: firstSeg }
+  }
+  if (host === 'jobs.apple.com') {
+    return { type: 'apple' }
   }
   return { type: 'generic' }
 }
@@ -100,6 +103,85 @@ async function scrapeSmartRecruiters(board: string): Promise<DiscoveredPosting[]
     offset += items.length
     if (items.length < 100) break
   }
+  return postings
+}
+
+// Apple 검색 페이지 URL에서 검색 키워드 추출.
+// 예: ?search=data → "data", ?product=apple-music-APPMU → "apple music"
+function appleKeyword(url: string): string {
+  const params = new URL(url).searchParams
+  const search = params.get('search')?.trim()
+  if (search) return search
+
+  const product = params.get('product')?.trim()
+  if (product) {
+    // 'apple-music-APPMU' → 끝의 대문자 코드 제거 → 'apple-music' → 'apple music'
+    return product.replace(/-[A-Z0-9]+$/, '').replace(/-/g, ' ')
+  }
+
+  const team = params.get('team')?.trim()
+  if (team) return team.replace(/-/g, ' ')
+
+  return ''
+}
+
+// Apple 공개 search API로 공고 목록 수집 (CSRF 토큰 + 키워드 검색)
+async function scrapeApple(url: string): Promise<DiscoveredPosting[]> {
+  const keyword = appleKeyword(url)
+  if (!keyword) {
+    throw new Error('Apple 소스는 검색 키워드가 필요합니다. URL에 ?search=키워드 또는 ?product=... 를 포함해주세요.')
+  }
+
+  // CSRF 토큰 + 쿠키 획득
+  const tokenRes = await fetch('https://jobs.apple.com/api/v1/csrfToken', {
+    headers: { 'User-Agent': FETCH_HEADERS['User-Agent'] },
+    cache: 'no-store',
+  })
+  const token = tokenRes.headers.get('x-apple-csrf-token') ?? ''
+  const cookie = tokenRes.headers.get('set-cookie') ?? ''
+  if (!token) throw new Error('Apple CSRF 토큰을 가져오지 못했습니다.')
+
+  const postings: DiscoveredPosting[] = []
+  for (let page = 1; page <= 5; page++) {
+    const res = await fetch('https://jobs.apple.com/api/v1/search?locale=en-us', {
+      method: 'POST',
+      headers: {
+        'User-Agent': FETCH_HEADERS['User-Agent'],
+        'Content-Type': 'application/json',
+        'X-Apple-CSRF-Token': token,
+        Cookie: cookie,
+        Referer: 'https://jobs.apple.com/en-us/search',
+        Origin: 'https://jobs.apple.com',
+      },
+      body: JSON.stringify({
+        query: keyword,
+        locale: 'en-us',
+        page,
+        sort: 'newest',
+        format: { longDate: 'MMMM D, YYYY', mediumDate: 'MMM D, YYYY' },
+        filters: { range: { standardWeeklyHours: { start: null, end: null } }, teams: [] },
+      }),
+      cache: 'no-store',
+    })
+    if (!res.ok) throw new Error(`Apple search failed: ${res.status}`)
+
+    const results = (await res.json())?.res?.searchResults ?? []
+    if (results.length === 0) break
+
+    for (const j of results) {
+      // reqId = "{positionId}-{postingIdentifier}" → detail URL 구성
+      const jobNumber = j.reqId ?? j.positionId
+      if (!jobNumber || !j.transformedPostingTitle) continue
+      const loc = j.locations?.[0]
+      postings.push({
+        title: j.postingTitle,
+        url: `https://jobs.apple.com/en-us/details/${jobNumber}/${j.transformedPostingTitle}`,
+        location: loc ? [loc.city ?? loc.name, loc.countryName].filter(Boolean).join(', ') : undefined,
+        department: j.team?.teamName,
+      })
+    }
+  }
+
   return postings
 }
 
@@ -167,6 +249,7 @@ export async function scrapeJobSource(sourceUrl: string, sourceType: AtsType): P
   else if (sourceType === 'lever' && board) postings = await scrapeLever(board)
   else if (sourceType === 'ashby' && board) postings = await scrapeAshby(board)
   else if (sourceType === 'smartrecruiters' && board) postings = await scrapeSmartRecruiters(board)
+  else if (sourceType === 'apple') postings = await scrapeApple(sourceUrl)
   else postings = await scrapeGeneric(sourceUrl)
 
   // URL 기준 중복 제거

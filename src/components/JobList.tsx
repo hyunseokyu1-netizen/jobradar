@@ -363,9 +363,12 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   )
 }
 
+type SortMode = 'score' | 'recent'
+
 export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
   const [jobs, setJobs] = useState(initialJobs)
   const [filter, setFilter] = useState('all')
+  const [sortMode, setSortMode] = useState<SortMode>('score')
 
   // 서버 재렌더링 시 최신 데이터 동기화
   useEffect(() => { setJobs(initialJobs) }, [initialJobs])
@@ -398,11 +401,19 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
     return acc
   }, {})
 
-  const filteredJobs = filter === 'all' ? jobs : jobs.filter(j => j.match_status === filter)
+  const filtered = filter === 'all' ? jobs : jobs.filter(j => j.match_status === filter)
+  // 최신순은 등록(scraped_at) 기준, 점수순은 매칭됨 우선 + 점수 내림차순
+  const filteredJobs = sortMode === 'recent'
+    ? [...filtered].sort((a, b) => new Date(b.scraped_at).getTime() - new Date(a.scraped_at).getTime())
+    : [...filtered].sort((a, b) => {
+        if (a.match_score !== null && b.match_score === null) return -1
+        if (a.match_score === null && b.match_score !== null) return 1
+        return (b.match_score ?? 0) - (a.match_score ?? 0)
+      })
 
   return (
     <div>
-      {/* 상태 필터 */}
+      {/* 상태 필터 + 정렬 */}
       <div className="flex items-center gap-1.5 mb-4 flex-wrap">
         <button
           onClick={() => setFilter('all')}
@@ -425,6 +436,25 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
             {opt.label} {statusCounts[opt.value]}
           </button>
         ))}
+        <div className="ml-auto flex items-center gap-1 text-xs">
+          <span className="text-zinc-400">정렬</span>
+          <button
+            onClick={() => setSortMode('score')}
+            className={`px-2 py-1 rounded-full border transition-colors ${
+              sortMode === 'score' ? 'bg-zinc-900 text-white border-zinc-900' : 'text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+            }`}
+          >
+            점수순
+          </button>
+          <button
+            onClick={() => setSortMode('recent')}
+            className={`px-2 py-1 rounded-full border transition-colors ${
+              sortMode === 'recent' ? 'bg-zinc-900 text-white border-zinc-900' : 'text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+            }`}
+          >
+            최신순
+          </button>
+        </div>
       </div>
 
       {filteredJobs.length === 0 ? (
