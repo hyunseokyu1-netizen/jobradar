@@ -529,6 +529,10 @@ export async function updateJobCompany(jobId: string, company: string): Promise<
   return updateJobFields(jobId, { company: company.trim() })
 }
 
+export async function updateJobLocation(jobId: string, location: string): Promise<{ error?: string }> {
+  return updateJobFields(jobId, { location: location.trim() })
+}
+
 // 본인 목록(matches)에 있는 공고의 공유 jobs 필드를 수정 (권한 확인 포함)
 async function updateJobFields(
   jobId: string,

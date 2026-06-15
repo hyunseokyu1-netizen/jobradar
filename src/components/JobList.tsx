@@ -16,7 +16,7 @@ import CoverLetterModal from './CoverLetterModal'
 import JdInputModal from './JdInputModal'
 import AppliedResumeModal from './AppliedResumeModal'
 import TailoredResumeModal from './TailoredResumeModal'
-import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt, updateJobTitle, updateJobCompany } from '@/app/actions'
+import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt, updateJobTitle, updateJobCompany, updateJobLocation } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
 export interface JobItem {
@@ -103,6 +103,9 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   const [editingCompany, setEditingCompany] = useState(false)
   const [companyInput, setCompanyInput] = useState(job.company)
   const [savingCompany, setSavingCompany] = useState(false)
+  const [editingLocation, setEditingLocation] = useState(false)
+  const [locationInput, setLocationInput] = useState(job.location)
+  const [savingLocation, setSavingLocation] = useState(false)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -172,6 +175,23 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
     if (!res.error) {
       onUpdate(job.id, { company: trimmed })
       setEditingCompany(false)
+    }
+  }
+
+  function startEditLocation() {
+    setLocationInput(job.location)
+    setEditingLocation(true)
+  }
+
+  async function handleSaveLocation() {
+    const trimmed = locationInput.trim()
+    if (trimmed === job.location) { setEditingLocation(false); return }
+    setSavingLocation(true)
+    const res = await updateJobLocation(job.id, trimmed)
+    setSavingLocation(false)
+    if (!res.error) {
+      onUpdate(job.id, { location: trimmed })
+      setEditingLocation(false)
     }
   }
 
@@ -306,7 +326,6 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
             <p className="text-sm text-zinc-500 mt-0.5 flex items-center gap-1.5 group/company">
               <span>
                 {job.company || <span className="text-zinc-300">회사명 없음</span>}
-                {job.location && !job.location.startsWith('(Location') && <> · {job.location}</>}
                 {job.salary && <> · <span className="text-green-600">{job.salary}</span></>}
               </span>
               <button
@@ -317,6 +336,48 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
               >
                 ✏️
               </button>
+            </p>
+          )}
+          {editingLocation ? (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <input
+                value={locationInput}
+                onChange={e => setLocationInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSaveLocation()
+                  if (e.key === 'Escape') setEditingLocation(false)
+                }}
+                autoFocus
+                placeholder="위치 (예: Sydney, Australia)"
+                className="flex-1 text-sm border border-zinc-300 rounded-lg px-2 py-1 outline-none focus:border-zinc-500"
+              />
+              <button onClick={handleSaveLocation} disabled={savingLocation} className="text-xs text-blue-500 hover:text-blue-700 px-1 disabled:opacity-50">
+                {savingLocation ? '...' : '저장'}
+              </button>
+              <button onClick={() => setEditingLocation(false)} className="text-xs text-zinc-400 hover:text-zinc-600 px-1">취소</button>
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500 mt-0.5 flex items-center gap-1.5 group/location">
+              {job.location && !job.location.startsWith('(Location') ? (
+                <>
+                  <span>📍 {job.location}</span>
+                  <button
+                    onClick={startEditLocation}
+                    className="text-xs text-zinc-300 hover:text-zinc-600 transition-colors shrink-0 opacity-0 group-hover/location:opacity-100"
+                    title="위치 수정"
+                    aria-label="위치 수정"
+                  >
+                    ✏️
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={startEditLocation}
+                  className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
+                >
+                  + 위치 추가
+                </button>
+              )}
             </p>
           )}
           {job.match_reason && (
