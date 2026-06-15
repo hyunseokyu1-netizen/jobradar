@@ -522,14 +522,26 @@ export async function uploadAppliedResume(formData: FormData): Promise<{ text?: 
 }
 
 export async function updateJobTitle(jobId: string, title: string): Promise<{ error?: string }> {
+  return updateJobFields(jobId, { title: title.trim() }, !title.trim() ? '제목을 입력해주세요.' : undefined)
+}
+
+export async function updateJobCompany(jobId: string, company: string): Promise<{ error?: string }> {
+  return updateJobFields(jobId, { company: company.trim() })
+}
+
+// 본인 목록(matches)에 있는 공고의 공유 jobs 필드를 수정 (권한 확인 포함)
+async function updateJobFields(
+  jobId: string,
+  fields: Record<string, string>,
+  validationError?: string
+): Promise<{ error?: string }> {
+  if (validationError) return { error: validationError }
+
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
 
   const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }
-
-  const trimmed = title.trim()
-  if (!trimmed) return { error: '제목을 입력해주세요.' }
 
   // 본인 목록에 있는 공고만 수정 허용 (matches 존재 여부로 권한 확인)
   const { data: match } = await supabaseAdmin
@@ -543,7 +555,7 @@ export async function updateJobTitle(jobId: string, title: string): Promise<{ er
 
   const { error } = await supabaseAdmin
     .from('jobs')
-    .update({ title: trimmed })
+    .update(fields)
     .eq('id', jobId)
 
   if (error) return { error: error.message }
