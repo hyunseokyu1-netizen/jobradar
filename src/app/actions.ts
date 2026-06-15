@@ -521,6 +521,37 @@ export async function uploadAppliedResume(formData: FormData): Promise<{ text?: 
   }
 }
 
+export async function updateJobTitle(jobId: string, title: string): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const trimmed = title.trim()
+  if (!trimmed) return { error: '제목을 입력해주세요.' }
+
+  // 본인 목록에 있는 공고만 수정 허용 (matches 존재 여부로 권한 확인)
+  const { data: match } = await supabaseAdmin
+    .from('matches')
+    .select('job_id')
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+    .maybeSingle()
+
+  if (!match) return { error: '수정 권한이 없습니다.' }
+
+  const { error } = await supabaseAdmin
+    .from('jobs')
+    .update({ title: trimmed })
+    .eq('id', jobId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/')
+  return {}
+}
+
 export async function updateJobMemo(jobId: string, memo: string): Promise<{ error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
