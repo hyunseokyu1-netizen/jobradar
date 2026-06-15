@@ -16,7 +16,7 @@ import CoverLetterModal from './CoverLetterModal'
 import JdInputModal from './JdInputModal'
 import AppliedResumeModal from './AppliedResumeModal'
 import TailoredResumeModal from './TailoredResumeModal'
-import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt } from '@/app/actions'
+import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt, updateJobTitle } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
 export interface JobItem {
@@ -97,6 +97,9 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   const [appliedAt, setAppliedAt] = useState(job.applied_at ?? '')
   const [editingDate, setEditingDate] = useState(false)
   const [dateInput, setDateInput] = useState('')
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleInput, setTitleInput] = useState(job.title)
+  const [savingTitle, setSavingTitle] = useState(false)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -133,6 +136,23 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
 
   function daysElapsed(iso: string) {
     return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+  }
+
+  function startEditTitle() {
+    setTitleInput(job.title)
+    setEditingTitle(true)
+  }
+
+  async function handleSaveTitle() {
+    const trimmed = titleInput.trim()
+    if (!trimmed || trimmed === job.title) { setEditingTitle(false); return }
+    setSavingTitle(true)
+    const res = await updateJobTitle(job.id, trimmed)
+    setSavingTitle(false)
+    if (!res.error) {
+      onUpdate(job.id, { title: trimmed })
+      setEditingTitle(false)
+    }
   }
 
   return (
@@ -207,14 +227,43 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
             </span>
           </div>
 
-          <a
-            href={job.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-zinc-900 hover:text-blue-600 leading-snug block truncate"
-          >
-            {job.title}
-          </a>
+          {editingTitle ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                value={titleInput}
+                onChange={e => setTitleInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSaveTitle()
+                  if (e.key === 'Escape') setEditingTitle(false)
+                }}
+                autoFocus
+                className="flex-1 text-sm font-semibold border border-zinc-300 rounded-lg px-2 py-1 outline-none focus:border-zinc-500"
+              />
+              <button onClick={handleSaveTitle} disabled={savingTitle} className="text-xs text-blue-500 hover:text-blue-700 px-1 disabled:opacity-50">
+                {savingTitle ? '...' : '저장'}
+              </button>
+              <button onClick={() => setEditingTitle(false)} className="text-xs text-zinc-400 hover:text-zinc-600 px-1">취소</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 group/title">
+              <a
+                href={job.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-zinc-900 hover:text-blue-600 leading-snug truncate"
+              >
+                {job.title}
+              </a>
+              <button
+                onClick={startEditTitle}
+                className="text-xs text-zinc-300 hover:text-zinc-600 transition-colors shrink-0 opacity-0 group-hover/title:opacity-100"
+                title="제목 수정"
+                aria-label="제목 수정"
+              >
+                ✏️
+              </button>
+            </div>
+          )}
           <p className="text-sm text-zinc-500 mt-0.5">
             {job.company}
             {job.location && !job.location.startsWith('(Location') && <> · {job.location}</>}
