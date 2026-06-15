@@ -1,10 +1,11 @@
-export type Platform = 'seek' | 'indeed' | 'linkedin' | 'glassdoor' | 'other'
+export type Platform = 'seek' | 'indeed' | 'linkedin' | 'glassdoor' | 'apple' | 'other'
 
 const PLATFORM_PATTERNS: { platform: Platform; pattern: RegExp }[] = [
   { platform: 'seek',      pattern: /seek\.com\.au/i },
   { platform: 'indeed',   pattern: /indeed\.com/i },
   { platform: 'linkedin',  pattern: /linkedin\.com\/jobs/i },
   { platform: 'glassdoor', pattern: /glassdoor\.(com|de|co\.uk|com\.au)/i },
+  { platform: 'apple',     pattern: /jobs\.apple\.com/i },
 ]
 
 export function detectPlatform(url: string): Platform {
@@ -19,5 +20,6 @@ export const PLATFORM_STYLE: Record<Platform, { label: string; className: string
   indeed:    { label: 'Indeed',    className: 'bg-orange-100 text-orange-700' },
   linkedin:  { label: 'LinkedIn',  className: 'bg-sky-100 text-sky-700' },
   glassdoor: { label: 'Glassdoor', className: 'bg-green-100 text-green-700' },
+  apple:     { label: 'Apple',     className: 'bg-zinc-800 text-white' },
   other:     { label: 'Other',     className: 'bg-zinc-100 text-zinc-500' },
 }
