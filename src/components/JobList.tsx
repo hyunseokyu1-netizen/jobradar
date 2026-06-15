@@ -16,7 +16,7 @@ import CoverLetterModal from './CoverLetterModal'
 import JdInputModal from './JdInputModal'
 import AppliedResumeModal from './AppliedResumeModal'
 import TailoredResumeModal from './TailoredResumeModal'
-import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt, updateJobTitle } from '@/app/actions'
+import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt, updateJobTitle, updateJobCompany } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
 export interface JobItem {
@@ -100,6 +100,9 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleInput, setTitleInput] = useState(job.title)
   const [savingTitle, setSavingTitle] = useState(false)
+  const [editingCompany, setEditingCompany] = useState(false)
+  const [companyInput, setCompanyInput] = useState(job.company)
+  const [savingCompany, setSavingCompany] = useState(false)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -152,6 +155,23 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
     if (!res.error) {
       onUpdate(job.id, { title: trimmed })
       setEditingTitle(false)
+    }
+  }
+
+  function startEditCompany() {
+    setCompanyInput(job.company)
+    setEditingCompany(true)
+  }
+
+  async function handleSaveCompany() {
+    const trimmed = companyInput.trim()
+    if (trimmed === job.company) { setEditingCompany(false); return }
+    setSavingCompany(true)
+    const res = await updateJobCompany(job.id, trimmed)
+    setSavingCompany(false)
+    if (!res.error) {
+      onUpdate(job.id, { company: trimmed })
+      setEditingCompany(false)
     }
   }
 
@@ -264,11 +284,41 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
               </button>
             </div>
           )}
-          <p className="text-sm text-zinc-500 mt-0.5">
-            {job.company}
-            {job.location && !job.location.startsWith('(Location') && <> · {job.location}</>}
-            {job.salary && <> · <span className="text-green-600">{job.salary}</span></>}
-          </p>
+          {editingCompany ? (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <input
+                value={companyInput}
+                onChange={e => setCompanyInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSaveCompany()
+                  if (e.key === 'Escape') setEditingCompany(false)
+                }}
+                autoFocus
+                placeholder="회사명"
+                className="flex-1 text-sm border border-zinc-300 rounded-lg px-2 py-1 outline-none focus:border-zinc-500"
+              />
+              <button onClick={handleSaveCompany} disabled={savingCompany} className="text-xs text-blue-500 hover:text-blue-700 px-1 disabled:opacity-50">
+                {savingCompany ? '...' : '저장'}
+              </button>
+              <button onClick={() => setEditingCompany(false)} className="text-xs text-zinc-400 hover:text-zinc-600 px-1">취소</button>
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500 mt-0.5 flex items-center gap-1.5 group/company">
+              <span>
+                {job.company || <span className="text-zinc-300">회사명 없음</span>}
+                {job.location && !job.location.startsWith('(Location') && <> · {job.location}</>}
+                {job.salary && <> · <span className="text-green-600">{job.salary}</span></>}
+              </span>
+              <button
+                onClick={startEditCompany}
+                className="text-xs text-zinc-300 hover:text-zinc-600 transition-colors shrink-0 opacity-0 group-hover/company:opacity-100"
+                title="회사명 수정"
+                aria-label="회사명 수정"
+              >
+                ✏️
+              </button>
+            </p>
+          )}
           {job.match_reason && (
             <p className="text-xs text-zinc-400 mt-1.5 line-clamp-2">{job.match_reason}</p>
           )}
