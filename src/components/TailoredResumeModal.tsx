@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { generateTailoredResume, getTailoredResume, saveTailoredResume, applyTailoredTextToDocx } from '@/app/actions'
+import {
+  generateTailoredResume, getTailoredResume, saveTailoredResume,
+  applyTailoredTextToDocx, translateTailoredResume, editTailoredResume,
+} from '@/app/actions'
 import { printPdfFromDocx } from '@/lib/download'
 
 interface Props {
@@ -11,7 +14,7 @@ interface Props {
   onClose: () => void
 }
 
-type ActionState = 'idle' | 'loading' | 'saving' | 'generating' | 'applyingDocx' | 'applyingPdf'
+type ActionState = 'idle' | 'loading' | 'saving' | 'generating' | 'applyingDocx' | 'applyingPdf' | 'translating' | 'editing'
 
 function downloadBase64Docx(base64: string, filename: string) {
   const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -29,6 +32,9 @@ function downloadBase64Docx(base64: string, filename: string) {
 export default function TailoredResumeModal({ jobId, jobTitle, company, onClose }: Props) {
   const [content, setContent] = useState('')
   const [savedContent, setSavedContent] = useState('')
+  const [translation, setTranslation] = useState('')
+  const [translationStale, setTranslationStale] = useState(false)
+  const [instruction, setInstruction] = useState('')
   const [state, setState] = useState<ActionState>('loading')
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
@@ -48,6 +54,11 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
     })
   }, [jobId])
 
+  function updateContent(next: string) {
+    setContent(next)
+    if (translation) setTranslationStale(true)
+  }
+
   async function handleGenerate() {
     setState('generating')
     setError('')
@@ -57,6 +68,35 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
     else if (res.content) {
       setContent(res.content)
       setSavedContent(res.content)
+      setTranslation('')
+      setTranslationStale(false)
+    }
+  }
+
+  async function handleTranslate() {
+    setState('translating')
+    setError('')
+    const res = await translateTailoredResume(content)
+    setState('idle')
+    if (res.error) setError(res.error)
+    else if (res.translation) {
+      setTranslation(res.translation)
+      setTranslationStale(false)
+    }
+  }
+
+  async function handleEdit() {
+    if (!instruction.trim()) return
+    setState('editing')
+    setError('')
+    const res = await editTailoredResume(jobId, content, instruction)
+    setState('idle')
+    if (res.error) setError(res.error)
+    else if (res.content) {
+      setContent(res.content)
+      setSavedContent(res.content)
+      setInstruction('')
+      if (translation) setTranslationStale(true)
     }
   }
 
@@ -96,11 +136,11 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const showTextarea = content && state !== 'generating' && state !== 'applyingDocx' && state !== 'applyingPdf'
+  const busyOverlay = state === 'generating' || state === 'editing'
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl">
+      <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-xl">
         {/* 헤더 */}
         <div className="flex items-start justify-between p-6 border-b border-zinc-100">
           <div>
@@ -116,7 +156,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
             <div className="text-center py-8 text-sm text-zinc-400">불러오는 중...</div>
           )}
 
-          {state !== 'loading' && state !== 'generating' && !content && (
+          {state !== 'loading' && !content && !busyOverlay && (
             <div className="text-center py-12">
               <p className="text-sm text-zinc-400 mb-6">
                 프로필의 원본 이력서를 이 공고의 JD에 맞춰 재구성한 이력서를 생성합니다.
@@ -135,40 +175,94 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
           {state === 'generating' && (
             <div className="text-center py-8 text-sm text-zinc-400">JD를 분석해 이력서 작성 중... (최대 1분)</div>
           )}
-          {state === 'applyingDocx' && (
-            <div className="text-center py-8 text-sm text-zinc-400">원본 양식에 내용 적용 중...</div>
-          )}
-          {state === 'applyingPdf' && (
-            <div className="text-center py-8 text-sm text-zinc-400">PDF 준비 중...</div>
+          {state === 'editing' && (
+            <div className="text-center py-8 text-sm text-zinc-400">요청하신 내용으로 수정 중... (최대 1분)</div>
           )}
 
-          {showTextarea && (
-            <textarea
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              className="w-full text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 outline-none focus:border-zinc-400 resize-none font-mono"
-              rows={20}
-            />
+          {content && !busyOverlay && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 좌: 영어 (편집 가능) */}
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-zinc-500">English (편집 가능)</span>
+                </div>
+                <textarea
+                  value={content}
+                  onChange={e => updateContent(e.target.value)}
+                  className="w-full text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 outline-none focus:border-zinc-400 resize-none font-mono"
+                  rows={22}
+                />
+              </div>
+
+              {/* 우: 한글 번역 (참고용) */}
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-zinc-500">한글 번역 (참고용)</span>
+                  {content && (
+                    <button
+                      onClick={handleTranslate}
+                      disabled={isLoading}
+                      className="text-xs text-blue-500 hover:text-blue-700 disabled:opacity-50"
+                    >
+                      {state === 'translating' ? '번역 중...' : translation ? '↺ 다시 번역' : '🇰🇷 한글로 번역'}
+                    </button>
+                  )}
+                </div>
+                <div className="w-full flex-1 text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 bg-zinc-50 overflow-y-auto whitespace-pre-wrap text-zinc-700" style={{ minHeight: '34rem' }}>
+                  {translation ? (
+                    <>
+                      {translationStale && (
+                        <p className="text-[11px] text-amber-600 mb-2">⚠ 영어 내용이 바뀌었습니다. 다시 번역하세요.</p>
+                      )}
+                      {translation}
+                    </>
+                  ) : (
+                    <span className="text-zinc-400">
+                      {state === 'translating' ? '번역 중...' : '위 “한글로 번역” 버튼을 누르면 참고용 번역이 표시됩니다.'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
 
-          {error && content && (
+          {error && content && !busyOverlay && (
             <p className="text-xs text-red-500 mt-2">{error}</p>
           )}
         </div>
 
         {/* 푸터 */}
-        {content && state !== 'generating' && state !== 'loading' && (
+        {content && state !== 'loading' && !busyOverlay && (
           <div className="p-5 border-t border-zinc-100 space-y-3">
-            {/* 재생성 + 저장 */}
+            {/* 수정 채팅 */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleGenerate}
+                disabled={isLoading}
+                className="text-xs text-zinc-500 hover:text-zinc-800 disabled:opacity-50 border border-zinc-200 px-3 py-2 rounded-lg hover:bg-zinc-50 transition-colors whitespace-nowrap"
+              >
+                ↺ 재생성
+              </button>
+              <input
+                value={instruction}
+                onChange={e => setInstruction(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleEdit() }}
+                disabled={isLoading}
+                placeholder="수정 요청 (예: WORK EXPERIENCE를 더 강조하고, SUMMARY를 2줄로 줄여줘)"
+                className="flex-1 text-sm border border-zinc-200 rounded-lg px-3 py-2 outline-none focus:border-zinc-400 transition-colors disabled:opacity-50"
+              />
+              <button
+                onClick={handleEdit}
+                disabled={isLoading || !instruction.trim()}
+                className="text-sm bg-zinc-900 text-white px-4 py-2 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors whitespace-nowrap"
+              >
+                ✦ 수정
+              </button>
+            </div>
+
+            {/* 저장 + 다운로드 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handleGenerate}
-                  disabled={isLoading}
-                  className="text-xs text-zinc-500 hover:text-zinc-800 disabled:opacity-50 border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 transition-colors"
-                >
-                  ↺ 재생성
-                </button>
                 {isDirty ? (
                   <button
                     onClick={handleSave}
@@ -180,32 +274,30 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
                 ) : (
                   <span className="text-xs text-zinc-400">{saved ? '✓ 저장됨' : '저장됨'}</span>
                 )}
+                <button
+                  onClick={handleCopy}
+                  disabled={isLoading}
+                  className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
+                >
+                  {copied ? '✓ 복사됨' : '📋 복사'}
+                </button>
               </div>
-              <button
-                onClick={handleCopy}
-                disabled={isLoading}
-                className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
-              >
-                {copied ? '✓ 복사됨' : '📋 복사'}
-              </button>
-            </div>
-
-            {/* 다운로드 */}
-            <div className="flex items-center justify-end gap-2">
-              <button
-                onClick={handleDownloadDocx}
-                disabled={isLoading}
-                className="text-xs border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 disabled:opacity-50 transition-colors"
-              >
-                {state === 'applyingDocx' ? '...' : '원본 양식 DOCX'}
-              </button>
-              <button
-                onClick={handleDownloadPdf}
-                disabled={isLoading}
-                className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
-              >
-                {state === 'applyingPdf' ? '...' : 'PDF'}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadDocx}
+                  disabled={isLoading}
+                  className="text-xs border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 disabled:opacity-50 transition-colors"
+                >
+                  {state === 'applyingDocx' ? '...' : '원본 양식 DOCX'}
+                </button>
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={isLoading}
+                  className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
+                >
+                  {state === 'applyingPdf' ? '...' : 'PDF'}
+                </button>
+              </div>
             </div>
           </div>
         )}

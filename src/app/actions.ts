@@ -228,6 +228,92 @@ ${profile.resume_text.slice(0, 6000)}
   return { content }
 }
 
+// 맞춤 이력서를 한국어로 번역 (참고용, 저장하지 않음)
+export async function translateTailoredResume(content: string): Promise<{ translation?: string; error?: string }> {
+  if (!content.trim()) return { error: '번역할 내용이 없습니다.' }
+
+  const { anthropic } = await import('@/lib/claude')
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 3000,
+    messages: [{
+      role: 'user',
+      content: `아래 영문 이력서를 자연스러운 한국어로 번역해주세요. 섹션 제목과 줄 구성은 원문 구조를 그대로 유지하고, 번역문만 출력하세요. 다른 설명은 쓰지 마세요.\n\n${content}`,
+    }],
+  })
+
+  const translation = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+  return { translation }
+}
+
+// 지시사항에 따라 맞춤 이력서 전체를 다시 작성
+export async function editTailoredResume(jobId: string, currentContent: string, instruction: string): Promise<{ content?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+  if (!instruction.trim()) return { error: '수정 요청을 입력해주세요.' }
+  if (!currentContent.trim()) return { error: '수정할 이력서가 없습니다.' }
+
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('title, company, location, description')
+    .eq('id', jobId)
+    .single()
+
+  if (!job) return { error: 'Job not found' }
+
+  const { anthropic } = await import('@/lib/claude')
+  const message = await anthropic.messages.create({
+    model: 'claude-opus-4-8',
+    max_tokens: 4000,
+    thinking: { type: 'adaptive' },
+    messages: [{
+      role: 'user',
+      content: `당신은 전문 이력서 컨설턴트입니다. 아래 맞춤 이력서를 사용자의 수정 요청에 따라 다시 작성해주세요.
+
+## 지원 포지션
+- 직책: ${job.title}
+- 회사: ${job.company}
+- 위치: ${job.location ?? ''}
+
+## 채용공고 (JD)
+${(job.description ?? `${job.title} at ${job.company}`).slice(0, 2000)}
+
+## 원본 이력서 (사실 출처)
+${profile.resume_text?.slice(0, 4000) ?? ''}
+
+## 현재 맞춤 이력서
+${currentContent}
+
+## 사용자 수정 요청
+${instruction}
+
+## 작성 요구사항
+- 수정 요청을 반영하되, 요청과 무관한 부분은 현재 이력서 내용을 최대한 유지할 것
+- 원본 이력서에 있는 사실만 사용할 것. 경력, 스킬, 수치, 회사명을 절대 지어내거나 과장하지 말 것
+- ATS 친화적인 평문 텍스트로 작성 (표나 마크다운 기호 없이, 섹션 제목은 대문자)
+- 영어로 작성하고, 수정된 이력서 전문만 출력할 것. 다른 설명은 쓰지 말 것`,
+    }],
+  })
+
+  const textBlock = message.content.find(b => b.type === 'text')
+  const content = textBlock?.type === 'text' ? textBlock.text.trim() : ''
+  if (!content) return { error: '이력서 수정에 실패했습니다. 다시 시도해주세요.' }
+
+  const { error } = await supabaseAdmin.from('tailored_resumes').upsert({
+    user_id: profile.id,
+    job_id: jobId,
+    content,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,job_id' })
+
+  if (error) return { error: error.message }
+
+  return { content }
+}
+
 export async function getTailoredResume(jobId: string): Promise<{ content?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return {}
