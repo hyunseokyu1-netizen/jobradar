@@ -3,6 +3,7 @@ import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import RunMatchButton from '@/components/RunMatchButton'
 import AddJobForm from '@/components/AddJobForm'
 import JobList from '@/components/JobList'
+import Landing from '@/components/Landing'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,8 +11,11 @@ import type { JobItem } from '@/components/JobList'
 
 export default async function JobsPage() {
   const email = await getAuthUserEmail()
-  const profile = email ? await getOrCreateProfile(email) : null
 
+  // 비로그인 사용자에게는 소개 페이지 노출
+  if (!email) return <Landing />
+
+  const profile = await getOrCreateProfile(email)
   if (!profile) return <p className="text-zinc-400 text-center py-20">로그인이 필요합니다.</p>
 
   // 1단계: 유저의 matches 조회

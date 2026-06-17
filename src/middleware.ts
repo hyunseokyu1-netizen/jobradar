@@ -32,6 +32,11 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
+  // 루트(/)는 공개 — 비로그인 시 소개 페이지, 로그인 시 대시보드 (페이지에서 분기)
+  if (pathname === '/') {
+    return supabaseResponse
+  }
+
   // 나머지 페이지는 로그인 필요
   if (!user) {
     return NextResponse.redirect(new URL('/login', request.url))
