@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   generateTailoredResume, getTailoredResume, saveTailoredResume,
   applyTailoredTextToDocx, translateTailoredResume, editTailoredResume,
@@ -43,6 +43,20 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
   const filename = `resume_${company.replace(/\s+/g, '_')}_${jobTitle.replace(/\s+/g, '_')}`.slice(0, 60)
   const isDirty = content !== savedContent
   const isLoading = state !== 'idle'
+
+  // 영어/한글 패널 스크롤 동기화 (비율 기반)
+  const leftRef = useRef<HTMLTextAreaElement>(null)
+  const rightRef = useRef<HTMLDivElement>(null)
+  const syncing = useRef(false)
+
+  function syncScroll(from: HTMLElement | null, to: HTMLElement | null) {
+    if (!from || !to || syncing.current) return
+    syncing.current = true
+    const denom = from.scrollHeight - from.clientHeight
+    const ratio = denom > 0 ? from.scrollTop / denom : 0
+    to.scrollTop = ratio * (to.scrollHeight - to.clientHeight)
+    requestAnimationFrame(() => { syncing.current = false })
+  }
 
   useEffect(() => {
     getTailoredResume(jobId).then(res => {
@@ -183,20 +197,21 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* 좌: 영어 (편집 가능) */}
               <div className="flex flex-col">
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-1.5 h-5">
                   <span className="text-xs font-semibold text-zinc-500">English (편집 가능)</span>
                 </div>
                 <textarea
+                  ref={leftRef}
                   value={content}
                   onChange={e => updateContent(e.target.value)}
-                  className="w-full text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 outline-none focus:border-zinc-400 resize-none font-mono"
-                  rows={22}
+                  onScroll={() => syncScroll(leftRef.current, rightRef.current)}
+                  className="w-full h-[58vh] text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 outline-none focus:border-zinc-400 resize-none font-mono"
                 />
               </div>
 
               {/* 우: 한글 번역 (참고용) */}
               <div className="flex flex-col">
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-1.5 h-5">
                   <span className="text-xs font-semibold text-zinc-500">한글 번역 (참고용)</span>
                   {content && (
                     <button
@@ -208,7 +223,11 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
                     </button>
                   )}
                 </div>
-                <div className="w-full flex-1 text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 bg-zinc-50 overflow-y-auto whitespace-pre-wrap text-zinc-700" style={{ minHeight: '34rem' }}>
+                <div
+                  ref={rightRef}
+                  onScroll={() => syncScroll(rightRef.current, leftRef.current)}
+                  className="w-full h-[58vh] text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 bg-zinc-50 overflow-y-auto whitespace-pre-wrap text-zinc-700"
+                >
                   {translation ? (
                     <>
                       {translationStale && (
