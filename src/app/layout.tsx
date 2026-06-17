@@ -3,6 +3,8 @@ import { Geist } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { getAuthUser, signOut } from "./auth-actions";
+import { getOrCreateProfile } from "@/lib/auth-helpers";
+import OnboardingBanner from "@/components/OnboardingBanner";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
@@ -13,6 +15,8 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await getAuthUser()
+  const profile = user?.email ? await getOrCreateProfile(user.email) : null
+  const showOnboardingBanner = !!user && !profile?.onboarding_completed
 
   return (
     <html lang="ko" className={`${geist.variable} h-full`}>
@@ -42,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             )}
           </nav>
         </header>
+        {showOnboardingBanner && <OnboardingBanner />}
         <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
           {children}
         </main>
