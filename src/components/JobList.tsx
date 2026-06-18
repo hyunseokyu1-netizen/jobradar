@@ -106,6 +106,10 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   const [editingLocation, setEditingLocation] = useState(false)
   const [locationInput, setLocationInput] = useState(job.location)
   const [savingLocation, setSavingLocation] = useState(false)
+  const [reasonExpanded, setReasonExpanded] = useState(false)
+
+  // JD 입력이 필요한 카드(설명 부실) 여부 — 입력 완료된 카드는 음영 처리
+  const needsJdInput = job.source === 'glassdoor' || !job.description || job.description.length < 200
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -199,7 +203,9 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
     <li
       ref={setNodeRef}
       style={style}
-      className={`bg-white border rounded-xl p-5 transition-colors ${
+      className={`border rounded-xl p-5 transition-colors ${
+        needsJdInput ? 'bg-white' : 'bg-zinc-100/70'
+      } ${
         job.match_score !== null ? 'border-zinc-300' : 'border-zinc-200'
       } ${isDragging ? 'shadow-lg' : ''}`}
     >
@@ -381,7 +387,13 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
             </p>
           )}
           {job.match_reason && (
-            <p className="text-xs text-zinc-400 mt-1.5 line-clamp-2">{job.match_reason}</p>
+            <p
+              onClick={() => setReasonExpanded(p => !p)}
+              title={reasonExpanded ? '접기' : '더보기'}
+              className={`text-xs text-zinc-400 mt-1.5 cursor-pointer hover:text-zinc-500 transition-colors ${reasonExpanded ? '' : 'line-clamp-2'}`}
+            >
+              {job.match_reason}
+            </p>
           )}
           {job.title === '스크래핑 실패' && job.description && (
             <p className="text-xs text-red-400 mt-1.5 line-clamp-1">오류: {job.description}</p>
@@ -389,7 +401,7 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
 
           {/* 액션 버튼 — 컨텐츠 아래 (모바일/데스크톱 공통) */}
           <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-            {(job.source === 'glassdoor' || !job.description || job.description.length < 200) && (
+            {needsJdInput && (
               <button
                 onClick={() => setShowJdInput(true)}
                 className="text-xs border border-orange-200 text-orange-600 rounded-lg px-3 py-1.5 hover:bg-orange-50 transition-colors"
