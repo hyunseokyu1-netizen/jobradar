@@ -64,6 +64,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
         setContent(res.content)
         setSavedContent(res.content)
       }
+      if (res.translation) setTranslation(res.translation)
       setState('idle')
     })
   }, [jobId])
@@ -90,7 +91,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
   async function handleTranslate() {
     setState('translating')
     setError('')
-    const res = await translateTailoredResume(content)
+    const res = await translateTailoredResume(jobId, content)
     setState('idle')
     if (res.error) setError(res.error)
     else if (res.translation) {
