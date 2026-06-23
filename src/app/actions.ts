@@ -220,6 +220,7 @@ ${profile.resume_text.slice(0, 6000)}
     user_id: profile.id,
     job_id: jobId,
     content,
+    translation: null, // 영문이 새로 생성되었으므로 캐싱된 번역 무효화
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,job_id' })
 
@@ -228,9 +229,15 @@ ${profile.resume_text.slice(0, 6000)}
   return { content }
 }
 
-// 맞춤 이력서를 한국어로 번역 (참고용, 저장하지 않음)
-export async function translateTailoredResume(content: string): Promise<{ translation?: string; error?: string }> {
+// 맞춤 이력서를 한국어로 번역 (참고용) — 결과를 DB에 캐싱
+export async function translateTailoredResume(jobId: string, content: string): Promise<{ translation?: string; error?: string }> {
   if (!content.trim()) return { error: '번역할 내용이 없습니다.' }
+
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
 
   const { anthropic } = await import('@/lib/claude')
   const message = await anthropic.messages.create({
@@ -243,6 +250,17 @@ export async function translateTailoredResume(content: string): Promise<{ transl
   })
 
   const translation = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+  if (!translation) return { error: '번역에 실패했습니다. 다시 시도해주세요.' }
+
+  // 현재 영문(content)과 함께 번역을 저장해 재방문 시 재번역 없이 표시
+  const { error } = await supabaseAdmin
+    .from('tailored_resumes')
+    .upsert(
+      { user_id: profile.id, job_id: jobId, content, translation, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,job_id' }
+    )
+  if (error) return { error: error.message }
+
   return { translation }
 }
 
@@ -306,6 +324,7 @@ ${instruction}
     user_id: profile.id,
     job_id: jobId,
     content,
+    translation: null, // 영문이 수정되었으므로 캐싱된 번역 무효화
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,job_id' })
 
@@ -314,7 +333,7 @@ ${instruction}
   return { content }
 }
 
-export async function getTailoredResume(jobId: string): Promise<{ content?: string }> {
+export async function getTailoredResume(jobId: string): Promise<{ content?: string; translation?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return {}
 
@@ -323,11 +342,14 @@ export async function getTailoredResume(jobId: string): Promise<{ content?: stri
 
   const { data } = await supabaseAdmin
     .from('tailored_resumes')
-    .select('content')
+    .select('content, translation')
     .eq('job_id', jobId)
     .eq('user_id', profile.id)
     .single()
-  return { content: data?.content ?? undefined }
+  return {
+    content: data?.content ?? undefined,
+    translation: data?.translation ?? undefined,
+  }
 }
 
 export async function saveTailoredResume(jobId: string, content: string): Promise<{ error?: string }> {
@@ -340,7 +362,8 @@ export async function saveTailoredResume(jobId: string, content: string): Promis
   const { error } = await supabaseAdmin
     .from('tailored_resumes')
     .upsert(
-      { user_id: profile.id, job_id: jobId, content, updated_at: new Date().toISOString() },
+      // 영문을 직접 편집해 저장한 경우이므로 캐싱된 번역 무효화
+      { user_id: profile.id, job_id: jobId, content, translation: null, updated_at: new Date().toISOString() },
       { onConflict: 'user_id,job_id' }
     )
   if (error) return { error: error.message }
