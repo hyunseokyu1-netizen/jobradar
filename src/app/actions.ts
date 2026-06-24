@@ -677,6 +677,29 @@ async function updateJobFields(
   return {}
 }
 
+// 사용자가 드래그로 정한 목록 순서를 저장 (유저별 matches.position)
+export async function reorderJobs(orderedJobIds: string[]): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const results = await Promise.all(
+    orderedJobIds.map((jobId, index) =>
+      supabaseAdmin
+        .from('matches')
+        .update({ position: index })
+        .eq('user_id', profile.id)
+        .eq('job_id', jobId)
+    )
+  )
+
+  const failed = results.find(r => r.error)
+  if (failed?.error) return { error: failed.error.message }
+  return {}
+}
+
 export async function updateJobMemo(jobId: string, memo: string): Promise<{ error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
