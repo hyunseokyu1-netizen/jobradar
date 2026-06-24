@@ -5,6 +5,10 @@ import SourceList, { type SourceItem } from '@/components/discover/SourceList'
 import DiscoveredJobList, { type DiscoveredJobItem } from '@/components/discover/DiscoveredJobList'
 
 export const dynamic = 'force-dynamic'
+// 수집 서버 액션(scrapeSourceAction)이 이 페이지 라우트에서 실행된다.
+// 헤드리스 브라우저 폴백(chromium 콜드스타트 + Cloudflare 챌린지) + Haiku 채점이
+// 기본 타임아웃을 넘길 수 있어, /api/scrape와 동일하게 상한을 넉넉히 둔다.
+export const maxDuration = 300
 
 export default async function DiscoverPage() {
   const email = await getAuthUserEmail()
