@@ -21,18 +21,20 @@ const RETRYABLE = new Set([403, 429, 500, 502, 503, 504])
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 interface FetchHtmlOptions {
-  label?: string          // 에러 메시지 접두사 (예: 'Seek')
-  acceptLanguage?: string // 사이트별 언어 헤더 오버라이드
-  retries?: number        // 추가 재시도 횟수 (기본 2 = 최대 3회 시도)
+  label?: string           // 에러 메시지 접두사 (예: 'Seek')
+  acceptLanguage?: string  // 사이트별 언어 헤더 오버라이드
+  retries?: number         // 추가 재시도 횟수 (기본 2 = 최대 3회 시도)
+  browserFallback?: boolean // 봇 차단(403/429)으로 모두 실패 시 헤드리스 브라우저로 재시도
 }
 
 export async function fetchHtml(url: string, opts: FetchHtmlOptions = {}): Promise<string> {
-  const { label = 'Fetch', acceptLanguage, retries = 2 } = opts
+  const { label = 'Fetch', acceptLanguage, retries = 2, browserFallback = false } = opts
   const headers = acceptLanguage
     ? { ...BROWSER_HEADERS, 'Accept-Language': acceptLanguage }
     : BROWSER_HEADERS
 
   let lastError = `${label} failed`
+  let blocked = false // 마지막 실패가 봇 차단(403/429 등)이었는지
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     if (attempt > 0) await sleep(400 * 2 ** (attempt - 1)) // 400ms, 800ms ...
@@ -48,8 +50,19 @@ export async function fetchHtml(url: string, opts: FetchHtmlOptions = {}): Promi
     if (res.ok) return res.text()
 
     lastError = `Fetch failed: ${res.status}`
+    blocked = RETRYABLE.has(res.status)
     // 영구적 오류(404 등)는 즉시 실패, 일시적 차단만 재시도
-    if (!RETRYABLE.has(res.status)) break
+    if (!blocked) break
+  }
+
+  // 봇 차단으로 모두 실패했고 폴백이 켜져 있으면 실제 브라우저로 재시도
+  if (browserFallback && blocked) {
+    try {
+      const { fetchHtmlWithBrowser } = await import('./fetch-html-browser')
+      return await fetchHtmlWithBrowser(url)
+    } catch (e) {
+      lastError = `${label} browser fallback failed: ${String(e)}`
+    }
   }
 
   throw new Error(lastError)

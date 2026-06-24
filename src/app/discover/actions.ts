@@ -76,13 +76,21 @@ export async function scrapeSourceAction(sourceId: string): Promise<{
   try {
     postings = await scrapeJobSource(source.url, source.source_type)
   } catch (e) {
-    return { error: `수집 실패: ${String(e)}` }
+    const message = `수집 실패: ${String(e)}`
+    // 실패 상태를 영구 기록 → UI에서 "수집 불가" 표시 (last_scraped_at은 유지)
+    await supabaseAdmin
+      .from('job_sources')
+      .update({ last_scrape_error: message })
+      .eq('id', source.id)
+      .eq('user_id', profile.id)
+    revalidatePath('/discover')
+    return { error: message }
   }
 
   if (postings.length === 0) {
     await supabaseAdmin
       .from('job_sources')
-      .update({ last_scraped_at: new Date().toISOString() })
+      .update({ last_scraped_at: new Date().toISOString(), last_scrape_error: null })
       .eq('id', source.id)
       .eq('user_id', profile.id)
     revalidatePath('/discover')
@@ -146,7 +154,7 @@ export async function scrapeSourceAction(sourceId: string): Promise<{
 
   await supabaseAdmin
     .from('job_sources')
-    .update({ last_scraped_at: new Date().toISOString() })
+    .update({ last_scraped_at: new Date().toISOString(), last_scrape_error: null })
     .eq('id', source.id)
     .eq('user_id', profile.id)
 
