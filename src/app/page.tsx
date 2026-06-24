@@ -21,7 +21,7 @@ export default async function JobsPage() {
   // 1단계: 유저의 matches 조회
   const { data: myMatches, error: matchError } = await supabaseAdmin
     .from('matches')
-    .select('job_id, score, reason, status, memo, applied_resume_text, applied_resume_filename, applied_at')
+    .select('job_id, score, reason, status, memo, applied_resume_text, applied_resume_filename, applied_at, position')
     .eq('user_id', profile.id)
 
   if (matchError) return <p className="text-red-500">DB 오류: {matchError.message}</p>
@@ -62,11 +62,16 @@ export default async function JobsPage() {
       applied_resume_text: m?.applied_resume_text ?? null,
       applied_resume_filename: m?.applied_resume_filename ?? null,
       applied_at: m?.applied_at ?? null,
+      position: m?.position ?? null,
     }
   })
 
-  // 매칭된 것 위로, 같은 그룹 내에서는 점수 높은 순
+  // 배열 기본 순서는 사용자 정렬(position) 우선, 없으면 매칭된 것 위로 + 점수 높은 순.
+  // (직접 정렬 모드에서 이 배열 순서를 그대로 사용)
   const sorted = [...jobList].sort((a, b) => {
+    const pa = a.position ?? Infinity
+    const pb = b.position ?? Infinity
+    if (pa !== pb) return pa - pb
     if (a.match_score !== null && b.match_score === null) return -1
     if (a.match_score === null && b.match_score !== null) return 1
     return (b.match_score ?? 0) - (a.match_score ?? 0)

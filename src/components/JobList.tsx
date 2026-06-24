@@ -16,7 +16,7 @@ import CoverLetterModal from './CoverLetterModal'
 import JdInputModal from './JdInputModal'
 import AppliedResumeModal from './AppliedResumeModal'
 import TailoredResumeModal from './TailoredResumeModal'
-import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt, updateJobTitle, updateJobCompany, updateJobLocation } from '@/app/actions'
+import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt, updateJobTitle, updateJobCompany, updateJobLocation, reorderJobs } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
 export interface JobItem {
@@ -37,6 +37,7 @@ export interface JobItem {
   applied_resume_text: string | null
   applied_resume_filename: string | null
   applied_at: string | null
+  position: number | null
 }
 
 function timeAgo(dateStr: string): string {
@@ -82,8 +83,8 @@ function ScoreBadge({ score, jobId, onMatched }: { score: number | null; jobId: 
   )
 }
 
-function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: (id: string) => void; onUpdate: (id: string, patch: Partial<JobItem>) => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: job.id })
+function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem; draggable: boolean; onDelete: (id: string) => void; onUpdate: (id: string, patch: Partial<JobItem>) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: job.id, disabled: !draggable })
   const [deleting, setDeleting] = useState(false)
   const [showCoverLetter, setShowCoverLetter] = useState(false)
   const [showJdInput, setShowJdInput] = useState(false)
@@ -210,11 +211,17 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
       } ${isDragging ? 'shadow-lg' : ''}`}
     >
       <div className="flex items-start gap-3">
-        {/* 드래그 핸들 */}
+        {/* 드래그 핸들 — 직접 정렬 모드에서만 활성화 */}
         <button
           {...attributes}
           {...listeners}
-          className="mt-1 shrink-0 text-zinc-300 hover:text-zinc-500 cursor-grab active:cursor-grabbing"
+          disabled={!draggable}
+          title={draggable ? '드래그해서 순서 변경' : '‘직접 정렬’에서 순서를 바꿀 수 있어요'}
+          className={`mt-1 shrink-0 ${
+            draggable
+              ? 'text-zinc-400 hover:text-zinc-600 cursor-grab active:cursor-grabbing'
+              : 'text-zinc-200 cursor-not-allowed'
+          }`}
           aria-label="드래그"
         >
           ⠿
@@ -535,7 +542,7 @@ function SortableJobCard({ job, onDelete, onUpdate }: { job: JobItem; onDelete: 
   )
 }
 
-type SortMode = 'score' | 'recent'
+type SortMode = 'score' | 'recent' | 'manual'
 
 export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
   const [jobs, setJobs] = useState(initialJobs)
@@ -549,13 +556,17 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
-    if (over && active.id !== over.id) {
-      setJobs(prev => {
-        const oldIndex = prev.findIndex(j => j.id === active.id)
-        const newIndex = prev.findIndex(j => j.id === over.id)
-        return arrayMove(prev, oldIndex, newIndex)
-      })
-    }
+    if (!over || active.id === over.id) return
+
+    const oldIndex = jobs.findIndex(j => j.id === active.id)
+    const newIndex = jobs.findIndex(j => j.id === over.id)
+    if (oldIndex < 0 || newIndex < 0) return
+
+    const next = arrayMove(jobs, oldIndex, newIndex)
+    setJobs(next)
+    setSortMode('manual')
+    // 새 순서를 DB에 저장 (유저별 position)
+    reorderJobs(next.map(j => j.id))
   }
 
   function handleDelete(id: string) {
@@ -574,14 +585,17 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
   }, {})
 
   const filtered = filter === 'all' ? jobs : jobs.filter(j => j.match_status === filter)
-  // 최신순은 등록(scraped_at) 기준, 점수순은 매칭됨 우선 + 점수 내림차순
-  const filteredJobs = sortMode === 'recent'
-    ? [...filtered].sort((a, b) => new Date(b.scraped_at).getTime() - new Date(a.scraped_at).getTime())
-    : [...filtered].sort((a, b) => {
-        if (a.match_score !== null && b.match_score === null) return -1
-        if (a.match_score === null && b.match_score !== null) return 1
-        return (b.match_score ?? 0) - (a.match_score ?? 0)
-      })
+  // 직접 정렬은 jobs 배열 순서 그대로, 최신순은 등록(scraped_at) 기준, 점수순은 매칭됨 우선 + 점수 내림차순
+  const filteredJobs =
+    sortMode === 'manual'
+      ? filtered
+      : sortMode === 'recent'
+      ? [...filtered].sort((a, b) => new Date(b.scraped_at).getTime() - new Date(a.scraped_at).getTime())
+      : [...filtered].sort((a, b) => {
+          if (a.match_score !== null && b.match_score === null) return -1
+          if (a.match_score === null && b.match_score !== null) return 1
+          return (b.match_score ?? 0) - (a.match_score ?? 0)
+        })
 
   return (
     <div>
@@ -626,6 +640,15 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
           >
             최신순
           </button>
+          <button
+            onClick={() => setSortMode('manual')}
+            title="드래그해서 원하는 순서로 정렬"
+            className={`px-2 py-1 rounded-full border transition-colors ${
+              sortMode === 'manual' ? 'bg-zinc-900 text-white border-zinc-900' : 'text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+            }`}
+          >
+            직접 정렬
+          </button>
         </div>
       </div>
 
@@ -636,7 +659,7 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
           <SortableContext items={filteredJobs.map(j => j.id)} strategy={verticalListSortingStrategy}>
             <ul className="space-y-3">
               {filteredJobs.map(job => (
-                <SortableJobCard key={job.id} job={job} onDelete={handleDelete} onUpdate={handleUpdate} />
+                <SortableJobCard key={job.id} job={job} draggable={sortMode === 'manual'} onDelete={handleDelete} onUpdate={handleUpdate} />
               ))}
             </ul>
           </SortableContext>
