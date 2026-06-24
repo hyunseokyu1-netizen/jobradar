@@ -20,6 +20,22 @@ const RETRYABLE = new Set([403, 429, 500, 502, 503, 504])
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
+// Cloudflare 등 봇 매니지먼트의 차단/챌린지 인터스티셜 판별.
+// 이런 페이지는 HTTP 200으로 와도 본문에 공고가 없으므로, 정상 응답과 구분해
+// "수집 불가"로 처리한다. 데이터센터 IP는 stealth 브라우저로도 뚫지 못한다.
+export function isBotBlockPage(html: string): boolean {
+  const head = html.slice(0, 6000).toLowerCase()
+  const title = head.match(/<title[^>]*>([\s\S]*?)<\/title>/)?.[1] ?? ''
+  // 차단 인터스티셜 제목 (정상 통과 페이지엔 안 나타남)
+  if (/attention required|just a moment|access denied/.test(title)) return true
+  // 인터스티셜 본문 문구 — challenge-platform 같은 토큰은 정상 페이지에도 있어 제외
+  return (
+    /cf-browser-verification/.test(head) ||
+    /checking (if the site connection is secure|your browser before accessing)/.test(head) ||
+    /enable javascript and cookies to continue/.test(head)
+  )
+}
+
 interface FetchHtmlOptions {
   label?: string           // 에러 메시지 접두사 (예: 'Seek')
   acceptLanguage?: string  // 사이트별 언어 헤더 오버라이드
@@ -47,7 +63,16 @@ export async function fetchHtml(url: string, opts: FetchHtmlOptions = {}): Promi
       continue // 네트워크 오류 → 재시도
     }
 
-    if (res.ok) return res.text()
+    if (res.ok) {
+      const body = await res.text()
+      // 200이어도 Cloudflare 챌린지면 차단으로 간주 → 브라우저 폴백 시도
+      if (browserFallback && isBotBlockPage(body)) {
+        blocked = true
+        lastError = `${label} blocked: bot challenge`
+        break
+      }
+      return body
+    }
 
     lastError = `Fetch failed: ${res.status}`
     blocked = RETRYABLE.has(res.status)
@@ -55,14 +80,20 @@ export async function fetchHtml(url: string, opts: FetchHtmlOptions = {}): Promi
     if (!blocked) break
   }
 
-  // 봇 차단으로 모두 실패했고 폴백이 켜져 있으면 실제 브라우저로 재시도
+  // 봇 차단으로 실패했고 폴백이 켜져 있으면 실제 브라우저로 재시도
   if (browserFallback && blocked) {
+    let html: string
     try {
       const { fetchHtmlWithBrowser } = await import('./fetch-html-browser')
-      return await fetchHtmlWithBrowser(url)
+      html = await fetchHtmlWithBrowser(url)
     } catch (e) {
-      lastError = `${label} browser fallback failed: ${String(e)}`
+      throw new Error(`${label} browser fallback failed: ${String(e)}`)
     }
+    // 브라우저로도 차단 페이지면(데이터센터 IP 평판 문제) "수집 불가"로 정직하게 실패
+    if (isBotBlockPage(html)) {
+      throw new Error(`${label}: 봇 차단(Cloudflare 등)으로 공고를 가져올 수 없는 사이트입니다.`)
+    }
+    return html
   }
 
   throw new Error(lastError)
