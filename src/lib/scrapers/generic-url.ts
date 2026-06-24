@@ -1,17 +1,9 @@
 import * as cheerio from 'cheerio'
 import type { ScrapedJob } from './seek-url'
+import { fetchHtml } from './fetch-html'
 
 export async function scrapeGenericUrl(url: string): Promise<ScrapedJob> {
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
-
-  const html = await res.text()
+  const html = await fetchHtml(url)
   const $ = cheerio.load(html)
 
   // JSON-LD JobPosting
