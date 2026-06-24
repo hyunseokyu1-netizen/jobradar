@@ -10,6 +10,7 @@ export interface SourceItem {
   url: string
   source_type: string
   last_scraped_at: string | null
+  last_scrape_error: string | null
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -81,7 +82,13 @@ export default function SourceList({ sources }: { sources: SourceItem[] }) {
                   {TYPE_LABELS[s.source_type] ?? s.source_type}
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400">{timeAgo(s.last_scraped_at)}</p>
+              {s.last_scrape_error ? (
+                <p className="text-[11px] text-red-500" title={s.last_scrape_error}>
+                  수집 불가
+                </p>
+              ) : (
+                <p className="text-[11px] text-zinc-400">{timeAgo(s.last_scraped_at)}</p>
+              )}
             </div>
             <button
               onClick={() => handleScrape(s.id)}

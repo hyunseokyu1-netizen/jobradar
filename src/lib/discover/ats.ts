@@ -189,8 +189,9 @@ async function scrapeApple(url: string): Promise<DiscoveredPosting[]> {
 
 // 자체 구축 채용 페이지: HTML을 가져와 Claude Haiku로 공고 목록 추출
 async function scrapeGeneric(url: string): Promise<DiscoveredPosting[]> {
-  // 봇 차단(403/429) 사이트가 많아, 브라우저 헤더 + 재시도가 포함된 공통 fetcher 사용
-  const html = await fetchHtml(url, { label: '수집' })
+  // 봇 차단(403/429) 사이트가 많아, 브라우저 헤더 + 재시도가 포함된 공통 fetcher 사용.
+  // 헤더로 안 뚫리는 Cloudflare 챌린지 등은 헤드리스 브라우저 폴백으로 처리.
+  const html = await fetchHtml(url, { label: '수집', browserFallback: true })
 
   // 스크립트/스타일 제거 후 링크 구조는 유지한 채 압축
   const stripped = html
