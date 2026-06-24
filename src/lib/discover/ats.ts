@@ -193,6 +193,10 @@ async function scrapeGeneric(url: string): Promise<DiscoveredPosting[]> {
   // 헤더로 안 뚫리는 Cloudflare 챌린지 등은 헤드리스 브라우저 폴백으로 처리.
   const html = await fetchHtml(url, { label: '수집', browserFallback: true })
 
+  // [임시 진단] 프로덕션이 실제로 받은 HTML 정체 파악용 — 원인 확인 후 제거
+  const diagTitle = html.slice(0, 8000).match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? '(no title)'
+  console.log(`[scrapeGeneric] url=${url} htmlLen=${html.length} title="${diagTitle.slice(0, 120)}"`)
+
   // 스크립트/스타일 제거 후 링크 구조는 유지한 채 압축
   const stripped = html
     .replace(/<script[\s\S]*?<\/script>/gi, '')

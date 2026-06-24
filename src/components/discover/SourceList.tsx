@@ -77,7 +77,15 @@ export default function SourceList({ sources }: { sources: SourceItem[] }) {
           >
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">{s.name}</span>
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm font-semibold hover:text-blue-600 hover:underline"
+                  title="채용 페이지 열기"
+                >
+                  {s.name}
+                </a>
                 <span className="text-[10px] text-zinc-400 border border-zinc-200 rounded px-1 py-px">
                   {TYPE_LABELS[s.source_type] ?? s.source_type}
                 </span>
