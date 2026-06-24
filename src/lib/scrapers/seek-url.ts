@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio'
+import { fetchHtml } from './fetch-html'
 
 export interface ScrapedJob {
   title: string
@@ -10,17 +11,7 @@ export interface ScrapedJob {
 }
 
 export async function scrapeSeekUrl(url: string): Promise<ScrapedJob> {
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'en-AU,en;q=0.9',
-    },
-  })
-
-  if (!res.ok) throw new Error(`Seek fetch failed: ${res.status}`)
-
-  const html = await res.text()
+  const html = await fetchHtml(url, { label: 'Seek', acceptLanguage: 'en-AU,en;q=0.9' })
   const $ = cheerio.load(html)
 
   // __NEXT_DATA__ JSON에서 추출 (가장 신뢰성 높음)

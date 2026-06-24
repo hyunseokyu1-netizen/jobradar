@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
   const { data: job } = await supabaseAdmin
     .from('jobs')
-    .select('id, url, source')
+    .select('id, url, source, title')
     .eq('id', jobId)
     .single()
 
@@ -48,10 +48,16 @@ export async function POST(request: Request) {
   } catch (e) {
     const errMsg = String(e)
     console.error(`[scrape-url] ${job.url}:`, errMsg)
-    await supabaseAdmin
-      .from('jobs')
-      .update({ title: '스크래핑 실패', description: errMsg })
-      .eq('id', job.id)
+
+    // 이전에 정상 스크래핑된 적이 있으면(= 진짜 제목 보유) 기존 데이터를 보존한다.
+    // 간헐적 403/429 재스크래핑이 잘 수집된 공고를 덮어쓰지 않도록 방지.
+    const neverScraped = job.title === '스크래핑 대기 중...' || job.title === '스크래핑 실패'
+    if (neverScraped) {
+      await supabaseAdmin
+        .from('jobs')
+        .update({ title: '스크래핑 실패', description: errMsg })
+        .eq('id', job.id)
+    }
 
     return NextResponse.json({ error: errMsg }, { status: 500 })
   }
