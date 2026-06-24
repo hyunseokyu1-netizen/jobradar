@@ -2,6 +2,8 @@
 // 주요 ATS(Greenhouse, Lever, Ashby, SmartRecruiters)는 공개 JSON API를 쓰고,
 // 자체 구축 사이트(Spotify, Apple 등)는 generic 어댑터(HTML + Claude 추출)로 폴백한다.
 
+import { fetchHtml } from '@/lib/scrapers/fetch-html'
+
 export type AtsType = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters' | 'apple' | 'generic'
 
 export interface DiscoveredPosting {
@@ -187,9 +189,8 @@ async function scrapeApple(url: string): Promise<DiscoveredPosting[]> {
 
 // 자체 구축 채용 페이지: HTML을 가져와 Claude Haiku로 공고 목록 추출
 async function scrapeGeneric(url: string): Promise<DiscoveredPosting[]> {
-  const res = await fetch(url, { headers: FETCH_HEADERS, cache: 'no-store' })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} — ${url}`)
-  const html = await res.text()
+  // 봇 차단(403/429) 사이트가 많아, 브라우저 헤더 + 재시도가 포함된 공통 fetcher 사용
+  const html = await fetchHtml(url, { label: '수집' })
 
   // 스크립트/스타일 제거 후 링크 구조는 유지한 채 압축
   const stripped = html
