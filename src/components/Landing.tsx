@@ -34,7 +34,7 @@ export default function Landing() {
         <p className="text-base text-zinc-500 mt-5 leading-relaxed">
           채용공고 탐색부터 AI 매칭, 맞춤 이력서·커버레터까지.
           <br className="hidden sm:block" />
-          JobRadar가 해외 취업의 모든 과정을 함께합니다.
+          Matchda가 해외 취업의 모든 과정을 함께합니다.
         </p>
 
         <div className="flex items-center justify-center gap-3 mt-8">
