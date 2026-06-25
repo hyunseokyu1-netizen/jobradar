@@ -1,0 +1,31 @@
+import Link from 'next/link'
+import { Search, Plus, Bell } from '../ui/icons'
+import { Avatar } from '../ui/primitives'
+import type { Dictionary } from '@/lib/matchda/i18n'
+
+/** 대시보드 상단바 (68px) */
+export default function Topbar({ t }: { t: Dictionary }) {
+  return (
+    <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-[#ECEEF0] bg-white px-9">
+      {/* TODO(api): 공고/회사/국가 검색 연동 */}
+      <div className="flex w-[340px] items-center gap-[9px] rounded-[10px] border border-[#ECEEF0] bg-[#F4F6F8] px-[14px] py-[9px]">
+        <Search size={17} strokeWidth={1.8} className="text-[#98A2B3]" />
+        <span className="text-[14px] text-[#98A2B3]">{t.dashboard.topbarSearch}</span>
+      </div>
+      <div className="flex items-center gap-[14px]">
+        <Link
+          href="/matchda/workspace"
+          className="flex items-center gap-[7px] rounded-[9px] bg-[#046C4E] px-[15px] py-[9px] text-[14px] font-semibold text-white hover:bg-[#035A40]"
+        >
+          <Plus size={16} className="text-white" />
+          {t.dashboard.newResume}
+        </Link>
+        <button type="button" className="relative cursor-pointer text-[#475467]">
+          <Bell size={20} />
+          <span className="absolute -right-[2px] -top-[2px] h-2 w-2 rounded-full border-2 border-white bg-[#046C4E]" />
+        </button>
+        <Avatar initial="지" size={36} fontSize={14} />
+      </div>
+    </header>
+  )
+}

@@ -1,12 +1,23 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import Link from "next/link";
+import { Geist, IBM_Plex_Sans_KR, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { getAuthUser, signOut } from "./auth-actions";
 import { getOrCreateProfile } from "@/lib/auth-helpers";
-import OnboardingBanner from "@/components/OnboardingBanner";
+import AppChrome from "@/components/AppChrome";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+
+// MatchDa UI 폰트 (IBM Plex Sans KR / IBM Plex Mono)
+const plexKr = IBM_Plex_Sans_KR({
+  variable: "--font-plex-kr",
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["latin"],
+});
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  weight: ["400", "500"],
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "MatchDa",
@@ -19,37 +30,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const showOnboardingBanner = !!user && !profile?.onboarding_completed
 
   return (
-    <html lang="ko" className={`${geist.variable} h-full`}>
+    <html lang="ko" className={`${geist.variable} ${plexKr.variable} ${plexMono.variable} h-full`}>
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
-        <header className="border-b border-zinc-200 bg-white">
-          <nav className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            <Link href="/" className="font-bold text-lg tracking-tight">
-              🎯 MatchDa
-            </Link>
-            {user ? (
-              <div className="flex items-center gap-4 text-sm font-medium text-zinc-600">
-                <Link href="/" className="hover:text-zinc-900">지원 관리</Link>
-                <Link href="/discover" className="hover:text-zinc-900">잡 탐색</Link>
-                <Link href="/profile" className="hover:text-zinc-900">프로필</Link>
-                <span className="text-zinc-300 hidden sm:block">|</span>
-                <span className="text-zinc-400 text-xs hidden sm:block truncate max-w-40">{user.email}</span>
-                <form action={signOut}>
-                  <button type="submit" className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors whitespace-nowrap">
-                    로그아웃
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <Link href="/login" className="text-sm font-medium text-zinc-600 hover:text-zinc-900">
-                로그인
-              </Link>
-            )}
-          </nav>
-        </header>
-        {showOnboardingBanner && <OnboardingBanner />}
-        <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
+        <AppChrome
+          userEmail={user?.email ?? null}
+          showOnboardingBanner={showOnboardingBanner}
+          signOutAction={signOut}
+        >
           {children}
-        </main>
+        </AppChrome>
       </body>
     </html>
   );

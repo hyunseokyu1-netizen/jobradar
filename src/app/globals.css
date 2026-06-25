@@ -23,3 +23,36 @@ body {
 .input {
   @apply w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 resize-y;
 }
+
+/* ── MatchDa 히어로 그래픽 장식 애니메이션 (장식용, 생략 가능) ── */
+@keyframes md-dashflow {
+  to {
+    stroke-dashoffset: -220;
+  }
+}
+@keyframes md-ringpulse {
+  0% {
+    opacity: 0.55;
+    r: 7;
+  }
+  70% {
+    opacity: 0;
+    r: 22;
+  }
+  100% {
+    opacity: 0;
+    r: 22;
+  }
+}
+.md-dashflow {
+  animation: md-dashflow 9s linear infinite;
+}
+.md-ringpulse {
+  animation: md-ringpulse 3s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .md-dashflow,
+  .md-ringpulse {
+    animation: none;
+  }
+}
