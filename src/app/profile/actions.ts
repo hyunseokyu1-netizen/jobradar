@@ -76,6 +76,112 @@ ${profile.resume_text.slice(0, 4000)}`,
   return { summary }
 }
 
+// ── 이력서 섹션 번역 ──────────────────────────────────────────
+// 유저가 한국어로 작성 → 섹션별 "번역" → Claude가 구조화·영어 번역.
+// 한국어(편집 원본)는 onboarding_ko, 영어(앱이 사용하는 결과)는 onboarding_en에 저장하고
+// 매칭/커버레터가 읽는 flat 컬럼(skills, career_summary)도 동기화한다.
+
+export type ResumeSection = 'summary' | 'experience' | 'education' | 'skills'
+
+const SECTION_PROMPT: Record<ResumeSection, (ko: string) => string> = {
+  summary: ko => `다음 한국어 경력 요약을 자연스러운 영어로 번역하세요. JSON으로만 응답하세요. 다른 텍스트 금지.
+형식: {"en": "<영어 요약, 평문, 마크다운 없이>"}
+
+한국어:
+${ko}`,
+  skills: ko => `다음 한국어로 적힌 기술/스킬 목록을 표준 영어 표기로 정리하세요. JSON으로만 응답하세요.
+형식: {"ko": ["한국어 항목..."], "en": ["English item..."]}
+규칙: 쉼표/줄바꿈으로 구분, 각 항목 trim, 중복 제거, 최대 40개, ko와 en은 1:1 대응.
+
+입력:
+${ko}`,
+  experience: ko => `다음은 구직자가 한국어로 자유롭게 적은 경력입니다. 각 항목을 구조화하고 영어로 번역하세요. JSON으로만 응답하세요.
+형식: {"ko": [{"company":"","position":"","period":"","description":""}], "en": [{"company":"","position":"","period":"","description":""}]}
+규칙: 빈 줄로 항목을 구분. 정보가 없는 필드는 "". 절대 지어내지 마세요. ko/en은 같은 개수·순서.
+
+입력:
+${ko}`,
+  education: ko => `다음은 구직자가 한국어로 적은 학력입니다. 각 항목을 구조화하고 영어로 번역하세요. JSON으로만 응답하세요.
+형식: {"ko": [{"school":"","major":"","degree":"","period":""}], "en": [{"school":"","major":"","degree":"","period":""}]}
+규칙: 빈 줄로 항목을 구분. 정보가 없는 필드는 "". 절대 지어내지 마세요. ko/en은 같은 개수·순서.
+
+입력:
+${ko}`,
+}
+
+export async function translateResumeSection(
+  section: ResumeSection,
+  koText: string
+): Promise<{ ko?: unknown; en?: unknown; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  if (!koText.trim()) return { error: '먼저 한국어로 내용을 작성해주세요.' }
+
+  let parsed: { ko?: unknown; en?: unknown }
+  try {
+    const { anthropic } = await import('@/lib/claude')
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: SECTION_PROMPT[section](koText) }],
+    })
+    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const m = text.match(/\{[\s\S]*\}/)
+    if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
+    parsed = JSON.parse(m[0])
+  } catch (e) {
+    console.error('Resume section translate error:', e)
+    return { error: '번역 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+  }
+
+  const koObj = (profile.onboarding_ko ?? {}) as Record<string, unknown>
+  const enObj = (profile.onboarding_en ?? {}) as Record<string, unknown>
+  const flatPatch: Record<string, unknown> = {}
+
+  let savedKo: unknown
+  let savedEn: unknown
+
+  if (section === 'summary') {
+    savedKo = koText
+    savedEn = typeof parsed.en === 'string' ? parsed.en : ''
+    koObj.summary = savedKo
+    enObj.summary = savedEn
+    flatPatch.career_summary = savedEn
+  } else if (section === 'skills') {
+    savedKo = Array.isArray(parsed.ko) ? parsed.ko : []
+    savedEn = Array.isArray(parsed.en) ? parsed.en : []
+    koObj.skills = savedKo
+    enObj.skills = savedEn
+    flatPatch.skills = savedEn
+  } else {
+    // experience | education
+    savedKo = Array.isArray(parsed.ko) ? parsed.ko : []
+    savedEn = Array.isArray(parsed.en) ? parsed.en : []
+    koObj[section] = savedKo
+    enObj[section] = savedEn
+  }
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({
+      onboarding_ko: koObj,
+      onboarding_en: enObj,
+      ...flatPatch,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', profile.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/profile')
+  revalidatePath('/')
+  return { ko: savedKo, en: savedEn }
+}
+
 interface ExtractedProfile {
   name?: string
   skills?: string[]
