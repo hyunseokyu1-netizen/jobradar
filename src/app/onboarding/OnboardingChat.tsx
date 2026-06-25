@@ -19,12 +19,17 @@ interface ChatMessage {
 
 const DRAFT_KEY = 'onboarding_draft_v1'
 
-export default function OnboardingChat() {
+export default function OnboardingChat({
+  initialAnswers,
+}: {
+  initialAnswers?: OnboardingAnswers
+}) {
   const router = useRouter()
+  const prefill = !!initialAnswers // "다시 작성" 모드: 기존 답변을 미리 채워 수정
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [stepIndex, setStepIndex] = useState(0)
   const [mode, setMode] = useState<'input' | 'askMore' | 'finishing' | 'done'>('input')
-  const [answers, setAnswers] = useState<OnboardingAnswers>(EMPTY_ANSWERS)
+  const [answers, setAnswers] = useState<OnboardingAnswers>(initialAnswers ?? EMPTY_ANSWERS)
   const [input, setInput] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -33,23 +38,44 @@ export default function OnboardingChat() {
 
   const step: Step | undefined = STEPS[stepIndex]
 
+  // 질문 텍스트(리스트 단계는 다시 작성 시 편집 힌트 추가)
+  function questionText(s: Step): string {
+    if (prefill && s.kind === 'list') {
+      return `${s.question}\n(기존 내용이 채워져 있어요. 줄바꿈으로 항목을 수정·추가·삭제하세요.)`
+    }
+    return s.question
+  }
+  // 해당 단계의 입력칸 프리필 값(리스트는 줄바꿈으로 합침)
+  function stepInputValue(s: Step, ans: OnboardingAnswers): string {
+    return s.kind === 'list' ? ans[s.key].join('\n') : ans[s.key]
+  }
+
   // 첫 마운트: 인트로 + 첫 질문 (localStorage 답변 복원)
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
 
-    let restored = EMPTY_ANSWERS
-    try {
-      const saved = localStorage.getItem(DRAFT_KEY)
-      if (saved) restored = { ...EMPTY_ANSWERS, ...JSON.parse(saved) }
-    } catch {}
-    setAnswers(restored)
+    // 신규 작성만 localStorage 임시저장 복원. 다시 작성은 기존 프로필(initialAnswers) 사용.
+    if (!prefill) {
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY)
+        if (saved) setAnswers({ ...EMPTY_ANSWERS, ...JSON.parse(saved) })
+      } catch {}
+    }
 
     setMessages([
       { role: 'ai', text: INTRO },
-      { role: 'ai', text: STEPS[0].question },
+      { role: 'ai', text: questionText(STEPS[0]) },
     ])
   }, [])
+
+  // 다시 작성: 각 단계에 도달하면 입력칸에 기존 답변을 미리 채운다
+  useEffect(() => {
+    if (!prefill) return
+    const s = STEPS[stepIndex]
+    if (s) setInput(stepInputValue(s, answers))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepIndex, prefill])
 
   // 메시지 추가 시 자동 스크롤
   useEffect(() => {
@@ -75,7 +101,7 @@ export default function OnboardingChat() {
     if (nextIndex < STEPS.length) {
       setStepIndex(nextIndex)
       setMode('input')
-      pushAi(STEPS[nextIndex].question)
+      pushAi(questionText(STEPS[nextIndex]))
     } else {
       finish(nextAnswers)
     }
@@ -112,6 +138,14 @@ export default function OnboardingChat() {
         pushUser('(건너뜀)')
         setInput('')
         goNextStep(answers)
+      } else if (prefill && step.kind === 'list') {
+        // 다시 작성: 비우고 보내면 해당 목록 삭제
+        pushUser('(없음)')
+        setInput('')
+        const next = { ...answers, [step.key]: [] }
+        setAnswers(next)
+        persist(next)
+        goNextStep(next)
       }
       return
     }
@@ -124,8 +158,15 @@ export default function OnboardingChat() {
       setAnswers(next)
       persist(next)
       goNextStep(next)
+    } else if (prefill) {
+      // 다시 작성: 여러 줄을 한 번에 항목 배열로 처리(수정·추가·삭제)
+      const items = text.split('\n').map(s => s.trim()).filter(Boolean)
+      const next = { ...answers, [step.key]: items }
+      setAnswers(next)
+      persist(next)
+      goNextStep(next)
     } else {
-      // list: 항목 누적 후 "더 추가?" 묻기
+      // list(신규): 항목 누적 후 "더 추가?" 묻기
       const next = { ...answers, [step.key]: [...answers[step.key], text] }
       setAnswers(next)
       persist(next)
