@@ -107,3 +107,47 @@ export const EMPTY_ANSWERS: OnboardingAnswers = {
   locations: '',
   salary: '',
 }
+
+// 저장된 onboarding_ko(구조화 한국어 프로필)를 채팅 답변 형태로 역변환한다.
+// "다시 작성" 시 기존 답변을 미리 채워 수정할 수 있게 하기 위함.
+// 번역 실패로 raw OnboardingAnswers가 저장된 경우도 방어적으로 처리한다.
+export function answersFromOnboardingKo(ko: unknown): OnboardingAnswers {
+  if (!ko || typeof ko !== 'object') return EMPTY_ANSWERS
+  const k = ko as Record<string, unknown>
+
+  // 번역 실패 케이스: skills가 문자열이고 desired가 없으면 raw OnboardingAnswers
+  if (typeof k.skills === 'string' && !('desired' in k)) {
+    return { ...EMPTY_ANSWERS, ...(k as Partial<OnboardingAnswers>) }
+  }
+
+  const d = (k.desired ?? {}) as Record<string, unknown>
+  const join = (v: unknown) => (Array.isArray(v) ? v.filter(Boolean).join(', ') : '')
+
+  const salary = (() => {
+    const cur = (d.salary_currency as string) || ''
+    const min = d.salary_min as number | null | undefined
+    const max = d.salary_max as number | null | undefined
+    const fmt = (n: number) => n.toLocaleString('en-US')
+    if (min != null && max != null) return `${cur} ${fmt(min)} ~ ${fmt(max)}`.trim()
+    if (min != null || max != null) return `${cur} ${fmt((min ?? max) as number)}`.trim()
+    return ''
+  })()
+
+  const eduItems = (Array.isArray(k.education) ? k.education : []) as Record<string, unknown>[]
+  const expItems = (Array.isArray(k.experience) ? k.experience : []) as Record<string, unknown>[]
+
+  return {
+    name: (k.name as string) ?? '',
+    phone: (k.phone as string) ?? '',
+    education: eduItems
+      .map(e => [[e.school, e.major, e.degree].filter(Boolean).join(' '), e.period].filter(Boolean).join(', '))
+      .filter(Boolean),
+    experience: expItems
+      .map(e => [[e.company, e.position].filter(Boolean).join(' '), e.period, e.description].filter(Boolean).join(', '))
+      .filter(Boolean),
+    skills: join(k.skills),
+    positions: join(d.positions),
+    locations: join(d.locations),
+    salary,
+  }
+}
