@@ -37,6 +37,11 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
+  // MatchDa 디자인 화면(/matchda/*)은 목 데이터 기반 데모 — 공개
+  if (pathname.startsWith('/matchda')) {
+    return supabaseResponse
+  }
+
   // 나머지 페이지는 로그인 필요
   if (!user) {
     return NextResponse.redirect(new URL('/login', request.url))
