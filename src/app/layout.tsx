@@ -9,7 +9,7 @@ import OnboardingBanner from "@/components/OnboardingBanner";
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Matchda",
+  title: "MatchDa",
   description: "AI 잡 매칭 & 커버레터 자동화",
 };
 
@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <header className="border-b border-zinc-200 bg-white">
           <nav className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
             <Link href="/" className="font-bold text-lg tracking-tight">
-              🎯 Matchda
+              🎯 MatchDa
             </Link>
             {user ? (
               <div className="flex items-center gap-4 text-sm font-medium text-zinc-600">

@@ -13,14 +13,6 @@ export interface SourceItem {
   last_scrape_error: string | null
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  greenhouse: 'Greenhouse',
-  lever: 'Lever',
-  ashby: 'Ashby',
-  smartrecruiters: 'SmartRecruiters',
-  generic: 'AI 추출',
-}
-
 function timeAgo(iso: string | null): string {
   if (!iso) return '수집 전'
   const diff = Date.now() - new Date(iso).getTime()
@@ -76,20 +68,15 @@ export default function SourceList({ sources }: { sources: SourceItem[] }) {
             className="flex items-center gap-2 bg-white border border-zinc-200 rounded-xl px-4 py-2.5"
           >
             <div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={s.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-semibold hover:text-blue-600 hover:underline"
-                  title="채용 페이지 열기"
-                >
-                  {s.name}
-                </a>
-                <span className="text-[10px] text-zinc-400 border border-zinc-200 rounded px-1 py-px">
-                  {TYPE_LABELS[s.source_type] ?? s.source_type}
-                </span>
-              </div>
+              <a
+                href={s.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm font-semibold hover:text-blue-600 hover:underline"
+                title="채용 페이지 열기"
+              >
+                {s.name}
+              </a>
               {s.last_scrape_error ? (
                 <p className="text-[11px] text-red-500" title={s.last_scrape_error}>
                   수집 불가
