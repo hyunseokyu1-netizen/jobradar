@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import ProfileForm from './ProfileForm'
+import ResumeEditor from './ResumeEditor'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { redirect } from 'next/navigation'
 
@@ -8,6 +9,11 @@ export default async function ProfilePage() {
   if (!email) redirect('/login')
 
   const profile = await getOrCreateProfile(email)
+
+  // 한/영 구조화 프로필에서 이력서 에디터 초기값 구성
+  const ko = (profile?.onboarding_ko ?? {}) as Record<string, unknown>
+  const en = (profile?.onboarding_en ?? {}) as Record<string, unknown>
+  const asArr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : [])
 
   return (
     <div className="max-w-2xl">
@@ -20,6 +26,27 @@ export default async function ProfilePage() {
           ✨ AI로 다시 작성
         </Link>
       </div>
+
+      <section className="mb-8">
+        <h2 className="text-base font-semibold mb-1">이력서 (한글 작성 → 번역)</h2>
+        <p className="text-xs text-zinc-400 mb-3">
+          섹션별로 한국어로 작성하고 ‘번역해서 저장’을 누르면 영어로 저장돼 매칭·커버레터에 사용됩니다.
+        </p>
+        <ResumeEditor
+          email={email}
+          name={(profile?.name as string) ?? ''}
+          phone={(profile?.phone as string) ?? ''}
+          summaryKo={(ko.summary as string) ?? ''}
+          summaryEn={(en.summary as string) ?? (profile?.career_summary as string) ?? ''}
+          skillsKo={asArr<string>(ko.skills)}
+          skillsEn={asArr<string>(en.skills).length ? asArr<string>(en.skills) : asArr<string>(profile?.skills)}
+          experienceKo={asArr(ko.experience)}
+          experienceEn={asArr(en.experience)}
+          educationKo={asArr(ko.education)}
+          educationEn={asArr(en.education)}
+        />
+      </section>
+
       <ProfileForm initialData={profile} />
     </div>
   )
