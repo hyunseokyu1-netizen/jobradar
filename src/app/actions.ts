@@ -788,3 +788,65 @@ export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string;
   revalidatePath('/')
   return { jobId: data.id }
 }
+
+/**
+ * 채용공고를 URL 없이 직접 입력해 추가한다.
+ * (링크 복사가 막힌 사이트 대응 — 제목/회사/위치/JD를 손으로 입력)
+ * description 이 있으면 곧바로 AI 매칭까지 실행한다.
+ */
+export async function addJobManually(
+  formData: FormData
+): Promise<{ jobId?: string; matched?: boolean; score?: number; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const title = (formData.get('title') as string)?.trim()
+  const company = (formData.get('company') as string)?.trim() ?? ''
+  const location = (formData.get('location') as string)?.trim() ?? ''
+  const description = (formData.get('description') as string)?.trim() ?? ''
+
+  if (!title) return { error: '직무명을 입력해주세요.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  // URL 컬럼은 고유·필수이므로 직접 입력 공고에는 합성 URL을 부여한다.
+  const syntheticUrl = `manual://${globalThis.crypto.randomUUID()}`
+
+  const { data, error } = await supabaseAdmin
+    .from('jobs')
+    .insert({
+      url: syntheticUrl,
+      source: 'other',
+      title,
+      company,
+      location,
+      description: description || null,
+      scraped_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single()
+
+  if (error) return { error: error.message }
+
+  await supabaseAdmin
+    .from('matches')
+    .upsert(
+      { user_id: profile.id, job_id: data.id, status: 'new' },
+      { onConflict: 'user_id,job_id' }
+    )
+
+  // JD 가 있으면 바로 매칭
+  let matched = false
+  let score: number | undefined
+  if (description) {
+    const matchRes = await matchSingleJob(data.id)
+    if (!matchRes.error && matchRes.score !== undefined) {
+      matched = true
+      score = matchRes.score
+    }
+  }
+
+  revalidatePath('/')
+  return { jobId: data.id, matched, score }
+}

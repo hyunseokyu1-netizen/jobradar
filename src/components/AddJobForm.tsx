@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { addJobByUrl, matchSingleJob } from '@/app/actions'
+import AddJobManualModal from './AddJobManualModal'
 
 export default function AddJobForm() {
   const [status, setStatus] = useState<'idle' | 'saving' | 'scraping' | 'matching' | 'done'>('idle')
   const [error, setError] = useState('')
   const [url, setUrl] = useState('')
+  const [manualOpen, setManualOpen] = useState(false)
 
   const router = useRouter()
   const loading = status !== 'idle' && status !== 'done'
@@ -51,26 +53,41 @@ export default function AddJobForm() {
   const label = status === 'scraping' ? 'JD 분석 중...' : status === 'matching' ? 'AI 매칭 중...' : status === 'saving' ? '저장 중...' : '추가'
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 mb-6">
-      <input
-        type="url"
-        value={url}
-        onChange={e => setUrl(e.target.value)}
-        placeholder="채용공고 URL 붙여넣기 (Seek, Indeed, LinkedIn, Glassdoor...)"
-        className="flex-1 text-sm border border-zinc-200 rounded-lg px-4 py-2.5 outline-none focus:border-zinc-400 transition-colors"
-        disabled={loading}
-      />
-      <button
-        type="submit"
-        disabled={loading || !url}
-        className="text-sm bg-zinc-900 text-white px-4 py-2.5 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors whitespace-nowrap sm:min-w-28 text-center"
-      >
-        {label}
-      </button>
+    <div className="mb-6">
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
+        <input
+          type="url"
+          value={url}
+          onChange={e => setUrl(e.target.value)}
+          placeholder="채용공고 URL 붙여넣기 (Seek, Indeed, LinkedIn, Glassdoor...)"
+          className="flex-1 text-sm border border-zinc-200 rounded-lg px-4 py-2.5 outline-none focus:border-zinc-400 transition-colors"
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          disabled={loading || !url}
+          className="text-sm bg-zinc-900 text-white px-4 py-2.5 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors whitespace-nowrap sm:min-w-28 text-center"
+        >
+          {label}
+        </button>
+        <button
+          type="button"
+          onClick={() => setManualOpen(true)}
+          disabled={loading}
+          className="text-sm border border-zinc-200 text-zinc-600 px-4 py-2.5 rounded-lg hover:bg-zinc-50 disabled:opacity-40 transition-colors whitespace-nowrap text-center"
+        >
+          직접 추가
+        </button>
+      </form>
+      <p className="text-xs text-zinc-400 mt-1.5">
+        링크 복사가 안 되는 사이트는 <button type="button" onClick={() => setManualOpen(true)} className="underline hover:text-zinc-600">직접 추가</button>로 카드를 만드세요.
+      </p>
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
       {status === 'done' && (
         <p className="text-xs text-green-600 mt-1">✓ 등록되었습니다.</p>
       )}
-    </form>
+
+      {manualOpen && <AddJobManualModal onClose={() => setManualOpen(false)} />}
+    </div>
   )
 }
