@@ -10,13 +10,16 @@ export default function LandingHeader({
   t,
   tinted = false,
   logoHref = '/matchda',
-  authHref = '/matchda/dashboard',
+  loginHref = '/matchda/dashboard',
+  signupHref = loginHref,
 }: {
   t: Dictionary
   tinted?: boolean
   logoHref?: string
-  /** 로그인/무료로 시작하기 버튼 목적지 (공개 랜딩은 /login) */
-  authHref?: string
+  /** 로그인 버튼 목적지 (공개 랜딩은 /login) */
+  loginHref?: string
+  /** 무료로 시작하기 버튼 목적지 (공개 랜딩은 /login?mode=signup) */
+  signupHref?: string
 }) {
   return (
     <header
@@ -50,13 +53,13 @@ export default function LandingHeader({
         </div>
         <div className="flex items-center gap-[6px]">
           <Link
-            href={authHref}
+            href={loginHref}
             className="rounded-lg px-4 py-[9px] text-[14px] font-semibold text-[#344054] hover:bg-[#F4F6F8]"
           >
             {t.nav.login}
           </Link>
           <Link
-            href={authHref}
+            href={signupHref}
             className="rounded-lg bg-[#046C4E] px-[18px] py-[10px] text-[14px] font-semibold text-white shadow-[0_1px_2px_rgba(4,108,78,0.25)] hover:bg-[#035A40]"
           >
             {t.nav.signup}

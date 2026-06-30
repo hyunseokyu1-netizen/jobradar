@@ -13,7 +13,15 @@ export default async function JobsPage() {
   const email = await getAuthUserEmail()
 
   // 비로그인 사용자에게는 MatchDa 랜딩 A 노출 (공개 첫 화면)
-  if (!email) return <MatchdaLanding authHref="/login" />
+  // CTA·검색은 실제 로그인/회원가입 퍼널로 연결한다.
+  if (!email)
+    return (
+      <MatchdaLanding
+        loginHref="/login"
+        signupHref="/login?mode=signup"
+        searchHref="/login?mode=signup"
+      />
+    )
 
   const profile = await getOrCreateProfile(email)
   if (!profile) return <p className="text-zinc-400 text-center py-20">로그인이 필요합니다.</p>
