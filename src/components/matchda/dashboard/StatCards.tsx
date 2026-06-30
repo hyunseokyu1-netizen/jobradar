@@ -8,12 +8,24 @@ const DELTA_COLOR: Record<'green' | 'amber' | 'muted', string> = {
   muted: '#667085',
 }
 
-/** 요약 stat 4카드 */
-export default function StatCards({ t, values }: { t: Dictionary; values: string[] }) {
+/**
+ * 요약 stat 4카드.
+ * deltas 가 주어지면(실데이터) 그 값을, 없으면 i18n 기본 델타(목업)를 쓴다.
+ */
+export default function StatCards({
+  t,
+  values,
+  deltas,
+}: {
+  t: Dictionary
+  values: string[]
+  deltas?: string[]
+}) {
   return (
     <div className="mb-7 grid grid-cols-4 gap-4">
       {t.dashboard.statCards.map((card, i) => {
         const Icon = ICONS[i]
+        const delta = deltas ? deltas[i] : card.delta
         return (
           <div key={card.label} className="rounded-[14px] border border-[#ECEEF0] bg-white p-5">
             <div className="flex items-center justify-between">
@@ -26,7 +38,7 @@ export default function StatCards({ t, values }: { t: Dictionary; values: string
               {values[i]}
             </div>
             <div className="text-[12px] font-medium" style={{ color: DELTA_COLOR[card.tone] }}>
-              {card.delta}
+              {delta}
             </div>
           </div>
         )
