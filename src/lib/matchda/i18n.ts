@@ -116,6 +116,8 @@ const ko = {
     originalMeta: '수정 없음 · 312 단어',
     translatedLabel: 'AI 번역 · 맞춤화 (영어)',
     translatedMeta: '방금 업데이트됨 · 298 words',
+    optimizeButton: '이 공고에 맞춰 AI 분석',
+    optimizing: 'AI 분석 중...',
     sections: {
       experience: '경력',
       skills: '기술',
@@ -240,6 +242,8 @@ const en: typeof ko = {
     originalMeta: 'No edits · 312 words',
     translatedLabel: 'AI translated · tailored (English)',
     translatedMeta: 'Updated just now · 298 words',
+    optimizeButton: 'Analyze for this job with AI',
+    optimizing: 'Analyzing...',
     sections: {
       experience: '경력',
       skills: '기술',

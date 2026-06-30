@@ -86,6 +86,8 @@ export interface ResumeWorkspaceData {
    * true(목업): 하이라이트·최적화 노트 포함. false(실데이터): 일반 이력서를 공고와 비교.
    */
   tailored?: boolean
+  /** 아직 AI 최적화 분석 전인 실데이터 — 워크스페이스에서 생성 버튼 노출 */
+  optimizable?: boolean
   /** 영어본 경력 아래 표시되는 최적화 노트 (맞춤 최적화본에만 존재) */
   optimizationNote?: {
     company: string

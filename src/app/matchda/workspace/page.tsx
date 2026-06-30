@@ -4,6 +4,7 @@ import { getMatchdaWorkspace } from '@/lib/matchda/data'
 import WorkspaceTopbar from '@/components/matchda/workspace/WorkspaceTopbar'
 import OptimizationBanner from '@/components/matchda/workspace/OptimizationBanner'
 import ResumeDocument from '@/components/matchda/workspace/ResumeDocument'
+import GenerateOptimizationButton from '@/components/matchda/workspace/GenerateOptimizationButton'
 import { Sparkle } from '@/components/matchda/ui/icons'
 
 export const dynamic = 'force-dynamic'
@@ -41,13 +42,21 @@ export default async function MatchdaWorkspacePage({
 
         {/* 우: AI 번역 · 맞춤화 (영어) */}
         <div>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 rounded-lg border border-[#CEEBDC] bg-[#ECFDF3] px-3 py-[6px]">
               <Sparkle size={14} strokeWidth={1.8} className="text-[#046C4E]" />
               <span className="text-[13px] font-semibold text-[#046C4E]">
                 {t.workspace.translatedLabel}
               </span>
             </div>
+            {/* 실데이터 + 아직 미분석 시 AI 최적화 분석 버튼 */}
+            {real && data.optimizable && jobId && (
+              <GenerateOptimizationButton
+                jobId={jobId}
+                label={t.workspace.optimizeButton}
+                loadingLabel={t.workspace.optimizing}
+              />
+            )}
           </div>
           <ResumeDocument
             doc={data.translated}
