@@ -40,7 +40,7 @@ export default function ResumeDocument({
   const accent = variant === 'translated'
 
   return (
-    <div className="rounded-[14px] border border-[#ECEEF0] bg-white px-12 py-11 shadow-[0_2px_14px_rgba(16,24,40,0.04)]">
+    <div className="rounded-[14px] border border-[#ECEEF0] bg-white px-6 py-8 shadow-[0_2px_14px_rgba(16,24,40,0.04)] sm:px-12 sm:py-11">
       <div className="text-[23px] font-bold tracking-[-0.01em] text-[#101828]">{doc.name}</div>
       <div className="mt-[3px] text-[15px] font-semibold text-[#046C4E]">{doc.title}</div>
       <div className="mt-[6px] font-[family-name:var(--font-plex-mono)] text-[13px] text-[#98A2B3]">

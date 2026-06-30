@@ -19,8 +19,8 @@ export default function FeatureCards({
 }) {
   const isB = variant === 'b'
   return (
-    <section className={`mx-auto max-w-[1200px] px-8 ${isB ? 'pb-6 pt-2' : 'pb-6 pt-10'}`}>
-      <div className="grid grid-cols-3 gap-6">
+    <section className={`mx-auto max-w-[1200px] px-4 sm:px-8 ${isB ? 'pb-6 pt-2' : 'pb-6 pt-10'}`}>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {t.features.map((f, i) => {
           const Icon = ICONS[i]
           return (

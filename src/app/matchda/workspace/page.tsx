@@ -25,7 +25,7 @@ export default async function MatchdaWorkspacePage({
       <WorkspaceTopbar t={t} data={data} />
       <OptimizationBanner t={t} data={data} />
 
-      <div className="mx-auto grid max-w-[1320px] grid-cols-2 gap-[22px] px-7 pb-20 pt-6">
+      <div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-[22px] px-4 pb-20 pt-6 sm:px-7 lg:grid-cols-2">
         {/* 좌: 원본 (한국어) */}
         <div>
           <div className="mb-3 flex items-center justify-between">

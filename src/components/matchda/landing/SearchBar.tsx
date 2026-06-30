@@ -46,7 +46,7 @@ export default function SearchBar({
     >
       <button
         type="button"
-        className={`flex items-center gap-[7px] whitespace-nowrap text-[14px] font-medium text-[#344054] ${
+        className={`hidden items-center gap-[7px] whitespace-nowrap text-[14px] font-medium text-[#344054] sm:flex ${
           lg ? 'px-[14px] py-[11px]' : 'px-3 py-[10px]'
         }`}
       >
@@ -54,7 +54,7 @@ export default function SearchBar({
         {country}
         <ChevronDown size={14} className="text-[#98A2B3]" />
       </button>
-      <div className={`w-px bg-[#E5E8EB] ${lg ? 'h-[26px]' : 'h-6'}`} />
+      <div className={`hidden w-px bg-[#E5E8EB] sm:block ${lg ? 'h-[26px]' : 'h-6'}`} />
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}

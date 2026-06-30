@@ -15,7 +15,7 @@ export default function OptimizationBanner({
   const prefix = tailored ? t.workspace.bannerPrefix : t.workspace.comparePrefix
   const suffix = tailored ? t.workspace.bannerSuffix : t.workspace.compareSuffix
   return (
-    <div className="flex items-center justify-between border-b border-[#CEEBDC] bg-[#ECFDF3] px-7 py-3">
+    <div className="flex flex-col items-start justify-between gap-2 border-b border-[#CEEBDC] bg-[#ECFDF3] px-4 py-3 sm:flex-row sm:items-center sm:px-7">
       <div className="flex items-center gap-[10px] text-[13px] font-medium text-[#046C4E]">
         <Target size={17} strokeWidth={1.8} />
         <span>

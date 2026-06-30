@@ -9,7 +9,7 @@ const BG_DOTS = [
 /** 랜딩 B 중앙 정렬 히어로 (그린 워시 + 흐린 연결선 SVG 배경) */
 export default function CenteredHero({ t }: { t: Dictionary }) {
   return (
-    <section className="relative overflow-hidden bg-[radial-gradient(120%_90%_at_50%_0%,#E9F7F1_0%,#F5FBF8_42%,#FFFFFF_80%)] px-8 pb-[76px] pt-[92px]">
+    <section className="relative overflow-hidden bg-[radial-gradient(120%_90%_at_50%_0%,#E9F7F1_0%,#F5FBF8_42%,#FFFFFF_80%)] px-4 pb-14 pt-16 sm:px-8 sm:pb-[76px] sm:pt-[92px]">
       {/* 배경 연결선 (장식) */}
       <svg
         viewBox="0 0 1200 600"
@@ -40,12 +40,12 @@ export default function CenteredHero({ t }: { t: Dictionary }) {
           <span className="h-[7px] w-[7px] rounded-full bg-[#046C4E]" />
           {t.hero.eyebrow}
         </div>
-        <h1 className="mt-6 text-[62px] font-bold leading-[1.1] tracking-[-0.04em] text-[#0B1A12]">
+        <h1 className="mt-6 text-[34px] font-bold leading-[1.12] tracking-[-0.04em] text-[#0B1A12] sm:text-[48px] sm:leading-[1.1] lg:text-[62px]">
           {t.hero.titleLine1}
           <br />
           {t.hero.titleLine2}
         </h1>
-        <p className="mx-auto mt-6 max-w-[540px] text-[19px] leading-[1.6] text-[#475467]">
+        <p className="mx-auto mt-6 max-w-[540px] text-[16px] leading-[1.6] text-[#475467] sm:text-[19px]">
           {t.heroB.subheadLine1}
           <br />
           {t.heroB.subheadLine2}

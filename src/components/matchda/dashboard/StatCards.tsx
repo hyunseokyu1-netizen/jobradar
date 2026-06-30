@@ -22,7 +22,7 @@ export default function StatCards({
   deltas?: string[]
 }) {
   return (
-    <div className="mb-7 grid grid-cols-4 gap-4">
+    <div className="mb-7 grid grid-cols-2 gap-4 xl:grid-cols-4">
       {t.dashboard.statCards.map((card, i) => {
         const Icon = ICONS[i]
         const delta = deltas ? deltas[i] : card.delta
