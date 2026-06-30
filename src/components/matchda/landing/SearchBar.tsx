@@ -1,29 +1,37 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { GlobeMark, ChevronDown, Search } from '../ui/icons'
 
 /**
- * 히어로 검색바. 현재는 시각 표현 + 로컬 입력만.
- * 클라이언트 컴포넌트이므로 딕셔너리 전체가 아닌 문자열 props 만 받는다.
+ * 히어로 검색바. 클라이언트 컴포넌트이므로 문자열 props 만 받는다.
  * size: 'md'(랜딩 A) / 'lg'(랜딩 B 중앙 강조).
- * TODO(api): 국가 셀렉트/검색어로 공고 검색 연동.
+ * submitHref: 제출 시 이동 경로. 미지정 시 no-op(디자인 데모용).
+ *   공개 랜딩에서는 로그인 퍼널(/login?mode=signup)로 연결된다.
+ *   입력한 검색어는 q 쿼리로 함께 전달한다(추후 검색 페이지에서 소비 — TODO(api)).
  */
 export default function SearchBar({
   country,
   placeholder,
   buttonLabel,
   size = 'md',
+  submitHref,
 }: {
   country: string
   placeholder: string
   buttonLabel: string
   size?: 'md' | 'lg'
+  submitHref?: string
 }) {
   const [query, setQuery] = useState('')
+  const router = useRouter()
 
   function handleSearch() {
-    // TODO(api): 검색 실행 → /matchda/dashboard?q=... 또는 검색 결과 페이지로 라우팅
+    if (!submitHref) return
+    const q = query.trim()
+    const sep = submitHref.includes('?') ? '&' : '?'
+    router.push(q ? `${submitHref}${sep}q=${encodeURIComponent(q)}` : submitHref)
   }
 
   const lg = size === 'lg'

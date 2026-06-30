@@ -1,13 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 
 type Mode = 'login' | 'signup'
 
 export default function LoginForm() {
-  const [mode, setMode] = useState<Mode>('login')
+  // 공개 랜딩의 "무료로 시작하기"/검색 CTA가 ?mode=signup 으로 진입 → 회원가입 탭 자동 선택
+  const searchParams = useSearchParams()
+  const initialMode: Mode = searchParams.get('mode') === 'signup' ? 'signup' : 'login'
+  const [mode, setMode] = useState<Mode>(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)

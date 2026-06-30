@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import LoginForm from './LoginForm'
 
 export default function LoginPage() {
@@ -8,7 +9,10 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-zinc-900">MatchDa</h1>
           <p className="text-sm text-zinc-500 mt-1">AI 기반 잡 매칭 & 커버레터 자동화</p>
         </div>
-        <LoginForm />
+        {/* useSearchParams(?mode=signup) 사용 → Suspense 경계 필요 */}
+        <Suspense fallback={null}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   )

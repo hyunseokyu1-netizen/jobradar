@@ -10,7 +10,7 @@ const TRUST_AVATARS = [
 ]
 
 /** 분할 히어로 (좌 카피·검색바, 우 글로벌 연결 그래픽) */
-export default function SplitHero({ t }: { t: Dictionary }) {
+export default function SplitHero({ t, searchHref }: { t: Dictionary; searchHref?: string }) {
   return (
     <section className="mx-auto grid max-w-[1200px] grid-cols-[1.04fr_0.96fr] items-center gap-[60px] px-8 pb-12 pt-[84px]">
       <div>
@@ -32,6 +32,7 @@ export default function SplitHero({ t }: { t: Dictionary }) {
             country={t.hero.searchCountry}
             placeholder={t.hero.searchPlaceholder}
             buttonLabel={t.hero.searchButton}
+            submitHref={searchHref}
           />
         </div>
 
