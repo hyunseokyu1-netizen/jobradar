@@ -1,18 +1,23 @@
 import { getMatchdaDict } from '@/lib/matchda/i18n'
 import { getDashboardSummary, getKanbanColumns } from '@/lib/matchda/mock-data'
+import { getMatchdaDashboard } from '@/lib/matchda/data'
 import Sidebar from '@/components/matchda/dashboard/Sidebar'
 import Topbar from '@/components/matchda/dashboard/Topbar'
 import StatCards from '@/components/matchda/dashboard/StatCards'
 import KanbanBoard from '@/components/matchda/dashboard/KanbanBoard'
 
-// TODO(api): getDashboardSummary / getKanbanColumns 를 실제 사용자 데이터 조회로 대체
-export default function MatchdaDashboardPage() {
-  const t = getMatchdaDict('ko')
-  const summary = getDashboardSummary()
-  const columns = getKanbanColumns()
+export const dynamic = 'force-dynamic'
 
-  // TODO(i18n): 로케일에 맞춘 날짜 포맷
-  const today = '2026년 6월 26일 금요일'
+export default async function MatchdaDashboardPage() {
+  const t = getMatchdaDict('ko')
+
+  // 로그인 시 실데이터, 비로그인 시 목업 데모로 폴백
+  const real = await getMatchdaDashboard()
+  const summary = real?.summary ?? getDashboardSummary()
+  const columns = real?.columns ?? getKanbanColumns()
+  const deltas = real?.deltas // undefined 면 StatCards 가 i18n 기본 델타 사용
+
+  const today = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'full' }).format(new Date())
 
   return (
     <div className="flex min-h-screen bg-[#F7F8FA] text-[#111827]">
@@ -32,7 +37,7 @@ export default function MatchdaDashboardPage() {
             <div className="text-[13px] text-[#98A2B3]">{today}</div>
           </div>
 
-          <StatCards t={t} values={summary.stats} />
+          <StatCards t={t} values={summary.stats} deltas={deltas} />
 
           <div className="mb-4 flex items-center justify-between">
             <div>
