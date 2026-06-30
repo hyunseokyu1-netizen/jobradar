@@ -216,10 +216,10 @@ export async function getMatchdaWorkspace(
   const hasEn = (en.experience?.length ?? 0) > 0 || (en.skills?.length ?? 0) > 0 || !!en.summary
   if (!hasEn) return null
 
-  // 타깃 공고 (유저 소유 확인)
+  // 타깃 공고 (유저 소유 확인). select('*') 로 optimization 컬럼 유무에 안전하게 대응
   const { data: match } = await supabaseAdmin
     .from('matches')
-    .select('score')
+    .select('*')
     .eq('user_id', profile.id)
     .eq('job_id', jobId)
     .maybeSingle()
@@ -236,6 +236,28 @@ export async function getMatchdaWorkspace(
   const koTitle = ko.experience?.[0]?.position || profile.desired_positions?.[0] || ''
   const enTitle = en.experience?.[0]?.position || ''
 
+  const translated = buildDoc(en, name, profile.email ?? '', enTitle)
+
+  // 공고별 AI 최적화 결과(캐시) 적용 — 하이라이트 + 최적화 노트
+  const opt = (match as { optimization?: unknown }).optimization as
+    | { highlights?: string[]; note?: { keyword?: string; body?: string } | null }
+    | null
+    | undefined
+  const highlights = opt?.highlights ?? []
+  if (highlights.length) {
+    for (const exp of translated.experiences) {
+      for (const b of exp.bullets) {
+        const hits = highlights.filter((h) => b.text.includes(h))
+        if (hits.length) b.highlights = hits
+      }
+    }
+  }
+  const optimizationNote =
+    opt?.note?.keyword && opt?.note?.body
+      ? { company: job.company || '', keyword: opt.note.keyword, body: opt.note.body }
+      : undefined
+  const optimized = highlights.length > 0 || !!optimizationNote
+
   return {
     docTitle: enTitle || koTitle || (job.title ?? ''),
     target: {
@@ -245,8 +267,11 @@ export async function getMatchdaWorkspace(
       brand: brandFor(job.company || ''),
     },
     matchRate: match.score ?? 0,
-    tailored: false, // 일반 이력서를 공고와 비교 — 하이라이트/최적화 노트 없음
+    // 최적화 분석 완료 시 맞춤본(하이라이트·노트 표시), 아니면 일반 이력서 비교
+    tailored: optimized,
+    optimizable: !optimized, // 아직 분석 전이면 생성 버튼 노출
+    optimizationNote,
     original: buildDoc(ko, name, profile.email ?? '', koTitle),
-    translated: buildDoc(en, name, profile.email ?? '', enTitle),
+    translated,
   }
 }

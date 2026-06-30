@@ -850,3 +850,117 @@ export async function addJobManually(
   revalidatePath('/')
   return { jobId: data.id, matched, score }
 }
+
+/**
+ * 공고별 이력서 최적화 분석.
+ * 유저의 영어 이력서(onboarding_en)를 타깃 공고의 JD와 대조해
+ * - highlights: JD 요구사항과 부합하는 이력서 문구(원문 그대로의 부분 문자열)
+ * - note: 강조 포인트 설명(키워드 + 한국어 본문)
+ * 를 생성해 matches.optimization 에 캐싱한다.
+ */
+export async function generateWorkspaceOptimization(
+  jobId: string
+): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+  if (!jobId) return { error: '공고 정보가 없습니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  // 본인 소유 매칭 확인
+  const { data: match } = await supabaseAdmin
+    .from('matches')
+    .select('job_id')
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+    .maybeSingle()
+  if (!match) return { error: '내 공고가 아닙니다.' }
+
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('title, company, description')
+    .eq('id', jobId)
+    .maybeSingle()
+  if (!job) return { error: '공고를 찾을 수 없습니다.' }
+  if (!job.description?.trim()) {
+    return { error: '공고에 JD가 없어 분석할 수 없습니다. 공고 상세에서 JD를 먼저 입력해주세요.' }
+  }
+
+  const en = (profile.onboarding_en ?? {}) as {
+    experience?: { company?: string; position?: string; description?: string }[]
+    skills?: string[]
+  }
+  // 이력서 경력 문장들(하이라이트 후보) 수집
+  const bullets = (en.experience ?? [])
+    .flatMap((e) => (e.description ?? '').split('\n'))
+    .map((l) => l.replace(/^[-•\s]+/, '').trim())
+    .filter(Boolean)
+  if (bullets.length === 0) {
+    return { error: '영어 이력서 경력이 비어 있어 분석할 수 없습니다. 프로필에서 이력서를 먼저 작성해주세요.' }
+  }
+
+  const prompt = `당신은 해외 취업 이력서 컨설턴트입니다. 아래 [영어 이력서 문장]을 [채용공고]의 요구사항과 대조해 분석하세요. JSON으로만 응답하세요. 다른 텍스트 금지.
+
+형식:
+{
+  "highlights": ["채용공고 요구사항과 직접 부합하는 이력서 문장 속 핵심 구절"],
+  "note": { "keyword": "'채용공고 핵심 요구 키워드(영문, 작은따옴표 포함)'", "body": "한국어 한 문장 설명" }
+}
+
+규칙:
+- highlights 의 각 항목은 [영어 이력서 문장] 안에 **그대로 존재하는 부분 문자열**이어야 합니다(철자·대소문자·구두점 동일). 새 문장을 지어내지 마세요.
+- highlights 는 2~4개. 공고와 가장 관련 높은 구절만.
+- note.keyword 는 공고가 요구하는 핵심 역량을 영문 구절로(예: 'distributed systems'), 작은따옴표 포함.
+- note.body 는 "${job.company} 공고의 <keyword>" 다음에 이어질 한국어 설명입니다. "요구사항에 맞춰 ○○ 경험을 강조했습니다." 같은 형태의 자연스러운 한 문장. 절대 사실을 지어내지 마세요.
+
+[채용공고: ${job.title} @ ${job.company}]
+${job.description.slice(0, 4000)}
+
+[영어 이력서 문장]
+${bullets.map((b) => `- ${b}`).join('\n')}`
+
+  let parsed: { highlights?: unknown; note?: { keyword?: unknown; body?: unknown } }
+  try {
+    const { anthropic } = await import('@/lib/claude')
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }],
+    })
+    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const m = text.match(/\{[\s\S]*\}/)
+    if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
+    parsed = JSON.parse(m[0])
+  } catch (e) {
+    console.error('Workspace optimization error:', e)
+    return { error: '분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+  }
+
+  // highlights 는 실제 이력서 문장에 존재하는 것만 채택(환각 방지)
+  const haystack = bullets.join('\n')
+  const highlights = (Array.isArray(parsed.highlights) ? parsed.highlights : [])
+    .filter((h): h is string => typeof h === 'string' && h.trim().length > 0)
+    .filter((h) => haystack.includes(h))
+    .slice(0, 4)
+
+  const keyword = typeof parsed.note?.keyword === 'string' ? parsed.note.keyword : ''
+  const body = typeof parsed.note?.body === 'string' ? parsed.note.body : ''
+
+  const optimization = {
+    highlights,
+    note: keyword && body ? { keyword, body } : null,
+    generated_at: new Date().toISOString(),
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('matches')
+    .update({ optimization })
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+
+  if (updateError) return { error: updateError.message }
+
+  revalidatePath('/matchda/workspace')
+  return {}
+}
