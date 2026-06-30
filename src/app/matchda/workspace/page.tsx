@@ -1,14 +1,24 @@
 import { getMatchdaDict } from '@/lib/matchda/i18n'
 import { getWorkspaceData } from '@/lib/matchda/mock-data'
+import { getMatchdaWorkspace } from '@/lib/matchda/data'
 import WorkspaceTopbar from '@/components/matchda/workspace/WorkspaceTopbar'
 import OptimizationBanner from '@/components/matchda/workspace/OptimizationBanner'
 import ResumeDocument from '@/components/matchda/workspace/ResumeDocument'
 import { Sparkle } from '@/components/matchda/ui/icons'
 
-// TODO(api): getWorkspaceData 를 실제 이력서 원본/번역본 + 타깃 공고 조회로 대체
-export default function MatchdaWorkspacePage() {
+export const dynamic = 'force-dynamic'
+
+export default async function MatchdaWorkspacePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ jobId?: string }>
+}) {
   const t = getMatchdaDict('ko')
-  const data = getWorkspaceData()
+  const { jobId } = await searchParams
+
+  // 로그인 + jobId + 영어 이력서 작성 시 실데이터, 그 외 목업 데모로 폴백
+  const real = await getMatchdaWorkspace(jobId)
+  const data = real ?? getWorkspaceData()
 
   return (
     <div className="min-h-screen bg-[#F4F6F8] text-[#111827]">
@@ -25,7 +35,6 @@ export default function MatchdaWorkspacePage() {
                 {t.workspace.originalLabel}
               </span>
             </div>
-            <span className="text-[12px] text-[#98A2B3]">{t.workspace.originalMeta}</span>
           </div>
           <ResumeDocument doc={data.original} labels={t.workspace.sections} variant="original" />
         </div>
@@ -39,7 +48,6 @@ export default function MatchdaWorkspacePage() {
                 {t.workspace.translatedLabel}
               </span>
             </div>
-            <span className="text-[12px] text-[#98A2B3]">{t.workspace.translatedMeta}</span>
           </div>
           <ResumeDocument
             doc={data.translated}

@@ -17,7 +17,7 @@ export default function JobCard({
 }) {
   return (
     <Link
-      href="/matchda/workspace"
+      href={`/matchda/workspace?jobId=${encodeURIComponent(job.id)}`}
       className={`block cursor-pointer rounded-[12px] border bg-white p-[14px] ${
         emphasized
           ? 'border-[#CEEBDC] shadow-[0_1px_2px_rgba(4,108,78,0.06)]'

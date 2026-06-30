@@ -81,8 +81,13 @@ export interface ResumeWorkspaceData {
   matchRate: number
   original: ResumeDocumentData
   translated: ResumeDocumentData
-  /** 영어본 경력 아래 표시되는 최적화 노트 */
-  optimizationNote: {
+  /**
+   * 공고 맞춤 최적화본 여부.
+   * true(목업): 하이라이트·최적화 노트 포함. false(실데이터): 일반 이력서를 공고와 비교.
+   */
+  tailored?: boolean
+  /** 영어본 경력 아래 표시되는 최적화 노트 (맞춤 최적화본에만 존재) */
+  optimizationNote?: {
     company: string
     keyword: string
     body: string
