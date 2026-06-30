@@ -26,10 +26,10 @@ export default async function MatchdaDashboardPage() {
       <main className="min-w-0 flex-1">
         <Topbar t={t} />
 
-        <div className="px-9 pb-16 pt-[30px]">
-          <div className="mb-6 flex items-end justify-between">
+        <div className="px-4 pb-16 pt-[30px] sm:px-6 lg:px-9">
+          <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="m-0 text-[26px] font-bold tracking-[-0.02em] text-[#101828]">
+              <h1 className="m-0 text-[22px] font-bold tracking-[-0.02em] text-[#101828] sm:text-[26px]">
                 {t.dashboard.greeting(summary.userName)}
               </h1>
               <p className="mt-[7px] text-[15px] text-[#667085]">{t.dashboard.greetingSub}</p>

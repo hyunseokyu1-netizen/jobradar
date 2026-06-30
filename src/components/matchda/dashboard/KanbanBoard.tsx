@@ -11,7 +11,7 @@ export default function KanbanBoard({
   t: Dictionary
 }) {
   return (
-    <div className="grid grid-cols-4 items-start gap-[14px]">
+    <div className="grid grid-cols-1 items-start gap-[14px] sm:grid-cols-2 xl:grid-cols-4">
       {columns.map((col) => (
         <div
           key={col.status}

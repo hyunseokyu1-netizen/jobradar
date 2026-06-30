@@ -12,18 +12,18 @@ const TRUST_AVATARS = [
 /** 분할 히어로 (좌 카피·검색바, 우 글로벌 연결 그래픽) */
 export default function SplitHero({ t, searchHref }: { t: Dictionary; searchHref?: string }) {
   return (
-    <section className="mx-auto grid max-w-[1200px] grid-cols-[1.04fr_0.96fr] items-center gap-[60px] px-8 pb-12 pt-[84px]">
+    <section className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 px-4 pb-12 pt-12 sm:px-8 sm:pt-[84px] lg:grid-cols-[1.04fr_0.96fr] lg:gap-[60px]">
       <div>
         <div className="inline-flex items-center gap-2 rounded-full border border-[#CEEBDC] bg-[#ECFDF3] px-[13px] py-[6px] text-[13px] font-semibold text-[#046C4E]">
           <span className="h-[7px] w-[7px] rounded-full bg-[#046C4E]" />
           {t.hero.eyebrow}
         </div>
-        <h1 className="mt-[22px] text-[53px] font-bold leading-[1.12] tracking-[-0.035em] text-[#0B1A12]">
+        <h1 className="mt-[22px] text-[34px] font-bold leading-[1.15] tracking-[-0.035em] text-[#0B1A12] sm:text-[44px] sm:leading-[1.12] lg:text-[53px]">
           {t.hero.titleLine1}
           <br />
           {t.hero.titleLine2}
         </h1>
-        <p className="mt-[22px] max-w-[452px] text-[18px] leading-[1.62] text-[#4B5563]">
+        <p className="mt-[22px] max-w-[452px] text-[16px] leading-[1.62] text-[#4B5563] sm:text-[18px]">
           {t.hero.subhead}
         </p>
 

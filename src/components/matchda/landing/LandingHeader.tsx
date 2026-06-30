@@ -27,10 +27,10 @@ export default function LandingHeader({
         tinted ? 'border-[#E4EEE9] bg-[#F7FBF9]/[0.86]' : 'border-[#ECEEF0] bg-white/[0.86]'
       }`}
     >
-      <div className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between px-8">
-        <div className="flex items-center gap-11">
+      <div className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between px-4 sm:px-8">
+        <div className="flex items-center gap-4 lg:gap-11">
           <Logo href={logoHref} sub={t.brand.sub} />
-          <nav className="flex gap-[30px]">
+          <nav className="hidden gap-[30px] lg:flex">
             <span className="cursor-pointer text-[15px] font-medium text-[#475467]">
               {t.nav.about}
             </span>
@@ -54,7 +54,7 @@ export default function LandingHeader({
         <div className="flex items-center gap-[6px]">
           <Link
             href={loginHref}
-            className="rounded-lg px-4 py-[9px] text-[14px] font-semibold text-[#344054] hover:bg-[#F4F6F8]"
+            className="hidden rounded-lg px-4 py-[9px] text-[14px] font-semibold text-[#344054] hover:bg-[#F4F6F8] sm:inline-block"
           >
             {t.nav.login}
           </Link>
