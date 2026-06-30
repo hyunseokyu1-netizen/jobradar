@@ -912,7 +912,7 @@ export async function generateWorkspaceOptimization(
 - highlights 의 각 항목은 [영어 이력서 문장] 안에 **그대로 존재하는 부분 문자열**이어야 합니다(철자·대소문자·구두점 동일). 새 문장을 지어내지 마세요.
 - highlights 는 2~4개. 공고와 가장 관련 높은 구절만.
 - note.keyword 는 공고가 요구하는 핵심 역량을 영문 구절로(예: 'distributed systems'), 작은따옴표 포함.
-- note.body 는 "${job.company} 공고의 <keyword>" 다음에 이어질 한국어 설명입니다. "요구사항에 맞춰 ○○ 경험을 강조했습니다." 같은 형태의 자연스러운 한 문장. 절대 사실을 지어내지 마세요.
+- note.body 는 한국어 한 문장. **회사명·키워드·"공고의" 를 절대 포함하지 말고**, 곧바로 "요구사항에 맞춰 ○○ 경험을 강조했습니다." 처럼 이어지는 설명만 쓰세요. (렌더 시 "${job.company} 공고의 <keyword>" 가 앞에 자동으로 붙습니다.) 절대 사실을 지어내지 마세요.
 
 [채용공고: ${job.title} @ ${job.company}]
 ${job.description.slice(0, 4000)}
@@ -945,7 +945,16 @@ ${bullets.map((b) => `- ${b}`).join('\n')}`
     .slice(0, 4)
 
   const keyword = typeof parsed.note?.keyword === 'string' ? parsed.note.keyword : ''
-  const body = typeof parsed.note?.body === 'string' ? parsed.note.body : ''
+  let body = typeof parsed.note?.body === 'string' ? parsed.note.body.trim() : ''
+  // 노트는 "<회사> 공고의 <keyword> {body}" 로 렌더되므로,
+  // 모델이 body 에 같은 접두("회사 공고의 키워드" 또는 키워드)를 반복하면 제거(중복 방지)
+  if (body) {
+    const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    if (job.company) {
+      body = body.replace(new RegExp(`^${esc(job.company)}\\s*공고의\\s*${esc(keyword)}\\s*`), '')
+    }
+    body = body.replace(new RegExp(`^${esc(keyword)}\\s*`), '').trim()
+  }
 
   const optimization = {
     highlights,
