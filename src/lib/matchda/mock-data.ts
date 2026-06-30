@@ -130,6 +130,7 @@ export function getWorkspaceData(): ResumeWorkspaceData {
       brand: BRAND.spotify,
     },
     matchRate: 82,
+    tailored: true,
     original: {
       name: '김지민',
       title: '시니어 백엔드 엔지니어',

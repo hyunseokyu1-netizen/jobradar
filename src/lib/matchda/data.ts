@@ -9,6 +9,8 @@ import type {
   DashboardSummary,
   JobCardData,
   KanbanColumn,
+  ResumeDocumentData,
+  ResumeWorkspaceData,
 } from './types'
 
 // 실제 matches.status → MatchDa 칸반 4컬럼 매핑
@@ -137,5 +139,114 @@ export async function getMatchdaDashboard(): Promise<MatchdaDashboardData | null
       `${scored.length}건 기준`,
     ],
     columns,
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// 워크스페이스 — 프로필의 구조화 이력서(onboarding_ko/en) ↔ 타깃 공고
+// ─────────────────────────────────────────────────────────────
+
+interface OnboardingExperience {
+  company?: string
+  position?: string
+  period?: string
+  description?: string
+}
+interface OnboardingEducation {
+  school?: string
+  major?: string
+  degree?: string
+  period?: string
+}
+interface OnboardingResume {
+  summary?: string
+  skills?: string[]
+  experience?: OnboardingExperience[]
+  education?: OnboardingEducation[]
+}
+
+function expToBullets(description?: string) {
+  return (description ?? '')
+    .split('\n')
+    .map((l) => l.replace(/^[-•\s]+/, '').trim())
+    .filter(Boolean)
+    .map((text) => ({ text }))
+}
+
+function buildDoc(
+  resume: OnboardingResume,
+  name: string,
+  contact: string,
+  fallbackTitle: string
+): ResumeDocumentData {
+  const exps = resume.experience ?? []
+  const edu = (resume.education ?? [])[0]
+  return {
+    name,
+    title: exps[0]?.position || fallbackTitle || '',
+    contact,
+    experiences: exps.map((e) => ({
+      org: [e.company, e.position].filter(Boolean).join(' — '),
+      period: e.period ?? '',
+      bullets: expToBullets(e.description),
+    })),
+    skills: resume.skills ?? [],
+    education: edu
+      ? { org: [edu.school, edu.major || edu.degree].filter(Boolean).join(' — '), period: edu.period ?? '' }
+      : { org: '', period: '' },
+  }
+}
+
+/**
+ * 로그인 유저의 실제 이력서(한/영 구조화) + 타깃 공고로 워크스페이스 데이터 구성.
+ * 비로그인 / jobId 없음 / 공고 없음 / 영어 이력서 미작성 → null (목업 폴백)
+ */
+export async function getMatchdaWorkspace(
+  jobId?: string
+): Promise<ResumeWorkspaceData | null> {
+  if (!jobId) return null
+  const email = await getAuthUserEmail()
+  if (!email) return null
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return null
+
+  const ko = (profile.onboarding_ko ?? {}) as OnboardingResume
+  const en = (profile.onboarding_en ?? {}) as OnboardingResume
+  // 영어 이력서가 비어 있으면 보여줄 게 없으므로 목업 폴백
+  const hasEn = (en.experience?.length ?? 0) > 0 || (en.skills?.length ?? 0) > 0 || !!en.summary
+  if (!hasEn) return null
+
+  // 타깃 공고 (유저 소유 확인)
+  const { data: match } = await supabaseAdmin
+    .from('matches')
+    .select('score')
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+    .maybeSingle()
+  if (!match) return null
+
+  const { data: job } = await supabaseAdmin
+    .from('jobs')
+    .select('title, company, location')
+    .eq('id', jobId)
+    .maybeSingle()
+  if (!job) return null
+
+  const name = profile.name?.trim() || email.split('@')[0] || ''
+  const koTitle = ko.experience?.[0]?.position || profile.desired_positions?.[0] || ''
+  const enTitle = en.experience?.[0]?.position || ''
+
+  return {
+    docTitle: enTitle || koTitle || (job.title ?? ''),
+    target: {
+      company: job.company || '',
+      role: job.title || '',
+      location: job.location || '',
+      brand: brandFor(job.company || ''),
+    },
+    matchRate: match.score ?? 0,
+    tailored: false, // 일반 이력서를 공고와 비교 — 하이라이트/최적화 노트 없음
+    original: buildDoc(ko, name, profile.email ?? '', koTitle),
+    translated: buildDoc(en, name, profile.email ?? '', enTitle),
   }
 }
