@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { GlobeMark, LayoutDashboard, FileText, Target } from '../ui/icons'
+import { HandshakeMark, LayoutDashboard, FileText, Target } from '../ui/icons'
 import { Avatar } from '../ui/primitives'
 import { signOut } from '@/app/auth-actions'
 import type { Dictionary } from '@/lib/matchda/i18n'
@@ -30,8 +30,8 @@ export default function Sidebar({
   return (
     <aside className="sticky top-0 hidden min-h-screen w-[248px] flex-shrink-0 flex-col self-start border-r border-[#ECEEF0] bg-white px-[14px] py-5 lg:flex">
       <Link href="/matchda/dashboard" className="flex cursor-pointer items-center gap-[9px] px-2 pb-[18px] pt-[6px]">
-        <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-[#046C4E]">
-          <GlobeMark size={17} className="text-white" />
+        <div className="h-[30px] w-[30px] overflow-hidden rounded-lg bg-[#046C4E]">
+          <HandshakeMark size={30} className="block text-white" />
         </div>
         <span className="text-[18px] font-bold tracking-[-0.02em] text-[#0C1A14]">MatchDa</span>
       </Link>

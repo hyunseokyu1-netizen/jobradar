@@ -33,6 +33,25 @@ export function GlobeMark({ size = 18, strokeWidth = 2, ...p }: IconProps) {
   )
 }
 
+/** 브랜드 마크: 두 사람이 M을 이루며 악수 (그린 타일 안에서 흰색으로 사용). currentColor 상속 */
+export function HandshakeMark({ size = 18, ...p }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 512 512" fill="none" {...p}>
+      <g fill="currentColor">
+        <rect x="118" y="222" width="60" height="188" rx="30" />
+        <rect x="334" y="222" width="60" height="188" rx="30" />
+        <circle cx="148" cy="176" r="54" />
+        <circle cx="364" cy="176" r="54" />
+        <circle cx="256" cy="322" r="18" />
+      </g>
+      <g fill="none" stroke="currentColor" strokeWidth="18" strokeLinecap="round">
+        <path d="M186 200 C 216 252, 236 290, 253 316" />
+        <path d="M326 200 C 296 252, 276 290, 259 316" />
+      </g>
+    </svg>
+  )
+}
+
 export function ChevronDown({ size = 14, strokeWidth = 2, ...p }: IconProps) {
   return (
     <svg {...base({ size, strokeWidth, ...p })}>
