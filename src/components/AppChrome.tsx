@@ -22,10 +22,10 @@ export default function AppChrome({
 }) {
   const pathname = usePathname()
   const isMatchda = pathname?.startsWith('/matchda')
-  // 비로그인 상태의 루트(/)는 MatchDa 공개 랜딩 → 전역 크롬 숨기고 풀블리드
-  const isPublicLanding = pathname === '/' && !userEmail
+  // 루트(/)는 자체 크롬을 가진 MatchDa 화면(비로그인=랜딩, 로그인=대시보드) → 전역 크롬 숨김
+  const isHome = pathname === '/'
 
-  if (isMatchda || isPublicLanding) {
+  if (isMatchda || isHome) {
     return <>{children}</>
   }
 

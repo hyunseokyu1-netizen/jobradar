@@ -73,7 +73,9 @@ const ko = {
       savedJobs: '저장한 공고',
       applications: '지원 현황',
       recommended: '추천 채용',
+      discover: '잡 탐색',
     },
+    logout: '로그아웃',
     premium: {
       title: '프리미엄 업그레이드',
       desc: '무제한 번역과 우선 매칭을 이용하세요.',
@@ -199,7 +201,9 @@ const en: typeof ko = {
       savedJobs: 'Saved Jobs',
       applications: 'Applications',
       recommended: 'Recommended',
+      discover: 'Explore',
     },
+    logout: 'Log out',
     premium: {
       title: 'Upgrade to Premium',
       desc: 'Get unlimited translations and priority matching.',
