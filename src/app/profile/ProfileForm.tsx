@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { saveProfile, uploadResume, generateCareerSummary } from './actions'
+import SkillChipInput from '@/components/SkillChipInput'
 
 const CURRENCIES = [
   { code: 'AUD', label: 'AUD — 호주달러' },
@@ -103,14 +104,14 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         />
       </Field>
 
-      <Field label="스킬" hint="쉼표로 구분">
-        <textarea
-          name="skills"
-          value={skillsValue}
-          onChange={e => setSkillsValue(e.target.value)}
-          className="input min-h-24"
+      <Field label="스킬" hint="입력하면 자동완성 제안이 표시됩니다">
+        <SkillChipInput
+          value={skillsValue.split(',').map(s => s.trim()).filter(Boolean)}
+          onChange={arr => setSkillsValue(arr.join(', '))}
           placeholder="Node.js, React Native, TypeScript, ..."
         />
+        {/* 서버 액션은 기존 그대로 쉼표 문자열(skills)을 읽는다 */}
+        <input type="hidden" name="skills" value={skillsValue} />
       </Field>
 
       <Field label="원하는 포지션" hint="쉼표로 구분 (스크래핑 키워드)">

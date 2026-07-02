@@ -11,6 +11,7 @@ import {
   type Step,
 } from './questions'
 import { completeOnboarding } from './actions'
+import SkillChipInput from '@/components/SkillChipInput'
 
 interface ChatMessage {
   role: 'ai' | 'user'
@@ -31,6 +32,8 @@ export default function OnboardingChat({
   const [mode, setMode] = useState<'input' | 'askMore' | 'finishing' | 'done'>('input')
   const [answers, setAnswers] = useState<OnboardingAnswers>(initialAnswers ?? EMPTY_ANSWERS)
   const [input, setInput] = useState('')
+  // 스킬 단계 전용: 자동완성 칩 입력 상태
+  const [skillList, setSkillList] = useState<string[]>([])
   const [errorMsg, setErrorMsg] = useState('')
 
   const initialized = useRef(false)
@@ -73,7 +76,12 @@ export default function OnboardingChat({
   useEffect(() => {
     if (!prefill) return
     const s = STEPS[stepIndex]
-    if (s) setInput(stepInputValue(s, answers))
+    if (!s) return
+    if (s.kind === 'single' && s.key === 'skills') {
+      setSkillList(answers.skills.split(',').map(v => v.trim()).filter(Boolean))
+    } else {
+      setInput(stepInputValue(s, answers))
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex, prefill])
 
@@ -175,6 +183,19 @@ export default function OnboardingChat({
     }
   }
 
+  // 스킬 단계: 칩 목록을 쉼표 문자열로 합쳐 답변 처리
+  function handleSkillSend(skills: string[]) {
+    if (!step || step.kind !== 'single' || step.key !== 'skills' || mode !== 'input') return
+    if (skills.length === 0) return
+    setErrorMsg('')
+    const text = skills.join(', ')
+    pushUser(text)
+    const next = { ...answers, skills: text }
+    setAnswers(next)
+    persist(next)
+    goNextStep(next)
+  }
+
   function handleAddMore() {
     if (!step || step.kind !== 'list') return
     setMode('input')
@@ -197,18 +218,18 @@ export default function OnboardingChat({
   const progress = Math.min(stepIndex + 1, STEPS.length)
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 flex flex-col h-[70vh]">
+    <div className="bg-white rounded-2xl border border-[#ECEEF0] shadow-[0_1px_2px_rgba(16,24,40,0.04)] flex flex-col h-[70vh]">
       {/* 진행 바 */}
       <div className="px-5 pt-4">
-        <div className="flex items-center justify-between text-xs text-zinc-400 mb-1.5">
+        <div className="flex items-center justify-between text-xs text-[#98A2B3] mb-1.5">
           <span>프로필 작성</span>
           <span>
             {progress} / {STEPS.length}
           </span>
         </div>
-        <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-[#EEF1F3] rounded-full overflow-hidden">
           <div
-            className="h-full bg-zinc-900 rounded-full transition-all duration-300"
+            className="h-full bg-[#046C4E] rounded-full transition-all duration-300"
             style={{ width: `${(progress / STEPS.length) * 100}%` }}
           />
         </div>
@@ -221,8 +242,8 @@ export default function OnboardingChat({
             <div
               className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap leading-relaxed ${
                 m.role === 'user'
-                  ? 'bg-zinc-900 text-white rounded-br-sm'
-                  : 'bg-zinc-100 text-zinc-800 rounded-bl-sm'
+                  ? 'bg-[#046C4E] text-white rounded-br-sm'
+                  : 'bg-[#F4F6F8] text-[#344054] rounded-bl-sm'
               }`}
             >
               {m.text}
@@ -231,7 +252,7 @@ export default function OnboardingChat({
         ))}
         {mode === 'finishing' && (
           <div className="flex justify-start">
-            <div className="bg-zinc-100 text-zinc-400 rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm">
+            <div className="bg-[#F4F6F8] text-[#98A2B3] rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm">
               정리하는 중<span className="animate-pulse">...</span>
             </div>
           </div>
@@ -239,24 +260,33 @@ export default function OnboardingChat({
       </div>
 
       {/* 입력 영역 */}
-      <div className="border-t border-zinc-100 p-3">
+      <div className="border-t border-[#F0F2F4] p-3">
         {errorMsg && <p className="text-xs text-red-500 px-2 pb-2">{errorMsg}</p>}
 
         {mode === 'askMore' ? (
           <div className="flex gap-2">
             <button
               onClick={handleAddMore}
-              className="flex-1 border border-zinc-300 rounded-xl py-2.5 text-sm font-medium hover:bg-zinc-50 transition-colors"
+              className="flex-1 border border-[#E2E6EA] rounded-xl py-2.5 text-sm font-medium text-[#344054] hover:bg-[#F4F6F8] transition-colors"
             >
               ＋ 추가하기
             </button>
             <button
               onClick={handleNoMore}
-              className="flex-1 bg-zinc-900 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-zinc-700 transition-colors"
+              className="flex-1 bg-[#046C4E] text-white rounded-xl py-2.5 text-sm font-medium hover:bg-[#035A40] transition-colors"
             >
               다음으로 →
             </button>
           </div>
+        ) : step?.kind === 'single' && step.key === 'skills' ? (
+          // 스킬 단계: 자동완성 칩 입력 (자유 입력도 가능)
+          <SkillChipInput
+            value={skillList}
+            onChange={setSkillList}
+            onSend={handleSkillSend}
+            disabled={busy}
+            placeholder={step.placeholder ?? '스킬을 입력하면 자동완성됩니다'}
+          />
         ) : (
           <div className="flex items-end gap-2">
             <textarea
@@ -279,12 +309,12 @@ export default function OnboardingChat({
                   ? step.placeholder
                   : '답변을 입력하세요'
               }
-              className="flex-1 resize-none border border-zinc-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 max-h-32 disabled:bg-zinc-50 disabled:text-zinc-400"
+              className="flex-1 resize-none border border-[#E2E6EA] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#046C4E] focus:ring-2 focus:ring-[#046C4E]/10 max-h-32 disabled:bg-[#F4F6F8] disabled:text-[#98A2B3]"
             />
             {step?.kind === 'single' && step.optional && !busy && (
               <button
                 onClick={handleSkip}
-                className="text-xs text-zinc-400 hover:text-zinc-600 px-2 py-2 whitespace-nowrap transition-colors"
+                className="text-xs text-[#98A2B3] hover:text-[#667085] px-2 py-2 whitespace-nowrap transition-colors"
               >
                 건너뛰기
               </button>
@@ -292,7 +322,7 @@ export default function OnboardingChat({
             <button
               onClick={handleSend}
               disabled={busy || !input.trim()}
-              className="bg-zinc-900 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 transition-colors whitespace-nowrap"
+              className="bg-[#046C4E] text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-[#035A40] disabled:opacity-40 transition-colors whitespace-nowrap"
             >
               전송
             </button>
