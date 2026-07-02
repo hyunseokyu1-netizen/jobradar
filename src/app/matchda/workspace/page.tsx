@@ -5,6 +5,7 @@ import WorkspaceTopbar from '@/components/matchda/workspace/WorkspaceTopbar'
 import OptimizationBanner from '@/components/matchda/workspace/OptimizationBanner'
 import ResumeDocument from '@/components/matchda/workspace/ResumeDocument'
 import GenerateOptimizationButton from '@/components/matchda/workspace/GenerateOptimizationButton'
+import WorkspaceActions from '@/components/matchda/workspace/WorkspaceActions'
 import { Sparkle } from '@/components/matchda/ui/icons'
 
 export const dynamic = 'force-dynamic'
@@ -23,7 +24,19 @@ export default async function MatchdaWorkspacePage({
 
   return (
     <div className="min-h-screen bg-[#F4F6F8] text-[#111827]">
-      <WorkspaceTopbar t={t} data={data} />
+      <WorkspaceTopbar
+        t={t}
+        data={data}
+        actions={
+          real && jobId ? (
+            <WorkspaceActions
+              jobId={jobId}
+              jobTitle={data.target.role}
+              company={data.target.company}
+            />
+          ) : undefined
+        }
+      />
       <OptimizationBanner t={t} data={data} />
 
       <div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-[22px] px-4 pb-20 pt-6 sm:px-7 lg:grid-cols-2">
