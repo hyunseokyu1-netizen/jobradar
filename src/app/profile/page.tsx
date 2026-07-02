@@ -3,6 +3,7 @@ import ProfileForm from './ProfileForm'
 import ResumeEditor from './ResumeEditor'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { redirect } from 'next/navigation'
+import AppShell from '@/components/matchda/AppShell'
 
 export default async function ProfilePage() {
   const email = await getAuthUserEmail()
@@ -16,7 +17,8 @@ export default async function ProfilePage() {
   const asArr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : [])
 
   return (
-    <div className="max-w-2xl">
+    <AppShell activeKey="profile" userName={(profile?.name as string) ?? undefined} userEmail={email}>
+      <div className="max-w-2xl">
       <div className="flex items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold">내 프로파일</h1>
         <Link
@@ -48,6 +50,7 @@ export default async function ProfilePage() {
       </section>
 
       <ProfileForm initialData={profile} />
-    </div>
+      </div>
+    </AppShell>
   )
 }

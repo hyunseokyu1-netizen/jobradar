@@ -3,6 +3,7 @@ import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import AddSourceForm from '@/components/discover/AddSourceForm'
 import SourceList, { type SourceItem } from '@/components/discover/SourceList'
 import DiscoveredJobList, { type DiscoveredJobItem } from '@/components/discover/DiscoveredJobList'
+import AppShell from '@/components/matchda/AppShell'
 
 export const dynamic = 'force-dynamic'
 // 수집 서버 액션(scrapeSourceAction)이 이 페이지 라우트에서 실행된다.
@@ -41,7 +42,7 @@ export default async function DiscoverPage() {
   }))
 
   return (
-    <div>
+    <AppShell activeKey="discover" userName={profile.name as string} userEmail={email}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold">잡 탐색</h1>
         <p className="text-sm text-zinc-400 mt-0.5">
@@ -52,6 +53,6 @@ export default async function DiscoverPage() {
       <AddSourceForm />
       <SourceList sources={(sources ?? []) as SourceItem[]} />
       <DiscoveredJobList jobs={jobs} />
-    </div>
+    </AppShell>
   )
 }
