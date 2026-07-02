@@ -1,21 +1,33 @@
 import Link from 'next/link'
-import { GlobeMark, LayoutDashboard, FileText, Bookmark, TrendingUp, Target, ChevronDown } from '../ui/icons'
+import { GlobeMark, LayoutDashboard, FileText, Target } from '../ui/icons'
 import { Avatar } from '../ui/primitives'
+import { signOut } from '@/app/auth-actions'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
-/** 좌측 고정 사이드바 (248px) */
-export default function Sidebar({ t }: { t: Dictionary }) {
+/**
+ * 좌측 고정 사이드바 (248px).
+ * userEmail 이 있으면 실제 유저(로그아웃 포함), 없으면 목업 데모 placeholder.
+ */
+export default function Sidebar({
+  t,
+  userName,
+  userEmail,
+}: {
+  t: Dictionary
+  userName?: string
+  userEmail?: string | null
+}) {
   const navItems = [
     { key: 'dashboard', label: t.dashboard.nav.dashboard, Icon: LayoutDashboard, active: true, href: '/matchda/dashboard' },
-    { key: 'myResume', label: t.dashboard.nav.myResume, Icon: FileText, active: false, href: '/matchda/workspace' },
-    { key: 'savedJobs', label: t.dashboard.nav.savedJobs, Icon: Bookmark, active: false, href: '/matchda/dashboard' },
-    { key: 'applications', label: t.dashboard.nav.applications, Icon: TrendingUp, active: false, href: '/matchda/dashboard' },
-    { key: 'recommended', label: t.dashboard.nav.recommended, Icon: Target, active: false, href: '/matchda/dashboard' },
+    { key: 'discover', label: t.dashboard.nav.discover, Icon: Target, active: false, href: '/discover' },
+    { key: 'profile', label: t.dashboard.nav.myResume, Icon: FileText, active: false, href: '/profile' },
   ]
+
+  const displayName = userName || '김지민'
 
   return (
     <aside className="sticky top-0 hidden min-h-screen w-[248px] flex-shrink-0 flex-col self-start border-r border-[#ECEEF0] bg-white px-[14px] py-5 lg:flex">
-      <Link href="/matchda" className="flex cursor-pointer items-center gap-[9px] px-2 pb-[18px] pt-[6px]">
+      <Link href="/matchda/dashboard" className="flex cursor-pointer items-center gap-[9px] px-2 pb-[18px] pt-[6px]">
         <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-[#046C4E]">
           <GlobeMark size={17} className="text-white" />
         </div>
@@ -54,13 +66,24 @@ export default function Sidebar({ t }: { t: Dictionary }) {
         </button>
       </div>
 
-      <div className="flex items-center gap-[10px] border-t border-[#F0F2F4] p-2 pt-[14px]">
-        <Avatar initial="지" size={34} fontSize={13} />
-        <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-semibold text-[#1F2A37]">김지민</div>
-          <div className="text-[12px] text-[#98A2B3]">{t.dashboard.plan}</div>
+      <div className="border-t border-[#F0F2F4] pt-[10px]">
+        <div className="flex items-center gap-[10px] p-2">
+          <Avatar initial={displayName.slice(0, 1)} size={34} fontSize={13} />
+          <div className="min-w-0 flex-1">
+            <div className="text-[13px] font-semibold text-[#1F2A37]">{displayName}</div>
+            <div className="truncate text-[12px] text-[#98A2B3]">{userEmail || t.dashboard.plan}</div>
+          </div>
         </div>
-        <ChevronDown size={16} className="text-[#98A2B3]" />
+        {userEmail && (
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="mt-1 w-full rounded-[9px] px-3 py-[7px] text-left text-[12px] font-medium text-[#98A2B3] hover:bg-[#F4F6F8] hover:text-[#475467]"
+            >
+              {t.dashboard.logout}
+            </button>
+          </form>
+        )}
       </div>
     </aside>
   )
