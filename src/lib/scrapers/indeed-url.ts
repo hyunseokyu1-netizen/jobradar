@@ -3,7 +3,8 @@ import type { ScrapedJob } from './seek-url'
 import { fetchHtml } from './fetch-html'
 
 export async function scrapeIndeedUrl(url: string): Promise<ScrapedJob> {
-  const html = await fetchHtml(url, { label: 'Indeed', acceptLanguage: 'en-AU,en;q=0.9' })
+  // Indeed(Cloudflare)도 일반 fetch를 자주 차단 → 실패 시 stealth 브라우저 폴백
+  const html = await fetchHtml(url, { label: 'Indeed', acceptLanguage: 'en-AU,en;q=0.9', browserFallback: true })
   const $ = cheerio.load(html)
 
   // JSON-LD 구조화 데이터 시도

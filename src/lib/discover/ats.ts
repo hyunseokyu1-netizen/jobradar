@@ -191,18 +191,27 @@ async function scrapeApple(url: string): Promise<DiscoveredPosting[]> {
 async function scrapeGeneric(url: string): Promise<DiscoveredPosting[]> {
   // 봇 차단(403/429) 사이트가 많아, 브라우저 헤더 + 재시도가 포함된 공통 fetcher 사용.
   // 헤더로 안 뚫리는 Cloudflare 챌린지 등은 헤드리스 브라우저 폴백으로 처리.
-  const html = await fetchHtml(url, { label: '수집', browserFallback: true })
+  let stripped: string
+  try {
+    const html = await fetchHtml(url, { label: '수집', browserFallback: true })
 
-  // 스크립트/스타일 제거 후 링크 구조는 유지한 채 압축
-  const stripped = html
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<svg[\s\S]*?<\/svg>/gi, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/\s+/g, ' ')
-    // 공고가 페이지 뒤쪽에 있는 경우(긴 마케팅/네비 뒤) 잘리지 않도록 넉넉히.
-    // Haiku는 200K 컨텍스트라 여유가 있다.
-    .slice(0, 100000)
+    // 스크립트/스타일 제거 후 링크 구조는 유지한 채 압축
+    stripped = html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<svg[\s\S]*?<\/svg>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\s+/g, ' ')
+      // 공고가 페이지 뒤쪽에 있는 경우(긴 마케팅/네비 뒤) 잘리지 않도록 넉넉히.
+      // Haiku는 200K 컨텍스트라 여유가 있다.
+      .slice(0, 100000)
+  } catch (directError) {
+    // 직접 fetch·헤드리스 브라우저 모두 차단 → 리더 프록시(r.jina.ai)로 우회.
+    // 마크다운이지만 링크가 보존되므로 아래 Haiku 추출 프롬프트를 그대로 쓸 수 있다.
+    console.warn(`[discover] 직접 수집 실패, 리더 프록시로 우회: ${url} — ${String(directError)}`)
+    const { fetchReaderMarkdown } = await import('@/lib/scrapers/reader')
+    stripped = (await fetchReaderMarkdown(url)).slice(0, 100000)
+  }
 
   const { anthropic } = await import('@/lib/claude')
   const message = await anthropic.messages.create({
@@ -210,7 +219,7 @@ async function scrapeGeneric(url: string): Promise<DiscoveredPosting[]> {
     max_tokens: 4000,
     messages: [{
       role: 'user',
-      content: `아래는 회사 채용 페이지의 HTML입니다. 채용공고 목록을 추출해 JSON으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
+      content: `아래는 회사 채용 페이지의 내용(HTML 또는 마크다운)입니다. 채용공고 목록을 추출해 JSON으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
 
 형식: {"jobs": [{"title": "직무명", "url": "공고 상세 링크(절대 또는 상대 경로)", "location": "위치(있으면)", "department": "부서(있으면)"}]}
 
@@ -219,7 +228,7 @@ async function scrapeGeneric(url: string): Promise<DiscoveredPosting[]> {
 - 공고를 찾을 수 없으면 {"jobs": []}
 - 최대 100개
 
-HTML:
+페이지 내용:
 ${stripped}`,
     }],
   })

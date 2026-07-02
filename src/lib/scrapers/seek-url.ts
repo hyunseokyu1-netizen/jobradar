@@ -11,7 +11,8 @@ export interface ScrapedJob {
 }
 
 export async function scrapeSeekUrl(url: string): Promise<ScrapedJob> {
-  const html = await fetchHtml(url, { label: 'Seek', acceptLanguage: 'en-AU,en;q=0.9' })
+  // Seek(Kasada)은 데이터센터·일반 fetch를 403으로 차단 → 실패 시 stealth 브라우저 폴백
+  const html = await fetchHtml(url, { label: 'Seek', acceptLanguage: 'en-AU,en;q=0.9', browserFallback: true })
   const $ = cheerio.load(html)
 
   // __NEXT_DATA__ JSON에서 추출 (가장 신뢰성 높음)

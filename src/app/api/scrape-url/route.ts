@@ -5,10 +5,12 @@ import { scrapeIndeedUrl } from '@/lib/scrapers/indeed-url'
 import { scrapeGenericUrl } from '@/lib/scrapers/generic-url'
 import { parseGlassdoorUrl } from '@/lib/scrapers/glassdoor-url'
 import { scrapeAppleUrl } from '@/lib/scrapers/apple-url'
+import { scrapeJobViaReader } from '@/lib/scrapers/reader'
 import type { Platform } from '@/lib/detect-platform'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 30
+// 리더 프록시 우회(최대 45초) + Haiku 추출까지 감안한 상한
+export const maxDuration = 90
 
 export async function POST(request: Request) {
   const { jobId } = await request.json()
@@ -16,7 +18,7 @@ export async function POST(request: Request) {
 
   const { data: job } = await supabaseAdmin
     .from('jobs')
-    .select('id, url, source, title')
+    .select('id, url, source, title, description')
     .eq('id', jobId)
     .single()
 
@@ -24,12 +26,20 @@ export async function POST(request: Request) {
 
   try {
     const source = job.source as Platform
-    const scraped =
-      source === 'seek'      ? await scrapeSeekUrl(job.url) :
-      source === 'indeed'    ? await scrapeIndeedUrl(job.url) :
-      source === 'glassdoor' ? parseGlassdoorUrl(job.url) :
-      source === 'apple'     ? await scrapeAppleUrl(job.url) :
-                               await scrapeGenericUrl(job.url)
+    let scraped
+    try {
+      scraped =
+        source === 'seek'      ? await scrapeSeekUrl(job.url) :
+        source === 'indeed'    ? await scrapeIndeedUrl(job.url) :
+        source === 'glassdoor' ? parseGlassdoorUrl(job.url) :
+        source === 'apple'     ? await scrapeAppleUrl(job.url) :
+                                 await scrapeGenericUrl(job.url)
+    } catch (directError) {
+      // 직접 fetch가 봇 차단(403/429, Cloudflare 등)으로 실패 →
+      // 리더 프록시(r.jina.ai)로 우회해 마크다운을 받아 AI로 추출
+      console.warn(`[scrape-url] 직접 수집 실패, 리더 프록시로 우회: ${job.url} — ${String(directError)}`)
+      scraped = await scrapeJobViaReader(job.url)
+    }
 
     await supabaseAdmin
       .from('jobs')
@@ -38,7 +48,8 @@ export async function POST(request: Request) {
         company: scraped.company,
         location: scraped.location,
         salary: scraped.salary,
-        description: scraped.description,
+        // 리더 폴백이 제목만 건진 경우(빈 JD), 기존/수동 입력 JD를 지우지 않는다
+        description: scraped.description || job.description || null,
         posted_at: scraped.posted_at,
         scraped_at: new Date().toISOString(),
       })
