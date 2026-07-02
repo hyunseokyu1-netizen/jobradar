@@ -20,6 +20,7 @@ export default function DashboardScreen({
   real,
   unmatchedCount,
   userEmail,
+  needsOnboarding = false,
 }: {
   t: Dictionary
   summary: DashboardSummary
@@ -28,6 +29,7 @@ export default function DashboardScreen({
   real: boolean
   unmatchedCount: number
   userEmail?: string | null
+  needsOnboarding?: boolean
 }) {
   const today = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'full' }).format(new Date())
 
@@ -39,6 +41,26 @@ export default function DashboardScreen({
         <Topbar t={t} />
 
         <div className="px-4 pb-16 pt-[30px] sm:px-6 lg:px-9">
+          {/* 온보딩 미완료 유저 → 프로필 완성 유도 (매칭·맞춤 이력서의 전제 조건) */}
+          {needsOnboarding && (
+            <a
+              href="/onboarding"
+              className="mb-6 flex items-center justify-between gap-3 rounded-[14px] border border-[#CEEBDC] bg-[#ECFDF3] px-5 py-4 transition-colors hover:bg-[#DFF7E9]"
+            >
+              <div>
+                <div className="text-[14px] font-bold text-[#046C4E]">
+                  ✨ 프로필을 완성하고 나에게 꼭 맞는 채용 매칭을 받아보세요
+                </div>
+                <p className="mt-0.5 text-[13px] text-[#3D7A63]">
+                  채팅으로 답하면 영어 이력서까지 자동으로 정리해 드려요. 3분이면 충분합니다.
+                </p>
+              </div>
+              <span className="whitespace-nowrap rounded-[9px] bg-[#046C4E] px-4 py-2 text-[13px] font-semibold text-white">
+                완성하기 →
+              </span>
+            </a>
+          )}
+
           <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="m-0 text-[22px] font-bold tracking-[-0.02em] text-[#101828] sm:text-[26px]">

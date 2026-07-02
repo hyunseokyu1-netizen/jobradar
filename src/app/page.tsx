@@ -1,4 +1,4 @@
-import { getAuthUserEmail } from '@/lib/auth-helpers'
+import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { getMatchdaDict } from '@/lib/matchda/i18n'
 import { getMatchdaDashboard } from '@/lib/matchda/data'
 import { getDashboardSummary, getKanbanColumns } from '@/lib/matchda/mock-data'
@@ -22,6 +22,7 @@ export default async function HomePage() {
 
   // 로그인 → MatchDa 대시보드가 실제 홈
   const t = getMatchdaDict('ko')
+  const profile = await getOrCreateProfile(email)
   const real = await getMatchdaDashboard()
   const summary = real?.summary ?? getDashboardSummary()
   const columns = real?.columns ?? getKanbanColumns()
@@ -35,6 +36,7 @@ export default async function HomePage() {
       real={!!real}
       unmatchedCount={real?.unmatchedCount ?? 0}
       userEmail={email}
+      needsOnboarding={!profile?.onboarding_completed}
     />
   )
 }

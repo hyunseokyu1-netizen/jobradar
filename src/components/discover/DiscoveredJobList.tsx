@@ -34,6 +34,8 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
   const [addingId, setAddingId] = useState<string | null>(null)
   const [addingStep, setAddingStep] = useState('')
   const [error, setError] = useState('')
+  // 방금 추가한 공고의 jobId (워크스페이스 바로가기 링크용)
+  const [addedJobIds, setAddedJobIds] = useState<Record<string, string>>({})
 
   const router = useRouter()
 
@@ -72,6 +74,7 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
       }
       setAddingStep('AI 정밀 매칭 중...')
       await matchSingleJob(res.jobId)
+      setAddedJobIds(prev => ({ ...prev, [job.id]: res.jobId! }))
     }
 
     setAddingId(null)
@@ -185,7 +188,19 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
 
               <div className="flex items-center gap-2 shrink-0">
                 {job.status === 'added' ? (
-                  <span className="text-xs text-green-600 whitespace-nowrap">✓ 추가됨</span>
+                  <span className="flex items-center gap-2 whitespace-nowrap text-xs">
+                    <span className="text-green-600">✓ 추가됨</span>
+                    <a
+                      href={
+                        addedJobIds[job.id]
+                          ? `/matchda/workspace?jobId=${encodeURIComponent(addedJobIds[job.id])}`
+                          : '/'
+                      }
+                      className="font-semibold text-[#046C4E] hover:underline"
+                    >
+                      {addedJobIds[job.id] ? '워크스페이스 →' : '공고 관리 →'}
+                    </a>
+                  </span>
                 ) : (
                   <>
                     <button
