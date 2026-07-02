@@ -12,16 +12,18 @@ export default function Sidebar({
   t,
   userName,
   userEmail,
+  activeKey = 'dashboard',
 }: {
   t: Dictionary
   userName?: string
   userEmail?: string | null
+  activeKey?: 'dashboard' | 'discover' | 'profile'
 }) {
   const navItems = [
-    { key: 'dashboard', label: t.dashboard.nav.dashboard, Icon: LayoutDashboard, active: true, href: '/matchda/dashboard' },
-    { key: 'discover', label: t.dashboard.nav.discover, Icon: Target, active: false, href: '/discover' },
-    { key: 'profile', label: t.dashboard.nav.myResume, Icon: FileText, active: false, href: '/profile' },
-  ]
+    { key: 'dashboard', label: t.dashboard.nav.dashboard, Icon: LayoutDashboard, href: '/matchda/dashboard' },
+    { key: 'discover', label: t.dashboard.nav.discover, Icon: Target, href: '/discover' },
+    { key: 'profile', label: t.dashboard.nav.myResume, Icon: FileText, href: '/profile' },
+  ] as const
 
   const displayName = userName || '김지민'
 
@@ -35,12 +37,12 @@ export default function Sidebar({
       </Link>
 
       <nav className="flex flex-col gap-[3px]">
-        {navItems.map(({ key, label, Icon, active, href }) => (
+        {navItems.map(({ key, label, Icon, href }) => (
           <Link
             key={key}
             href={href}
             className={`flex items-center gap-[11px] rounded-[10px] px-3 py-[10px] text-[14px] ${
-              active
+              key === activeKey
                 ? 'bg-[#ECFDF3] font-semibold text-[#046C4E]'
                 : 'font-medium text-[#475467] hover:bg-[#F4F6F8]'
             }`}

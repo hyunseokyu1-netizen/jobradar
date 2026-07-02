@@ -21,11 +21,14 @@ export default function AppChrome({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const isMatchda = pathname?.startsWith('/matchda')
-  // 루트(/)는 자체 크롬을 가진 MatchDa 화면(비로그인=랜딩, 로그인=대시보드) → 전역 크롬 숨김
-  const isHome = pathname === '/'
+  // MatchDa 셸(사이드바/랜딩/대시보드)을 자체적으로 가진 경로는 전역 크롬 숨김
+  const usesMatchdaShell =
+    pathname === '/' ||
+    pathname?.startsWith('/matchda') ||
+    pathname?.startsWith('/discover') ||
+    pathname?.startsWith('/profile')
 
-  if (isMatchda || isHome) {
+  if (usesMatchdaShell) {
     return <>{children}</>
   }
 
