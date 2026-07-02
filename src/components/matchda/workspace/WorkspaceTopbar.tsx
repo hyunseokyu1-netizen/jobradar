@@ -7,9 +7,12 @@ import type { Dictionary } from '@/lib/matchda/i18n'
 export default function WorkspaceTopbar({
   t,
   data,
+  actions,
 }: {
   t: Dictionary
   data: ResumeWorkspaceData
+  /** per-job 액션(커버레터·맞춤이력서 등) 슬롯 — 실데이터에서만 */
+  actions?: React.ReactNode
 }) {
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-[#ECEEF0] bg-white px-4 sm:px-6">
@@ -40,6 +43,7 @@ export default function WorkspaceTopbar({
       </div>
 
       <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
+        {actions}
         <div className="hidden items-center gap-[5px] text-[12px] text-[#98A2B3] lg:flex">
           <Check size={14} className="text-[#046C4E]" />
           {t.workspace.autoSaved}
