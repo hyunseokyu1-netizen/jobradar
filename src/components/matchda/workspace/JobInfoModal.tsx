@@ -58,42 +58,42 @@ export default function JobInfoModal({
   }
 
   const input =
-    'w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm outline-none focus:border-zinc-400'
+    'w-full rounded-lg border border-[#ECEEF0] px-3 py-2.5 text-sm outline-none focus:border-[#046C4E]'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-xl">
-        <div className="flex items-start justify-between border-b border-zinc-100 p-6">
+        <div className="flex items-start justify-between border-b border-[#F0F2F4] p-6">
           <h2 className="text-lg font-bold">공고 정보 편집</h2>
-          <button onClick={onClose} className="text-xl leading-none text-zinc-400 hover:text-zinc-600">
+          <button onClick={onClose} className="text-xl leading-none text-[#98A2B3] hover:text-[#475467]">
             ✕
           </button>
         </div>
         <div className="space-y-4 p-6">
           <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-500">직무명</label>
+            <label className="mb-1 block text-xs font-medium text-[#667085]">직무명</label>
             <input value={title} onChange={(e) => setTitle(e.target.value)} className={input} />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500">회사</label>
+              <label className="mb-1 block text-xs font-medium text-[#667085]">회사</label>
               <input value={company} onChange={(e) => setCompany(e.target.value)} className={input} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500">위치</label>
+              <label className="mb-1 block text-xs font-medium text-[#667085]">위치</label>
               <input value={location} onChange={(e) => setLocation(e.target.value)} className={input} />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-500">
-              지원일 <span className="text-zinc-300">— 선택</span>
+            <label className="mb-1 block text-xs font-medium text-[#667085]">
+              지원일 <span className="text-[#D0D5DB]">— 선택</span>
             </label>
             <input type="date" value={appliedAt} onChange={(e) => setAppliedAt(e.target.value)} className={input} />
           </div>
           {error && <p className="text-xs text-red-500">{error}</p>}
         </div>
-        <div className="flex items-center justify-end gap-2 border-t border-zinc-100 p-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-600" disabled={saving}>
+        <div className="flex items-center justify-end gap-2 border-t border-[#F0F2F4] p-6">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[#98A2B3] hover:text-[#475467]" disabled={saving}>
             취소
           </button>
           <button

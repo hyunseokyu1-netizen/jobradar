@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
+import { Logo } from '@/components/matchda/ui/primitives'
 import OnboardingChat from './OnboardingChat'
 import { answersFromOnboardingKo } from './questions'
 
@@ -25,14 +26,24 @@ export default async function OnboardingPage({
       : undefined
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold">{redo ? '프로필 다시 작성' : '프로필 작성'}</h1>
-        <p className="text-sm text-zinc-400 mt-0.5">
-          채팅으로 답하면 영어 프로필로 정리해 드려요. 한국어로 편하게 답해주세요.
-        </p>
+    <div className="min-h-screen bg-[#F7F8FA]">
+      <header className="border-b border-[#ECEEF0] bg-white">
+        <div className="mx-auto flex h-[60px] max-w-2xl items-center px-4">
+          <Logo href="/" />
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-2xl px-4 py-8">
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#101828]">
+            {redo ? '프로필 다시 작성' : '프로필 작성'}
+          </h1>
+          <p className="text-sm text-[#667085] mt-0.5">
+            채팅으로 답하면 영어 프로필로 정리해 드려요. 한국어로 편하게 답해주세요.
+          </p>
+        </div>
+        <OnboardingChat initialAnswers={initialAnswers} />
       </div>
-      <OnboardingChat initialAnswers={initialAnswers} />
     </div>
   )
 }

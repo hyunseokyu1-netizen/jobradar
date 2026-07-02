@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="ko" className={`${geist.variable} ${plexKr.variable} ${plexMono.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
+      <body className="min-h-full flex flex-col bg-[#F7F8FA] text-[#101828]">
         <AppChrome
           userEmail={user?.email ?? null}
           showOnboardingBanner={showOnboardingBanner}

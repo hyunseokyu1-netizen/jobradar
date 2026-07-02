@@ -23,7 +23,7 @@ export default async function ProfilePage() {
         <h1 className="text-2xl font-bold">내 프로파일</h1>
         <Link
           href="/onboarding?redo=1"
-          className="text-sm font-medium bg-zinc-900 text-white px-4 py-2 rounded-lg hover:bg-zinc-700 transition-colors whitespace-nowrap"
+          className="text-sm font-medium bg-[#046C4E] text-white px-4 py-2 rounded-lg hover:bg-[#035A40] transition-colors whitespace-nowrap"
         >
           ✨ AI로 다시 작성
         </Link>
@@ -31,7 +31,7 @@ export default async function ProfilePage() {
 
       <section className="mb-8">
         <h2 className="text-base font-semibold mb-1">이력서 (한글 작성 → 번역)</h2>
-        <p className="text-xs text-zinc-400 mb-3">
+        <p className="text-xs text-[#98A2B3] mb-3">
           섹션별로 한국어로 작성하고 ‘번역해서 저장’을 누르면 영어로 저장돼 매칭·커버레터에 사용됩니다.
         </p>
         <ResumeEditor

@@ -107,14 +107,14 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl">
         {/* 헤더 */}
-        <div className="flex items-start justify-between p-6 pb-0 border-b border-zinc-100">
+        <div className="flex items-start justify-between p-6 pb-0 border-b border-[#F0F2F4]">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="font-bold text-lg">커버레터</h2>
-                <p className="text-sm text-zinc-500 mt-0.5">{jobTitle} · {company}</p>
+                <p className="text-sm text-[#667085] mt-0.5">{jobTitle} · {company}</p>
               </div>
-              <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 text-xl leading-none">✕</button>
+              <button onClick={onClose} className="text-[#98A2B3] hover:text-[#475467] text-xl leading-none">✕</button>
             </div>
             {content && (
               <div className="flex gap-1">
@@ -124,8 +124,8 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
                     onClick={() => handleTabChange(t)}
                     className={`text-sm px-4 py-2 rounded-t-lg border-b-2 transition-colors ${
                       tab === t
-                        ? 'border-zinc-900 text-zinc-900 font-medium'
-                        : 'border-transparent text-zinc-400 hover:text-zinc-600'
+                        ? 'border-[#046C4E] text-[#046C4E] font-medium'
+                        : 'border-transparent text-[#98A2B3] hover:text-[#475467]'
                     }`}
                   >
                     {t === 'en' ? '영문' : '한국어'}
@@ -139,16 +139,16 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
         {/* 본문 */}
         <div className="flex-1 overflow-y-auto p-6">
           {state === 'loading' && (
-            <div className="text-center py-8 text-sm text-zinc-400">불러오는 중...</div>
+            <div className="text-center py-8 text-sm text-[#98A2B3]">불러오는 중...</div>
           )}
 
           {state !== 'loading' && !content && (
             <div className="text-center py-8">
-              <p className="text-sm text-zinc-400 mb-4">이력서와 JD를 분석해 맞춤 커버레터를 생성합니다.</p>
+              <p className="text-sm text-[#98A2B3] mb-4">이력서와 JD를 분석해 맞춤 커버레터를 생성합니다.</p>
               <button
                 onClick={handleGenerate}
                 disabled={isLoading}
-                className="bg-zinc-900 text-white text-sm px-6 py-2.5 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                className="bg-[#046C4E] text-white text-sm px-6 py-2.5 rounded-lg hover:bg-[#035A40] disabled:opacity-50 transition-colors"
               >
                 ✦ AI 커버레터 생성
               </button>
@@ -157,29 +157,29 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
           )}
 
           {state === 'generating' && (
-            <div className="text-center py-8 text-sm text-zinc-400">커버레터 작성 중...</div>
+            <div className="text-center py-8 text-sm text-[#98A2B3]">커버레터 작성 중...</div>
           )}
 
           {state === 'reviewing' && (
-            <div className="text-center py-8 text-sm text-zinc-400">AI가 검토 중...</div>
+            <div className="text-center py-8 text-sm text-[#98A2B3]">AI가 검토 중...</div>
           )}
 
           {content && state !== 'generating' && state !== 'reviewing' && tab === 'en' && (
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
-              className="w-full text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 outline-none focus:border-zinc-400 resize-none"
+              className="w-full text-sm leading-relaxed border border-[#ECEEF0] rounded-xl p-4 outline-none focus:border-[#046C4E] resize-none"
               rows={16}
             />
           )}
 
           {tab === 'ko' && state !== 'generating' && state !== 'reviewing' && (
             translating
-              ? <div className="text-center py-8 text-sm text-zinc-400">번역 중...</div>
+              ? <div className="text-center py-8 text-sm text-[#98A2B3]">번역 중...</div>
               : <textarea
                   readOnly
                   value={translation}
-                  className="w-full text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 outline-none resize-none bg-zinc-50 text-zinc-700"
+                  className="w-full text-sm leading-relaxed border border-[#ECEEF0] rounded-xl p-4 outline-none resize-none bg-[#F7F8FA] text-[#344054]"
                   rows={16}
                 />
           )}
@@ -191,7 +191,7 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
 
         {/* 푸터 */}
         {content && state !== 'generating' && state !== 'reviewing' && state !== 'loading' && (
-          <div className="p-6 border-t border-zinc-100 space-y-3">
+          <div className="p-6 border-t border-[#F0F2F4] space-y-3">
             {/* 액션 버튼 행 — 영문 탭에서만 표시 */}
             {tab === 'en' && (
               <div className="flex items-center justify-between">
@@ -199,7 +199,7 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
                   <button
                     onClick={handleGenerate}
                     disabled={isLoading}
-                    className="text-xs text-zinc-400 hover:text-zinc-600 disabled:opacity-50 border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 transition-colors"
+                    className="text-xs text-[#98A2B3] hover:text-[#475467] disabled:opacity-50 border border-[#ECEEF0] px-3 py-1.5 rounded-lg hover:bg-[#F4F6F8] transition-colors"
                   >
                     ↺ 재생성
                   </button>
@@ -216,13 +216,13 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
                     <button
                       onClick={handleSave}
                       disabled={isLoading}
-                      className="text-xs bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                      className="text-xs bg-[#046C4E] text-white px-3 py-1.5 rounded-lg hover:bg-[#035A40] disabled:opacity-50 transition-colors"
                     >
                       {state === 'saving' ? '저장 중...' : saved ? '✓ 저장됨' : '저장'}
                     </button>
                   )}
                   {!isDirty && savedContent && (
-                    <span className="text-xs text-zinc-400 px-3 py-1.5">{saved ? '✓ 저장됨' : '저장됨'}</span>
+                    <span className="text-xs text-[#98A2B3] px-3 py-1.5">{saved ? '✓ 저장됨' : '저장됨'}</span>
                   )}
                 </div>
               </div>
@@ -232,7 +232,7 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
             <div className="flex items-center justify-between">
               <button
                 onClick={handleCopy}
-                className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 transition-colors"
+                className="text-xs border border-[#ECEEF0] px-3 py-1.5 rounded-lg hover:bg-[#F4F6F8] transition-colors"
               >
                 {copied ? '✓ 복사됨' : '클립보드 복사'}
               </button>
@@ -243,7 +243,7 @@ export default function CoverLetterModal({ jobId, jobTitle, company, onClose }: 
                       key={type}
                       onClick={() => handleDownload(type)}
                       disabled={!!downloading}
-                      className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors uppercase"
+                      className="text-xs border border-[#ECEEF0] px-3 py-1.5 rounded-lg hover:bg-[#F4F6F8] disabled:opacity-50 transition-colors uppercase"
                     >
                       {downloading === type ? '...' : type}
                     </button>

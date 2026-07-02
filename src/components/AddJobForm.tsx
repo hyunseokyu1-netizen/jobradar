@@ -60,13 +60,13 @@ export default function AddJobForm() {
           value={url}
           onChange={e => setUrl(e.target.value)}
           placeholder="채용공고 URL 붙여넣기 (Seek, Indeed, LinkedIn, Glassdoor...)"
-          className="flex-1 text-sm border border-zinc-200 rounded-lg px-4 py-2.5 outline-none focus:border-zinc-400 transition-colors"
+          className="flex-1 text-sm border border-[#ECEEF0] rounded-lg px-4 py-2.5 outline-none focus:border-[#046C4E] transition-colors"
           disabled={loading}
         />
         <button
           type="submit"
           disabled={loading || !url}
-          className="text-sm bg-zinc-900 text-white px-4 py-2.5 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors whitespace-nowrap sm:min-w-28 text-center"
+          className="text-sm bg-[#046C4E] text-white px-4 py-2.5 rounded-lg hover:bg-[#035A40] disabled:opacity-40 transition-colors whitespace-nowrap sm:min-w-28 text-center"
         >
           {label}
         </button>
@@ -74,13 +74,13 @@ export default function AddJobForm() {
           type="button"
           onClick={() => setManualOpen(true)}
           disabled={loading}
-          className="text-sm border border-zinc-200 text-zinc-600 px-4 py-2.5 rounded-lg hover:bg-zinc-50 disabled:opacity-40 transition-colors whitespace-nowrap text-center"
+          className="text-sm border border-[#ECEEF0] text-[#475467] px-4 py-2.5 rounded-lg hover:bg-[#F4F6F8] disabled:opacity-40 transition-colors whitespace-nowrap text-center"
         >
           직접 추가
         </button>
       </form>
-      <p className="text-xs text-zinc-400 mt-1.5">
-        링크 복사가 안 되는 사이트는 <button type="button" onClick={() => setManualOpen(true)} className="underline hover:text-zinc-600">직접 추가</button>로 카드를 만드세요.
+      <p className="text-xs text-[#98A2B3] mt-1.5">
+        링크 복사가 안 되는 사이트는 <button type="button" onClick={() => setManualOpen(true)} className="underline hover:text-[#475467]">직접 추가</button>로 카드를 만드세요.
       </p>
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
       {status === 'done' && (

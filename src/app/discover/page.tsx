@@ -15,7 +15,7 @@ export default async function DiscoverPage() {
   const email = await getAuthUserEmail()
   const profile = email ? await getOrCreateProfile(email) : null
 
-  if (!profile) return <p className="text-zinc-400 text-center py-20">로그인이 필요합니다.</p>
+  if (!profile) return <p className="text-[#98A2B3] text-center py-20">로그인이 필요합니다.</p>
 
   const { data: sources, error: sourceError } = await supabaseAdmin
     .from('job_sources')
@@ -45,7 +45,7 @@ export default async function DiscoverPage() {
     <AppShell activeKey="discover" userName={profile.name as string} userEmail={email}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold">잡 탐색</h1>
-        <p className="text-sm text-zinc-400 mt-0.5">
+        <p className="text-sm text-[#98A2B3] mt-0.5">
           관심 회사의 채용 페이지를 등록하면 공고를 수집해 매칭 점수순으로 보여드립니다.
         </p>
       </div>

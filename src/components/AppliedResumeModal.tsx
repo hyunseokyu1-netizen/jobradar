@@ -53,19 +53,19 @@ export default function AppliedResumeModal({
         onClick={e => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="flex items-start justify-between p-5 border-b border-zinc-100">
+        <div className="flex items-start justify-between p-5 border-b border-[#F0F2F4]">
           <div>
-            <h2 className="font-semibold text-zinc-900">제출 이력서</h2>
-            <p className="text-xs text-zinc-400 mt-0.5">{jobTitle} · {company}</p>
+            <h2 className="font-semibold text-[#101828]">제출 이력서</h2>
+            <p className="text-xs text-[#98A2B3] mt-0.5">{jobTitle} · {company}</p>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 transition-colors text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-[#98A2B3] hover:text-[#475467] transition-colors text-xl leading-none">✕</button>
         </div>
 
         {/* 본문 */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {/* 업로드 영역 */}
           <div className="flex items-center gap-3">
-            <label className={`cursor-pointer inline-flex items-center gap-2 text-sm border border-zinc-300 rounded-lg px-4 py-2 hover:bg-zinc-50 transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+            <label className={`cursor-pointer inline-flex items-center gap-2 text-sm border border-[#E2E6EA] rounded-lg px-4 py-2 hover:bg-[#F4F6F8] transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -77,7 +77,7 @@ export default function AppliedResumeModal({
               {uploading ? '업로드 중...' : filename ? '파일 교체' : '파일 선택'}
             </label>
             {filename && !uploading && (
-              <span className="text-sm text-zinc-500 truncate max-w-[200px]">{filename}</span>
+              <span className="text-sm text-[#667085] truncate max-w-[200px]">{filename}</span>
             )}
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
@@ -95,14 +95,14 @@ export default function AppliedResumeModal({
                 <textarea
                   readOnly
                   value={text}
-                  className="mt-2 w-full text-xs text-zinc-500 bg-zinc-50 border border-zinc-200 rounded-lg p-3 resize-y min-h-48"
+                  className="mt-2 w-full text-xs text-[#667085] bg-[#F7F8FA] border border-[#ECEEF0] rounded-lg p-3 resize-y min-h-48"
                 />
               )}
             </div>
           )}
 
           {!text && !uploading && (
-            <p className="text-sm text-zinc-400">PDF 또는 DOCX 파일을 업로드하세요.</p>
+            <p className="text-sm text-[#98A2B3]">PDF 또는 DOCX 파일을 업로드하세요.</p>
           )}
         </div>
       </div>

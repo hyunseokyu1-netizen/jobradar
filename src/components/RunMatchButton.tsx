@@ -33,7 +33,7 @@ export default function RunMatchButton({ unmatchedCount }: { unmatchedCount: num
       <button
         onClick={handleClick}
         disabled={running || unmatchedCount === 0}
-        className="text-sm bg-zinc-900 text-white px-4 py-2 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+        className="text-sm bg-[#046C4E] text-white px-4 py-2 rounded-lg hover:bg-[#035A40] disabled:opacity-40 transition-colors"
       >
         {running ? '매칭 중...' : `AI 매칭 실행${unmatchedCount > 0 ? ` (${unmatchedCount})` : ''}`}
       </button>

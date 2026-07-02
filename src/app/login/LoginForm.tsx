@@ -70,20 +70,24 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-8">
-      <div className="flex gap-1 mb-6 bg-zinc-100 rounded-lg p-1">
+    <div className="bg-white rounded-2xl border border-[#ECEEF0] p-8 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      <div className="flex gap-1 mb-6 bg-[#EEF1F3] rounded-[9px] p-[3px]">
         <button
           onClick={() => { setMode('login'); setError(''); setMessage('') }}
-          className={`flex-1 text-sm py-1.5 rounded-md transition-colors font-medium ${
-            mode === 'login' ? 'bg-white shadow-sm text-zinc-900' : 'text-zinc-500 hover:text-zinc-700'
+          className={`flex-1 text-[13px] py-1.5 rounded-[7px] transition-colors font-semibold ${
+            mode === 'login'
+              ? 'bg-white text-[#1F2A37] shadow-[0_1px_2px_rgba(16,24,40,0.06)]'
+              : 'text-[#667085] hover:text-[#344054]'
           }`}
         >
           로그인
         </button>
         <button
           onClick={() => { setMode('signup'); setError(''); setMessage('') }}
-          className={`flex-1 text-sm py-1.5 rounded-md transition-colors font-medium ${
-            mode === 'signup' ? 'bg-white shadow-sm text-zinc-900' : 'text-zinc-500 hover:text-zinc-700'
+          className={`flex-1 text-[13px] py-1.5 rounded-[7px] transition-colors font-semibold ${
+            mode === 'signup'
+              ? 'bg-white text-[#1F2A37] shadow-[0_1px_2px_rgba(16,24,40,0.06)]'
+              : 'text-[#667085] hover:text-[#344054]'
           }`}
         >
           회원가입
@@ -94,7 +98,7 @@ export default function LoginForm() {
       <button
         onClick={handleGoogleLogin}
         disabled={googleLoading || loading}
-        className="w-full flex items-center justify-center gap-2.5 border border-zinc-200 rounded-lg py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 transition-colors mb-5"
+        className="w-full flex items-center justify-center gap-2.5 border border-[#E2E6EA] rounded-[9px] py-2.5 text-sm font-medium text-[#344054] hover:bg-[#F4F6F8] disabled:opacity-50 transition-colors mb-5"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -106,25 +110,25 @@ export default function LoginForm() {
       </button>
 
       <div className="flex items-center gap-3 mb-5">
-        <hr className="flex-1 border-zinc-200" />
-        <span className="text-xs text-zinc-400">또는 이메일로</span>
-        <hr className="flex-1 border-zinc-200" />
+        <hr className="flex-1 border-[#ECEEF0]" />
+        <span className="text-xs text-[#98A2B3]">또는 이메일로</span>
+        <hr className="flex-1 border-[#ECEEF0]" />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-zinc-700 mb-1.5">이메일</label>
+          <label className="block text-sm font-medium text-[#344054] mb-1.5">이메일</label>
           <input
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
             placeholder="you@example.com"
-            className="w-full border border-zinc-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-400 transition-colors"
+            className="w-full border border-[#E2E6EA] rounded-[9px] px-3 py-2.5 text-sm outline-none focus:border-[#046C4E] transition-colors"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-zinc-700 mb-1.5">비밀번호</label>
+          <label className="block text-sm font-medium text-[#344054] mb-1.5">비밀번호</label>
           <input
             type="password"
             value={password}
@@ -132,7 +136,7 @@ export default function LoginForm() {
             required
             placeholder={mode === 'signup' ? '8자 이상' : '••••••••'}
             minLength={mode === 'signup' ? 8 : undefined}
-            className="w-full border border-zinc-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-zinc-400 transition-colors"
+            className="w-full border border-[#E2E6EA] rounded-[9px] px-3 py-2.5 text-sm outline-none focus:border-[#046C4E] transition-colors"
           />
         </div>
 
@@ -146,7 +150,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-zinc-900 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+          className="w-full bg-[#046C4E] text-white py-2.5 rounded-[9px] text-sm font-semibold hover:bg-[#035A40] disabled:opacity-50 transition-colors"
         >
           {loading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </button>

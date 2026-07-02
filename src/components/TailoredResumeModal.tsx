@@ -157,29 +157,29 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-xl">
         {/* 헤더 */}
-        <div className="flex items-start justify-between p-6 border-b border-zinc-100">
+        <div className="flex items-start justify-between p-6 border-b border-[#F0F2F4]">
           <div>
             <h2 className="font-bold text-lg">맞춤 이력서</h2>
-            <p className="text-sm text-zinc-500 mt-0.5">{jobTitle} · {company}</p>
+            <p className="text-sm text-[#667085] mt-0.5">{jobTitle} · {company}</p>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-[#98A2B3] hover:text-[#475467] text-xl leading-none">✕</button>
         </div>
 
         {/* 본문 */}
         <div className="flex-1 overflow-y-auto p-6">
           {state === 'loading' && (
-            <div className="text-center py-8 text-sm text-zinc-400">불러오는 중...</div>
+            <div className="text-center py-8 text-sm text-[#98A2B3]">불러오는 중...</div>
           )}
 
           {state !== 'loading' && !content && !busyOverlay && (
             <div className="text-center py-12">
-              <p className="text-sm text-zinc-400 mb-6">
+              <p className="text-sm text-[#98A2B3] mb-6">
                 프로필의 원본 이력서를 이 공고의 JD에 맞춰 재구성한 이력서를 생성합니다.
               </p>
               <button
                 onClick={handleGenerate}
                 disabled={isLoading}
-                className="bg-zinc-900 text-white text-sm px-6 py-3 rounded-xl hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                className="bg-[#046C4E] text-white text-sm px-6 py-3 rounded-xl hover:bg-[#035A40] disabled:opacity-50 transition-colors"
               >
                 ✦ 맞춤 이력서 생성
               </button>
@@ -188,10 +188,10 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
           )}
 
           {state === 'generating' && (
-            <div className="text-center py-8 text-sm text-zinc-400">JD를 분석해 이력서 작성 중... (최대 1분)</div>
+            <div className="text-center py-8 text-sm text-[#98A2B3]">JD를 분석해 이력서 작성 중... (최대 1분)</div>
           )}
           {state === 'editing' && (
-            <div className="text-center py-8 text-sm text-zinc-400">요청하신 내용으로 수정 중... (최대 1분)</div>
+            <div className="text-center py-8 text-sm text-[#98A2B3]">요청하신 내용으로 수정 중... (최대 1분)</div>
           )}
 
           {content && !busyOverlay && (
@@ -199,21 +199,21 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
               {/* 좌: 영어 (편집 가능) */}
               <div className="flex flex-col">
                 <div className="flex items-center justify-between mb-1.5 h-5">
-                  <span className="text-xs font-semibold text-zinc-500">English (편집 가능)</span>
+                  <span className="text-xs font-semibold text-[#667085]">English (편집 가능)</span>
                 </div>
                 <textarea
                   ref={leftRef}
                   value={content}
                   onChange={e => updateContent(e.target.value)}
                   onScroll={() => syncScroll(leftRef.current, rightRef.current)}
-                  className="w-full h-[58vh] text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 outline-none focus:border-zinc-400 resize-none font-mono"
+                  className="w-full h-[58vh] text-sm leading-relaxed border border-[#ECEEF0] rounded-xl p-4 outline-none focus:border-[#046C4E] resize-none font-mono"
                 />
               </div>
 
               {/* 우: 한글 번역 (참고용) */}
               <div className="flex flex-col">
                 <div className="flex items-center justify-between mb-1.5 h-5">
-                  <span className="text-xs font-semibold text-zinc-500">한글 번역 (참고용)</span>
+                  <span className="text-xs font-semibold text-[#667085]">한글 번역 (참고용)</span>
                   {content && (
                     <button
                       onClick={handleTranslate}
@@ -227,7 +227,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
                 <div
                   ref={rightRef}
                   onScroll={() => syncScroll(rightRef.current, leftRef.current)}
-                  className="w-full h-[58vh] text-sm leading-relaxed border border-zinc-200 rounded-xl p-4 bg-zinc-50 overflow-y-auto whitespace-pre-wrap text-zinc-700"
+                  className="w-full h-[58vh] text-sm leading-relaxed border border-[#ECEEF0] rounded-xl p-4 bg-[#F7F8FA] overflow-y-auto whitespace-pre-wrap text-[#344054]"
                 >
                   {translation ? (
                     <>
@@ -237,7 +237,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
                       {translation}
                     </>
                   ) : (
-                    <span className="text-zinc-400">
+                    <span className="text-[#98A2B3]">
                       {state === 'translating' ? '번역 중...' : '위 “한글로 번역” 버튼을 누르면 참고용 번역이 표시됩니다.'}
                     </span>
                   )}
@@ -253,13 +253,13 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
 
         {/* 푸터 */}
         {content && state !== 'loading' && !busyOverlay && (
-          <div className="p-5 border-t border-zinc-100 space-y-3">
+          <div className="p-5 border-t border-[#F0F2F4] space-y-3">
             {/* 수정 채팅 */}
             <div className="flex items-center gap-2">
               <button
                 onClick={handleGenerate}
                 disabled={isLoading}
-                className="text-xs text-zinc-500 hover:text-zinc-800 disabled:opacity-50 border border-zinc-200 px-3 py-2 rounded-lg hover:bg-zinc-50 transition-colors whitespace-nowrap"
+                className="text-xs text-[#667085] hover:text-[#1F2A37] disabled:opacity-50 border border-[#ECEEF0] px-3 py-2 rounded-lg hover:bg-[#F4F6F8] transition-colors whitespace-nowrap"
               >
                 ↺ 재생성
               </button>
@@ -269,12 +269,12 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
                 onKeyDown={e => { if (e.key === 'Enter') handleEdit() }}
                 disabled={isLoading}
                 placeholder="수정 요청 (예: WORK EXPERIENCE를 더 강조하고, SUMMARY를 2줄로 줄여줘)"
-                className="flex-1 text-sm border border-zinc-200 rounded-lg px-3 py-2 outline-none focus:border-zinc-400 transition-colors disabled:opacity-50"
+                className="flex-1 text-sm border border-[#ECEEF0] rounded-lg px-3 py-2 outline-none focus:border-[#046C4E] transition-colors disabled:opacity-50"
               />
               <button
                 onClick={handleEdit}
                 disabled={isLoading || !instruction.trim()}
-                className="text-sm bg-zinc-900 text-white px-4 py-2 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors whitespace-nowrap"
+                className="text-sm bg-[#046C4E] text-white px-4 py-2 rounded-lg hover:bg-[#035A40] disabled:opacity-40 transition-colors whitespace-nowrap"
               >
                 ✦ 수정
               </button>
@@ -287,17 +287,17 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
                   <button
                     onClick={handleSave}
                     disabled={isLoading}
-                    className="text-xs bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                    className="text-xs bg-[#046C4E] text-white px-3 py-1.5 rounded-lg hover:bg-[#035A40] disabled:opacity-50 transition-colors"
                   >
                     {state === 'saving' ? '저장 중...' : '저장'}
                   </button>
                 ) : (
-                  <span className="text-xs text-zinc-400">{saved ? '✓ 저장됨' : '저장됨'}</span>
+                  <span className="text-xs text-[#98A2B3]">{saved ? '✓ 저장됨' : '저장됨'}</span>
                 )}
                 <button
                   onClick={handleCopy}
                   disabled={isLoading}
-                  className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
+                  className="text-xs border border-[#ECEEF0] px-3 py-1.5 rounded-lg hover:bg-[#F4F6F8] disabled:opacity-50 transition-colors"
                 >
                   {copied ? '✓ 복사됨' : '📋 복사'}
                 </button>
@@ -313,7 +313,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
                 <button
                   onClick={handleDownloadPdf}
                   disabled={isLoading}
-                  className="text-xs border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 disabled:opacity-50 transition-colors"
+                  className="text-xs border border-[#ECEEF0] px-3 py-1.5 rounded-lg hover:bg-[#F4F6F8] disabled:opacity-50 transition-colors"
                 >
                   {state === 'applyingPdf' ? '...' : 'PDF'}
                 </button>

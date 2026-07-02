@@ -39,14 +39,14 @@ export default function MemoModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-xl">
-        <div className="flex items-start justify-between border-b border-zinc-100 p-6">
+        <div className="flex items-start justify-between border-b border-[#F0F2F4] p-6">
           <div>
             <h2 className="text-lg font-bold">메모</h2>
-            <p className="mt-0.5 text-sm text-zinc-500">
+            <p className="mt-0.5 text-sm text-[#667085]">
               {jobTitle} · {company}
             </p>
           </div>
-          <button onClick={onClose} className="text-xl leading-none text-zinc-400 hover:text-zinc-600">
+          <button onClick={onClose} className="text-xl leading-none text-[#98A2B3] hover:text-[#475467]">
             ✕
           </button>
         </div>
@@ -55,14 +55,14 @@ export default function MemoModal({
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
             placeholder="이 공고에 대한 메모를 남겨두세요..."
-            className="w-full resize-none rounded-xl border border-zinc-200 p-4 text-sm outline-none placeholder:text-zinc-300 focus:border-zinc-400"
+            className="w-full resize-none rounded-xl border border-[#ECEEF0] p-4 text-sm outline-none placeholder:text-[#D0D5DB] focus:border-[#046C4E]"
             rows={8}
             autoFocus
           />
           {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
         </div>
-        <div className="flex items-center justify-end gap-2 border-t border-zinc-100 p-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-600" disabled={saving}>
+        <div className="flex items-center justify-end gap-2 border-t border-[#F0F2F4] p-6">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[#98A2B3] hover:text-[#475467]" disabled={saving}>
             취소
           </button>
           <button
