@@ -18,7 +18,7 @@ export default function Topbar({ t }: { t: Dictionary }) {
       </div>
       <div className="flex items-center gap-[14px]">
         <Link
-          href="/matchda/workspace"
+          href="/profile"
           className="flex items-center gap-[7px] rounded-[9px] bg-[#046C4E] px-[15px] py-[9px] text-[14px] font-semibold text-white hover:bg-[#035A40]"
         >
           <Plus size={16} className="text-white" />
