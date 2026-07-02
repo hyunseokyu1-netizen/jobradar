@@ -33,6 +33,12 @@ export default async function MatchdaWorkspacePage({
               jobId={jobId}
               jobTitle={data.target.role}
               company={data.target.company}
+              description={data.jobExtra?.description ?? null}
+              memo={data.jobExtra?.memo ?? null}
+              appliedResumeFilename={data.jobExtra?.appliedResumeFilename ?? null}
+              appliedResumeText={data.jobExtra?.appliedResumeText ?? null}
+              location={data.jobExtra?.location ?? data.target.location}
+              appliedAt={data.jobExtra?.appliedAt ?? null}
             />
           ) : undefined
         }

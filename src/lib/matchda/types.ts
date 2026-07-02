@@ -96,4 +96,13 @@ export interface ResumeWorkspaceData {
     keyword: string
     body: string
   }
+  /** per-job 액션(JD 입력·지원 이력서·메모·정보 편집)에 필요한 실데이터 부가 정보 */
+  jobExtra?: {
+    description: string | null
+    memo: string | null
+    appliedResumeFilename: string | null
+    appliedResumeText: string | null
+    location: string | null
+    appliedAt: string | null
+  }
 }

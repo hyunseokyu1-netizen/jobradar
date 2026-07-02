@@ -231,10 +231,18 @@ export async function getMatchdaWorkspace(
 
   const { data: job } = await supabaseAdmin
     .from('jobs')
-    .select('title, company, location')
+    .select('title, company, location, description')
     .eq('id', jobId)
     .maybeSingle()
   if (!job) return null
+
+  const matchRow = match as {
+    score?: number
+    memo?: string | null
+    applied_resume_filename?: string | null
+    applied_resume_text?: string | null
+    applied_at?: string | null
+  }
 
   const name = profile.name?.trim() || email.split('@')[0] || ''
   const koTitle = ko.experience?.[0]?.position || profile.desired_positions?.[0] || ''
@@ -277,5 +285,13 @@ export async function getMatchdaWorkspace(
     optimizationNote,
     original: buildDoc(ko, name, profile.email ?? '', koTitle),
     translated,
+    jobExtra: {
+      description: job.description ?? null,
+      memo: matchRow.memo ?? null,
+      appliedResumeFilename: matchRow.applied_resume_filename ?? null,
+      appliedResumeText: matchRow.applied_resume_text ?? null,
+      location: job.location ?? null,
+      appliedAt: matchRow.applied_at ?? null,
+    },
   }
 }
