@@ -18,6 +18,8 @@ export interface JobCardData {
   location: string
   salary: string
   matchRate: number
+  /** 실제 matches.status (인터랙티브 보드의 상태 드롭다운용). 목업 카드엔 없음 */
+  status?: string
   /** 컬럼 상단의 상태 배지(면접 일정/오퍼 등). 없으면 미표시 */
   statusBadge?: {
     text: string

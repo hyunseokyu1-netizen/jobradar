@@ -5,6 +5,8 @@ import Sidebar from '@/components/matchda/dashboard/Sidebar'
 import Topbar from '@/components/matchda/dashboard/Topbar'
 import StatCards from '@/components/matchda/dashboard/StatCards'
 import KanbanBoard from '@/components/matchda/dashboard/KanbanBoard'
+import AddJobForm from '@/components/AddJobForm'
+import RunMatchButton from '@/components/RunMatchButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,25 +41,36 @@ export default async function MatchdaDashboardPage() {
 
           <StatCards t={t} values={summary.stats} deltas={deltas} />
 
-          <div className="mb-4 flex items-center justify-between">
+          {/* 공고 추가 (URL/직접) — 로그인 실데이터에서만 */}
+          {real && (
+            <div className="mb-6 rounded-[14px] border border-[#ECEEF0] bg-white p-4">
+              <AddJobForm />
+            </div>
+          )}
+
+          <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="m-0 text-[18px] font-bold tracking-[-0.01em] text-[#101828]">
                 {t.dashboard.boardTitle}
               </h2>
               <p className="mt-1 text-[13px] text-[#98A2B3]">{t.dashboard.boardSub}</p>
             </div>
-            {/* TODO: 보드/리스트 뷰 전환 — 현재 보드 고정 */}
-            <div className="flex rounded-[9px] bg-[#EEF1F3] p-[3px]">
-              <span className="cursor-pointer rounded-[7px] bg-white px-[14px] py-[6px] text-[13px] font-semibold text-[#1F2A37] shadow-[0_1px_2px_rgba(16,24,40,0.06)]">
-                {t.dashboard.viewBoard}
-              </span>
-              <span className="cursor-pointer px-[14px] py-[6px] text-[13px] font-medium text-[#667085]">
-                {t.dashboard.viewList}
-              </span>
+            <div className="flex items-center gap-3">
+              {/* 일괄 AI 매칭 — 로그인 실데이터에서만 */}
+              {real && <RunMatchButton unmatchedCount={real.unmatchedCount} />}
+              {/* TODO: 보드/리스트 뷰 전환 — 현재 보드 고정 */}
+              <div className="flex rounded-[9px] bg-[#EEF1F3] p-[3px]">
+                <span className="cursor-pointer rounded-[7px] bg-white px-[14px] py-[6px] text-[13px] font-semibold text-[#1F2A37] shadow-[0_1px_2px_rgba(16,24,40,0.06)]">
+                  {t.dashboard.viewBoard}
+                </span>
+                <span className="cursor-pointer px-[14px] py-[6px] text-[13px] font-medium text-[#667085]">
+                  {t.dashboard.viewList}
+                </span>
+              </div>
             </div>
           </div>
 
-          <KanbanBoard columns={columns} t={t} />
+          <KanbanBoard columns={columns} t={t} interactive={!!real} />
         </div>
       </main>
     </div>

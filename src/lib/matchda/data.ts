@@ -52,6 +52,8 @@ export interface MatchdaDashboardData {
   /** 실데이터 기반 stat 델타 (i18n 고정 델타 대체용) */
   deltas: string[]
   columns: KanbanColumn[]
+  /** 아직 AI 매칭 안 된 공고 수 (일괄 매칭 버튼용) */
+  unmatchedCount: number
 }
 
 /**
@@ -102,6 +104,7 @@ export async function getMatchdaDashboard(): Promise<MatchdaDashboardData | null
       location: j.location || '',
       salary: j.salary || '—',
       matchRate: m.score ?? 0,
+      status: m.status as string,
     })
   }
   const columns: KanbanColumn[] = COLUMN_ORDER.map((s) => ({
@@ -139,6 +142,7 @@ export async function getMatchdaDashboard(): Promise<MatchdaDashboardData | null
       `${scored.length}건 기준`,
     ],
     columns,
+    unmatchedCount: matches.filter((m) => typeof m.score !== 'number').length,
   }
 }
 
