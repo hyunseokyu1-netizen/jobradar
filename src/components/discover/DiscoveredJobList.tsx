@@ -22,10 +22,10 @@ export interface DiscoveredJobItem {
 type ScoreFilter = 'all' | '70' | '40'
 
 function scoreBadgeClass(score: number | null): string {
-  if (score === null) return 'bg-zinc-100 text-zinc-400'
+  if (score === null) return 'bg-[#F4F6F8] text-[#98A2B3]'
   if (score >= 70) return 'bg-emerald-100 text-emerald-700'
   if (score >= 40) return 'bg-amber-100 text-amber-700'
-  return 'bg-zinc-100 text-zinc-500'
+  return 'bg-[#F4F6F8] text-[#667085]'
 }
 
 export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] }) {
@@ -87,7 +87,7 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
 
   if (jobs.length === 0) {
     return (
-      <p className="text-sm text-zinc-400 text-center py-12">
+      <p className="text-sm text-[#98A2B3] text-center py-12">
         수집된 공고가 없습니다. 채용 페이지를 등록하고 수집을 실행해보세요.
       </p>
     )
@@ -104,8 +104,8 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
               onClick={() => setScoreFilter(v)}
               className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                 scoreFilter === v
-                  ? 'bg-zinc-900 text-white border-zinc-900'
-                  : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-400'
+                  ? 'bg-[#046C4E] text-white border-[#046C4E]'
+                  : 'bg-white text-[#667085] border-[#ECEEF0] hover:border-[#98A2B3]'
               }`}
             >
               {label}
@@ -114,14 +114,14 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
         </div>
         {sourceNames.length > 1 && (
           <>
-            <span className="text-zinc-200">|</span>
+            <span className="text-[#D0D5DB]">|</span>
             <div className="flex gap-1.5 flex-wrap">
               <button
                 onClick={() => setSourceFilter('all')}
                 className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                   sourceFilter === 'all'
-                    ? 'bg-zinc-900 text-white border-zinc-900'
-                    : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-400'
+                    ? 'bg-[#046C4E] text-white border-[#046C4E]'
+                    : 'bg-white text-[#667085] border-[#ECEEF0] hover:border-[#98A2B3]'
                 }`}
               >
                 모든 회사
@@ -132,8 +132,8 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
                   onClick={() => setSourceFilter(id)}
                   className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                     sourceFilter === id
-                      ? 'bg-zinc-900 text-white border-zinc-900'
-                      : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-400'
+                      ? 'bg-[#046C4E] text-white border-[#046C4E]'
+                      : 'bg-white text-[#667085] border-[#ECEEF0] hover:border-[#98A2B3]'
                   }`}
                 >
                   {name}
@@ -142,7 +142,7 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
             </div>
           </>
         )}
-        <span className="text-xs text-zinc-400 ml-auto">{visible.length}건</span>
+        <span className="text-xs text-[#98A2B3] ml-auto">{visible.length}건</span>
       </div>
 
       {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
@@ -152,7 +152,7 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
         {visible.map(job => (
           <div
             key={job.id}
-            className={`bg-white border border-zinc-200 rounded-xl px-5 py-4 ${
+            className={`bg-white border border-[#ECEEF0] rounded-xl px-5 py-4 ${
               job.status === 'added' ? 'opacity-60' : ''
             }`}
           >
@@ -173,13 +173,13 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
                     {job.title}
                   </a>
                 </div>
-                <p className="text-xs text-zinc-400 mt-1">
+                <p className="text-xs text-[#98A2B3] mt-1">
                   {job.source_name}
                   {job.location ? ` · ${job.location}` : ''}
                   {job.department ? ` · ${job.department}` : ''}
                 </p>
                 {job.match_reason && (
-                  <p className="text-xs text-zinc-500 mt-1.5">{job.match_reason}</p>
+                  <p className="text-xs text-[#667085] mt-1.5">{job.match_reason}</p>
                 )}
               </div>
 
@@ -191,14 +191,14 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
                     <button
                       onClick={() => handleAdd(job)}
                       disabled={!!addingId}
-                      className="text-xs bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors whitespace-nowrap"
+                      className="text-xs bg-[#046C4E] text-white px-3 py-1.5 rounded-lg hover:bg-[#035A40] disabled:opacity-40 transition-colors whitespace-nowrap"
                     >
                       {addingId === job.id ? addingStep : '+ 지원 관리에 추가'}
                     </button>
                     <button
                       onClick={() => handleDismiss(job.id)}
                       disabled={!!addingId}
-                      className="text-xs text-zinc-300 hover:text-zinc-500 transition-colors"
+                      className="text-xs text-[#B0B7C0] hover:text-[#667085] transition-colors"
                       title="관심 없음"
                     >
                       ✕

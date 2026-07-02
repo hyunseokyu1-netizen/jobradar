@@ -143,7 +143,7 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
               className="input flex-1 min-w-0"
               placeholder="최소"
             />
-            <span className="text-zinc-400 shrink-0">~</span>
+            <span className="text-[#98A2B3] shrink-0">~</span>
             <input
               name="salary_max"
               type="number"
@@ -191,7 +191,7 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
       <Field label="이력서 업로드" hint="PDF 또는 DOCX · 최대 5MB">
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <label className={`cursor-pointer inline-flex items-center gap-2 text-sm border border-zinc-300 rounded-lg px-4 py-2 hover:bg-zinc-50 transition-colors ${resumeUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+            <label className={`cursor-pointer inline-flex items-center gap-2 text-sm border border-[#E2E6EA] rounded-lg px-4 py-2 hover:bg-[#F4F6F8] transition-colors ${resumeUploading ? 'opacity-50 pointer-events-none' : ''}`}>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -209,7 +209,7 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
             <textarea
               readOnly
               value={resumePreview}
-              className="input min-h-36 text-xs text-zinc-500 bg-zinc-50 resize-y"
+              className="input min-h-36 text-xs text-[#667085] bg-[#F7F8FA] resize-y"
             />
           )}
         </div>
@@ -219,7 +219,7 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         <button
           type="submit"
           disabled={saving}
-          className="bg-zinc-900 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+          className="bg-[#046C4E] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#035A40] disabled:opacity-50 transition-colors"
         >
           {saving ? '저장 중...' : '저장'}
         </button>
@@ -234,9 +234,9 @@ function Field({ label, hint, action, children }: { label: string; hint?: string
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <label className="text-sm font-medium text-zinc-700">
+        <label className="text-sm font-medium text-[#344054]">
           {label}
-          {hint && <span className="ml-2 text-xs text-zinc-400 font-normal">{hint}</span>}
+          {hint && <span className="ml-2 text-xs text-[#98A2B3] font-normal">{hint}</span>}
         </label>
         {action}
       </div>

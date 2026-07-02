@@ -70,7 +70,7 @@ export default function ResumeEditor(props: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-zinc-200 divide-y divide-zinc-100">
+    <div className="bg-white rounded-2xl border border-[#ECEEF0] divide-y divide-[#F0F2F4]">
       {/* 연락처 (읽기 전용 — 기본 정보는 아래 프로필에서 수정) */}
       <Section title="연락처" defaultOpen>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
@@ -78,7 +78,7 @@ export default function ResumeEditor(props: Props) {
           <ReadField label="이메일" value={props.email} />
           <ReadField label="전화" value={props.phone || '—'} />
         </div>
-        <p className="text-[11px] text-zinc-400 mt-2">이름·전화는 아래 ‘프로파일’에서 수정할 수 있어요.</p>
+        <p className="text-[11px] text-[#98A2B3] mt-2">이름·전화는 아래 ‘프로파일’에서 수정할 수 있어요.</p>
       </Section>
 
       {/* 요약 */}
@@ -113,7 +113,7 @@ export default function ResumeEditor(props: Props) {
             {expEn.map((e, i) => (
               <div key={i} className="mb-2.5 last:mb-0">
                 <p className="text-sm font-semibold">{[e.company, e.position].filter(Boolean).join(' · ')}</p>
-                {e.period && <p className="text-[11px] text-zinc-400">{e.period}</p>}
+                {e.period && <p className="text-[11px] text-[#98A2B3]">{e.period}</p>}
                 {e.description && <p className="text-sm whitespace-pre-wrap mt-0.5">{e.description}</p>}
               </div>
             ))}
@@ -136,7 +136,7 @@ export default function ResumeEditor(props: Props) {
             {eduEn.map((e, i) => (
               <div key={i} className="mb-1.5 last:mb-0">
                 <p className="text-sm font-semibold">{[e.school, e.major, e.degree].filter(Boolean).join(' · ')}</p>
-                {e.period && <p className="text-[11px] text-zinc-400">{e.period}</p>}
+                {e.period && <p className="text-[11px] text-[#98A2B3]">{e.period}</p>}
               </div>
             ))}
           </EnBlock>
@@ -157,7 +157,7 @@ export default function ResumeEditor(props: Props) {
           <EnBlock>
             <div className="flex flex-wrap gap-1.5">
               {skillsEn.map((s, i) => (
-                <span key={i} className="text-xs bg-zinc-100 text-zinc-700 rounded px-2 py-0.5">{s}</span>
+                <span key={i} className="text-xs bg-[#F4F6F8] text-[#344054] rounded px-2 py-0.5">{s}</span>
               ))}
             </div>
           </EnBlock>
@@ -180,7 +180,7 @@ function Section({ title, defaultOpen, children }: { title: string; defaultOpen?
         className="w-full flex items-center justify-between text-left"
       >
         <span className="text-sm font-semibold">{title}</span>
-        <span className="text-lg text-zinc-300 leading-none">{open ? '−' : '+'}</span>
+        <span className="text-lg text-[#B0B7C0] leading-none">{open ? '−' : '+'}</span>
       </button>
       {open && <div className="mt-3">{children}</div>}
     </div>
@@ -204,13 +204,13 @@ function KoEditor({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         rows={rows}
-        className="w-full resize-y border border-zinc-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
+        className="w-full resize-y border border-[#E2E6EA] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#046C4E]/10"
       />
       <div className="flex justify-end mt-2">
         <button
           onClick={onTranslate}
           disabled={busy || !value.trim()}
-          className="text-xs font-medium bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+          className="text-xs font-medium bg-[#046C4E] text-white px-3 py-1.5 rounded-lg hover:bg-[#035A40] disabled:opacity-40 transition-colors"
         >
           {busy ? '번역 중…' : '🌐 번역해서 저장'}
         </button>
@@ -222,8 +222,8 @@ function KoEditor({
 // 번역된 영어 결과 (영어가 본문, 한국어는 위 입력칸이 보조 역할)
 function EnBlock({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-2 border-l-2 border-zinc-900/70 bg-zinc-50 rounded-r-lg px-3 py-2">
-      <p className="text-[10px] font-semibold text-zinc-400 mb-1">EN · 저장됨</p>
+    <div className="mt-2 border-l-2 border-[#046C4E]/70 bg-[#F7F8FA] rounded-r-lg px-3 py-2">
+      <p className="text-[10px] font-semibold text-[#98A2B3] mb-1">EN · 저장됨</p>
       {children}
     </div>
   )
@@ -232,7 +232,7 @@ function EnBlock({ children }: { children: React.ReactNode }) {
 function ReadField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[11px] text-zinc-400">{label}</p>
+      <p className="text-[11px] text-[#98A2B3]">{label}</p>
       <p className="truncate">{value}</p>
     </div>
   )

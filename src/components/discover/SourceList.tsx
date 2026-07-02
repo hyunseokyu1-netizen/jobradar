@@ -53,7 +53,7 @@ export default function SourceList({ sources }: { sources: SourceItem[] }) {
 
   if (sources.length === 0) {
     return (
-      <p className="text-sm text-zinc-400 text-center py-8 border border-dashed border-zinc-200 rounded-xl mb-8">
+      <p className="text-sm text-[#98A2B3] text-center py-8 border border-dashed border-[#ECEEF0] rounded-xl mb-8">
         등록된 채용 페이지가 없습니다. 위에서 관심 있는 회사의 채용 페이지를 등록해보세요.
       </p>
     )
@@ -65,7 +65,7 @@ export default function SourceList({ sources }: { sources: SourceItem[] }) {
         {sources.map(s => (
           <div
             key={s.id}
-            className="flex items-center gap-2 bg-white border border-zinc-200 rounded-xl px-4 py-2.5"
+            className="flex items-center gap-2 bg-white border border-[#ECEEF0] rounded-xl px-4 py-2.5"
           >
             <div>
               <a
@@ -82,20 +82,20 @@ export default function SourceList({ sources }: { sources: SourceItem[] }) {
                   수집 불가
                 </p>
               ) : (
-                <p className="text-[11px] text-zinc-400">{timeAgo(s.last_scraped_at)}</p>
+                <p className="text-[11px] text-[#98A2B3]">{timeAgo(s.last_scraped_at)}</p>
               )}
             </div>
             <button
               onClick={() => handleScrape(s.id)}
               disabled={!!scrapingId}
-              className="text-xs bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-40 transition-colors ml-2"
+              className="text-xs bg-[#046C4E] text-white px-3 py-1.5 rounded-lg hover:bg-[#035A40] disabled:opacity-40 transition-colors ml-2"
             >
               {scrapingId === s.id ? '수집 중...' : '⟳ 수집'}
             </button>
             <button
               onClick={() => handleDelete(s.id, s.name)}
               disabled={!!scrapingId}
-              className="text-xs text-zinc-300 hover:text-red-500 transition-colors"
+              className="text-xs text-[#B0B7C0] hover:text-red-500 transition-colors"
               title="삭제"
             >
               ✕
