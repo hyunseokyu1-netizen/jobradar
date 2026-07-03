@@ -70,7 +70,7 @@ export default function WorkspaceActions({
       alert(res.error)
       return
     }
-    router.push('/matchda/dashboard')
+    router.push('/dashboard')
   }
 
   const btn =

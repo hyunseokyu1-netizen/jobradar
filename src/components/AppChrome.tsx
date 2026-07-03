@@ -25,6 +25,7 @@ export default function AppChrome({
   const usesMatchdaShell =
     pathname === '/' ||
     pathname?.startsWith('/matchda') ||
+    pathname?.startsWith('/dashboard') ||
     pathname?.startsWith('/discover') ||
     pathname?.startsWith('/profile') ||
     pathname?.startsWith('/login') ||

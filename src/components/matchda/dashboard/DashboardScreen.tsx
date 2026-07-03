@@ -11,7 +11,7 @@ import type { DashboardSummary, KanbanColumn } from '@/lib/matchda/types'
 
 /**
  * MatchDa 대시보드 화면 (사이드바 + 상단바 + 통계 + 칸반).
- * /matchda/dashboard(공개 데모)와 로그인 홈(/) 양쪽에서 재사용한다.
+ * /dashboard(로그인 필요) 에서 렌더한다. 비로그인 데모 데이터로도 폴백 가능.
  * real=true 면 인터랙티브 카드 + 공고 추가/일괄 매칭 진입점 노출.
  */
 export default function DashboardScreen({

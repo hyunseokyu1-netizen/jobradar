@@ -28,11 +28,11 @@ export async function middleware(request: NextRequest) {
   // 로그인 페이지는 인증 불필요
   if (pathname.startsWith('/login')) {
     // 이미 로그인된 경우 대시보드로
-    if (user) return NextResponse.redirect(new URL('/', request.url))
+    if (user) return NextResponse.redirect(new URL('/dashboard', request.url))
     return supabaseResponse
   }
 
-  // 루트(/)는 공개 — 비로그인 시 소개 페이지, 로그인 시 대시보드 (페이지에서 분기)
+  // 루트(/)는 공개 소개 페이지 (로그인 여부와 무관하게 랜딩)
   if (pathname === '/') {
     return supabaseResponse
   }

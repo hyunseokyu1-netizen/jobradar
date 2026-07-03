@@ -27,7 +27,7 @@ export default function AppShell({
       <main className="min-w-0 flex-1">
         {/* 모바일: 사이드바가 숨겨지므로 로고 노출 */}
         <header className="sticky top-0 z-20 flex h-[60px] items-center border-b border-[#ECEEF0] bg-white px-4 sm:px-6 lg:hidden">
-          <Logo href="/matchda/dashboard" />
+          <Logo href="/dashboard" />
         </header>
 
         <div className="mx-auto max-w-[1040px] px-4 py-8 sm:px-6 lg:px-9">{children}</div>

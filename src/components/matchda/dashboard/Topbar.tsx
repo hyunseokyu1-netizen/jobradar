@@ -19,7 +19,7 @@ export default function Topbar({
     <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between gap-3 border-b border-[#ECEEF0] bg-white px-4 sm:px-6 lg:px-9">
       {/* 모바일: 사이드바가 숨겨지므로 로고 노출 */}
       <div className="lg:hidden">
-        <Logo href="/matchda/dashboard" />
+        <Logo href="/dashboard" />
       </div>
       {/* TODO(api): 공고/회사/국가 검색 연동 */}
       <div className="hidden w-[200px] items-center gap-[9px] rounded-[10px] border border-[#ECEEF0] bg-[#F4F6F8] px-[14px] py-[9px] md:flex lg:w-[340px]">

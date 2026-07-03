@@ -1,88 +1,22 @@
-import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
-import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getMatchdaDict } from '@/lib/matchda/i18n'
-import { getMatchdaDashboard } from '@/lib/matchda/data'
-import { getDashboardSummary, getKanbanColumns } from '@/lib/matchda/mock-data'
+import { getAuthUserEmail } from '@/lib/auth-helpers'
 import MatchdaLanding from '@/components/matchda/landing/MatchdaLanding'
-import DashboardScreen from '@/components/matchda/dashboard/DashboardScreen'
-import type { JobItem } from '@/components/JobList'
 
 export const dynamic = 'force-dynamic'
 
-// 리스트 뷰용 공고 데이터 (구 채용 공고 리스트와 동일한 조립)
-async function getListJobs(profileId: string): Promise<JobItem[]> {
-  const { data: myMatches } = await supabaseAdmin
-    .from('matches')
-    .select('job_id, score, reason, status, memo, applied_resume_text, applied_resume_filename, applied_at, position')
-    .eq('user_id', profileId)
-  if (!myMatches?.length) return []
-
-  const matchMap = new Map(myMatches.map(m => [m.job_id, m]))
-  const { data: jobs } = await supabaseAdmin
-    .from('jobs')
-    .select('id, source, title, company, location, salary, url, description, posted_at, scraped_at')
-    .in('id', myMatches.map(m => m.job_id))
-    .order('scraped_at', { ascending: false })
-    .limit(100)
-
-  const list: JobItem[] = (jobs ?? []).map(j => {
-    const m = matchMap.get(j.id)
-    return {
-      ...j,
-      match_score: m?.score ?? null,
-      match_reason: m?.reason ?? null,
-      match_status: m?.status ?? 'new',
-      memo: m?.memo ?? null,
-      applied_resume_text: m?.applied_resume_text ?? null,
-      applied_resume_filename: m?.applied_resume_filename ?? null,
-      applied_at: m?.applied_at ?? null,
-      position: m?.position ?? null,
-    }
-  })
-
-  // 사용자 정렬(position) 우선, 없으면 매칭된 것 위로 + 점수 높은 순
-  return list.sort((a, b) => {
-    const pa = a.position ?? Infinity
-    const pb = b.position ?? Infinity
-    if (pa !== pb) return pa - pb
-    if (a.match_score !== null && b.match_score === null) return -1
-    if (a.match_score === null && b.match_score !== null) return 1
-    return (b.match_score ?? 0) - (a.match_score ?? 0)
-  })
-}
-
+/**
+ * 공개 랜딩(설명) 페이지. 로그인 여부와 무관하게 항상 랜딩을 보여준다.
+ * 로그인 상태면 헤더의 "로그인" 버튼을 숨기고 CTA를 대시보드로 연결한다.
+ * 실제 대시보드는 /dashboard 에서 렌더한다.
+ */
 export default async function HomePage() {
-  const email = await getAuthUserEmail()
-
-  // 비로그인 → MatchDa 공개 랜딩 (CTA·검색은 실제 로그인 퍼널로 연결)
-  if (!email)
-    return (
-      <MatchdaLanding
-        loginHref="/login"
-        signupHref="/login?mode=signup"
-        searchHref="/login?mode=signup"
-      />
-    )
-
-  // 로그인 → MatchDa 대시보드가 실제 홈
-  const t = getMatchdaDict('ko')
-  const profile = await getOrCreateProfile(email)
-  const real = await getMatchdaDashboard()
-  const summary = real?.summary ?? getDashboardSummary()
-  const columns = real?.columns ?? getKanbanColumns()
-  const listJobs = real && profile ? await getListJobs(profile.id) : undefined
+  const authed = !!(await getAuthUserEmail())
 
   return (
-    <DashboardScreen
-      t={t}
-      summary={summary}
-      deltas={real?.deltas}
-      columns={columns}
-      real={!!real}
-      unmatchedCount={real?.unmatchedCount ?? 0}
-      userEmail={email}
-      needsOnboarding={!profile?.onboarding_completed}
-      listJobs={listJobs}
+    <MatchdaLanding
+      authed={authed}
+      loginHref="/login"
+      signupHref={authed ? '/dashboard' : '/login?mode=signup'}
+      searchHref={authed ? '/dashboard' : '/login?mode=signup'}
     />
   )
 }

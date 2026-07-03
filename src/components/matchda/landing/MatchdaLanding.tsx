@@ -15,10 +15,13 @@ import SiteFooter from './SiteFooter'
  * 공개 랜딩(/)에서는 실제 로그인 퍼널로 오버라이드한다.
  */
 export default function MatchdaLanding({
+  authed = false,
   loginHref,
   signupHref,
   searchHref,
 }: {
+  /** 로그인 상태면 헤더의 로그인 버튼을 숨기고 CTA를 대시보드로 바꾼다 */
+  authed?: boolean
   /** 로그인 버튼 목적지 (공개 랜딩은 /login) */
   loginHref?: string
   /** 무료로 시작하기 목적지 (공개 랜딩은 /login?mode=signup) */
@@ -31,7 +34,7 @@ export default function MatchdaLanding({
 
   return (
     <div className="min-h-screen bg-white font-[family-name:var(--font-plex-kr)] text-[#111827] antialiased">
-      <LandingHeader t={t} loginHref={loginHref} signupHref={signupHref} />
+      <LandingHeader t={t} authed={authed} loginHref={loginHref} signupHref={signupHref} />
       <SplitHero t={t} searchHref={searchHref} />
       <FeatureCards t={t} />
       <StatsBand t={t} />

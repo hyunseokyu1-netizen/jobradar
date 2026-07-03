@@ -20,7 +20,7 @@ export default function Sidebar({
   activeKey?: 'dashboard' | 'discover' | 'profile'
 }) {
   const navItems = [
-    { key: 'dashboard', label: t.dashboard.nav.dashboard, Icon: LayoutDashboard, href: '/matchda/dashboard' },
+    { key: 'dashboard', label: t.dashboard.nav.dashboard, Icon: LayoutDashboard, href: '/dashboard' },
     { key: 'discover', label: t.dashboard.nav.discover, Icon: Target, href: '/discover' },
     { key: 'profile', label: t.dashboard.nav.myResume, Icon: FileText, href: '/profile' },
   ] as const
@@ -30,7 +30,7 @@ export default function Sidebar({
 
   return (
     <aside className="sticky top-0 hidden min-h-screen w-[248px] flex-shrink-0 flex-col self-start border-r border-[#ECEEF0] bg-white px-[14px] py-5 lg:flex">
-      <Link href="/matchda/dashboard" className="flex cursor-pointer items-center gap-[9px] px-2 pb-[18px] pt-[6px]">
+      <Link href="/dashboard" className="flex cursor-pointer items-center gap-[9px] px-2 pb-[18px] pt-[6px]">
         <div className="h-[30px] w-[30px] overflow-hidden rounded-lg bg-[#046C4E]">
           <HandshakeMark size={30} className="block text-white" />
         </div>
