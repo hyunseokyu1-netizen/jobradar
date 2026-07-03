@@ -1,0 +1,116 @@
+import { redirect } from 'next/navigation'
+import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
+import { planOf, FREE_LIMITS, PREMIUM_PRICE_LABEL } from '@/lib/plan'
+import UpgradeButton from '@/components/billing/UpgradeButton'
+import AppShell from '@/components/matchda/AppShell'
+
+export const dynamic = 'force-dynamic'
+
+const CHECK = '✓'
+
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string; canceled?: string }>
+}) {
+  const email = await getAuthUserEmail()
+  if (!email) redirect('/login')
+  const { success, canceled } = await searchParams
+
+  const profile = await getOrCreateProfile(email)
+  const plan = planOf(profile)
+  const isPremium = plan === 'premium'
+
+  const freeFeatures = [
+    `채용페이지(공고 회사) ${FREE_LIMITS.jobSources}개까지 등록`,
+    `맞춤 이력서 ${FREE_LIMITS.tailoredResumes}개까지 생성`,
+    '이력서 번역·잡 탐색·매칭 기본 기능',
+  ]
+  const premiumFeatures = [
+    '채용페이지 무제한 등록',
+    '맞춤 이력서·영어 번역 무제한',
+    '커버레터 무제한 생성',
+    '우선 AI 매칭',
+  ]
+
+  return (
+    <AppShell activeKey="profile" userName={(profile?.name as string) ?? undefined} userEmail={email}>
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold text-[#101828]">요금제</h1>
+          <p className="mt-1 text-sm text-[#667085]">
+            무료로 시작하고, 필요할 때 프리미엄으로 무제한 이용하세요.
+          </p>
+        </div>
+
+        {success && (
+          <div className="mb-6 rounded-lg border border-[#CEEBDC] bg-[#ECFDF3] px-4 py-3 text-sm text-[#046C4E]">
+            ✓ 결제가 완료됐어요! 프리미엄 기능이 곧 활성화됩니다.
+          </div>
+        )}
+        {canceled && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            결제가 취소됐어요. 언제든 다시 시작할 수 있습니다.
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          {/* 무료 */}
+          <div className="rounded-[16px] border border-[#ECEEF0] bg-white p-6">
+            <div className="text-[15px] font-bold text-[#1F2A37]">무료</div>
+            <div className="mt-1 text-[26px] font-bold text-[#101828]">₩0</div>
+            <p className="mt-1 text-xs text-[#98A2B3]">가입하면 바로 사용</p>
+            <ul className="mt-5 space-y-2.5">
+              {freeFeatures.map(f => (
+                <li key={f} className="flex items-start gap-2 text-[13px] text-[#475467]">
+                  <span className="text-[#98A2B3]">{CHECK}</span> {f}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6">
+              {!isPremium ? (
+                <div className="rounded-lg bg-[#F4F6F8] px-5 py-3 text-center text-sm font-semibold text-[#667085]">
+                  현재 이용 중
+                </div>
+              ) : (
+                <div className="rounded-lg bg-[#F4F6F8] px-5 py-3 text-center text-sm text-[#98A2B3]">
+                  무료 플랜
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 프리미엄 */}
+          <div className="relative rounded-[16px] border-2 border-[#046C4E] bg-white p-6 shadow-[0_4px_20px_rgba(4,108,78,0.1)]">
+            <div className="absolute -top-3 right-5 rounded-full bg-[#046C4E] px-3 py-1 text-[11px] font-bold text-white">
+              추천
+            </div>
+            <div className="text-[15px] font-bold text-[#046C4E]">프리미엄</div>
+            <div className="mt-1 text-[26px] font-bold text-[#101828]">
+              {PREMIUM_PRICE_LABEL}
+            </div>
+            <p className="mt-1 text-xs text-[#98A2B3]">언제든 해지 가능</p>
+            <ul className="mt-5 space-y-2.5">
+              {premiumFeatures.map(f => (
+                <li key={f} className="flex items-start gap-2 text-[13px] text-[#344054]">
+                  <span className="text-[#046C4E]">{CHECK}</span> {f}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6">
+              {isPremium ? (
+                <UpgradeButton mode="manage" label="구독 관리" />
+              ) : (
+                <UpgradeButton mode="upgrade" label="프리미엄 시작하기" />
+              )}
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-6 text-center text-xs text-[#98A2B3]">
+          결제는 Stripe로 안전하게 처리됩니다. 구독은 고객 포털에서 언제든 해지할 수 있어요.
+        </p>
+      </div>
+    </AppShell>
+  )
+}

@@ -6,6 +6,20 @@ import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { detectPlatform } from '@/lib/detect-platform'
 import { detectAtsType, scrapeJobSource } from '@/lib/discover/ats'
 import { prefilterPostings, scorePostings } from '@/lib/discover/scoring'
+import { planOf, billingEnabled, FREE_LIMITS } from '@/lib/plan'
+
+// 무료 플랜 채용페이지 등록 한도 검사 (프리미엄은 무제한)
+async function overSourceLimit(profile: { id: string; plan?: string | null; subscription_status?: string | null }): Promise<boolean> {
+  if (!billingEnabled()) return false
+  if (planOf(profile) === 'premium') return false
+  const { count } = await supabaseAdmin
+    .from('job_sources')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', profile.id)
+  return (count ?? 0) >= FREE_LIMITS.jobSources
+}
+
+const SOURCE_LIMIT_MSG = `무료 플랜은 채용페이지를 ${FREE_LIMITS.jobSources}개까지 등록할 수 있어요. 프리미엄으로 업그레이드하면 무제한입니다. (요금제 페이지 /pricing)`
 
 /**
  * 잡 탐색의 공유 공고 풀에서 공고를 지원 현황으로 보낸다 (관리 보내기).
@@ -64,6 +78,8 @@ export async function addPresetSource(
     .maybeSingle()
   if (existing) return { sourceId: existing.id, already: true }
 
+  if (await overSourceLimit(profile)) return { error: SOURCE_LIMIT_MSG }
+
   const { type } = detectAtsType(url)
   const { data, error } = await supabaseAdmin
     .from('job_sources')
@@ -93,6 +109,8 @@ export async function addJobSource(formData: FormData): Promise<{ error?: string
   } catch {
     return { error: '유효하지 않은 URL입니다.' }
   }
+
+  if (await overSourceLimit(profile)) return { error: SOURCE_LIMIT_MSG }
 
   const { type, board } = detectAtsType(url)
   if (!name) {

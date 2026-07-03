@@ -62,12 +62,12 @@ export default function Sidebar({
         <div className="my-[6px] mb-3 text-[12px] leading-[1.5] text-[#A7D8C4]">
           {t.dashboard.premium.desc}
         </div>
-        <button
-          type="button"
-          className="w-full rounded-[9px] bg-white py-[9px] text-[13px] font-semibold text-[#046C4E]"
+        <Link
+          href="/pricing"
+          className="block w-full rounded-[9px] bg-white py-[9px] text-center text-[13px] font-semibold text-[#046C4E] transition-colors hover:bg-[#F4F6F8]"
         >
           {t.dashboard.premium.button}
-        </button>
+        </Link>
       </div>
 
       <div className="border-t border-[#F0F2F4] pt-[10px]">

@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { detectPlatform } from '@/lib/detect-platform'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { parseResumeFile } from '@/lib/resume-parser'
+import { planOf, billingEnabled, FREE_LIMITS } from '@/lib/plan'
 
 export async function triggerMatching() {
   try {
@@ -254,6 +255,25 @@ export async function generateTailoredResume(jobId: string): Promise<{ content?:
 
   const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }
+
+  // 무료 플랜 맞춤 이력서 한도: 새 공고에 한해 제한 (기존 공고 재생성은 허용)
+  if (billingEnabled() && planOf(profile) !== 'premium') {
+    const { data: existingForJob } = await supabaseAdmin
+      .from('tailored_resumes')
+      .select('id')
+      .eq('user_id', profile.id)
+      .eq('job_id', jobId)
+      .maybeSingle()
+    if (!existingForJob) {
+      const { count } = await supabaseAdmin
+        .from('tailored_resumes')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', profile.id)
+      if ((count ?? 0) >= FREE_LIMITS.tailoredResumes) {
+        return { error: `무료 플랜은 맞춤 이력서를 ${FREE_LIMITS.tailoredResumes}개까지 만들 수 있어요. 프리미엄으로 업그레이드하면 무제한입니다. (요금제 페이지 /pricing)` }
+      }
+    }
+  }
 
   // 사실 기반 이력서: 업로드 원문 + 구조화 프로필(둘 중 있는 것 모두 활용)
   const structured = structuredResumeText(profile.onboarding_en)
