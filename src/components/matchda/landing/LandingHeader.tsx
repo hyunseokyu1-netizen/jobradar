@@ -44,7 +44,7 @@ export default function LandingHeader({
               {t.nav.jobs}
             </Link>
             <Link
-              href="/matchda/workspace"
+              href="/workspace"
               className="cursor-pointer text-[15px] font-medium text-[#475467] hover:text-[#046C4E]"
             >
               {t.nav.resume}

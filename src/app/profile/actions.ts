@@ -342,7 +342,7 @@ ${JSON.stringify({ name: ko.name, phone: ko.phone, title: ko.title, summary: ko.
 
   revalidatePath('/profile')
   revalidatePath('/')
-  revalidatePath('/matchda/workspace')
+  revalidatePath('/workspace')
   return { en }
 }
 
@@ -558,7 +558,7 @@ ${profile.resume_text.slice(0, 8000)}`,
 
   revalidatePath('/')
   revalidatePath('/profile')
-  revalidatePath('/matchda/workspace')
+  revalidatePath('/workspace')
   return {}
 }
 

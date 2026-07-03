@@ -4,7 +4,7 @@ import type { Dictionary } from '@/lib/matchda/i18n'
 
 const ICONS = [Languages, BarColumns, Target]
 // 각 기능 카드의 "자세히 보기" 라우팅 (README 네비게이션 흐름)
-const HREFS = ['/matchda/workspace', '/dashboard', '/matchda/workspace']
+const HREFS = ['/workspace', '/dashboard', '/workspace']
 
 /**
  * 기능 3카드 (아이콘 박스 + 제목 + 설명 + 선택적 "자세히 보기").

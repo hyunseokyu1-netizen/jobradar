@@ -25,9 +25,9 @@ export default function InteractiveJobCard({
     <div
       role="button"
       tabIndex={0}
-      onClick={() => router.push(`/matchda/workspace?jobId=${encodeURIComponent(job.id)}`)}
+      onClick={() => router.push(`/workspace?jobId=${encodeURIComponent(job.id)}`)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') router.push(`/matchda/workspace?jobId=${encodeURIComponent(job.id)}`)
+        if (e.key === 'Enter') router.push(`/workspace?jobId=${encodeURIComponent(job.id)}`)
       }}
       className={`block cursor-pointer rounded-[12px] border bg-white p-[14px] ${
         emphasized

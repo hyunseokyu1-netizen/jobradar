@@ -193,7 +193,7 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
                     <a
                       href={
                         addedJobIds[job.id]
-                          ? `/matchda/workspace?jobId=${encodeURIComponent(addedJobIds[job.id])}`
+                          ? `/workspace?jobId=${encodeURIComponent(addedJobIds[job.id])}`
                           : '/'
                       }
                       className="font-semibold text-[#046C4E] hover:underline"

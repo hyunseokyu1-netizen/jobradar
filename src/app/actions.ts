@@ -971,6 +971,6 @@ ${bullets.map((b) => `- ${b}`).join('\n')}`
 
   if (updateError) return { error: updateError.message }
 
-  revalidatePath('/matchda/workspace')
+  revalidatePath('/workspace')
   return {}
 }

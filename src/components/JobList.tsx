@@ -446,7 +446,7 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
         {/* 우측 — 워크스페이스, 보기, 삭제 */}
         <div className="flex items-center gap-1.5 shrink-0">
           <a
-            href={`/matchda/workspace?jobId=${encodeURIComponent(job.id)}`}
+            href={`/workspace?jobId=${encodeURIComponent(job.id)}`}
             className="text-xs border border-[#CEEBDC] text-[#046C4E] rounded-lg px-3 py-1.5 hover:bg-[#ECFDF3] whitespace-nowrap"
           >
             워크스페이스
