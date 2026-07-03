@@ -11,7 +11,7 @@ import {
 } from '@/lib/resume'
 import { RESUME_FONT_CSS, type ResumeDesign } from '@/lib/matchda/resume-design'
 import type { ResumeDocumentData, ResumeWorkspaceData } from '@/lib/matchda/types'
-import { downloadResumeDocx, printResumeHtml } from '@/lib/download'
+import { downloadResumeDocx, downloadResumePdf } from '@/lib/download'
 
 type SectionLabels = { experience: string; skills: string; education: string }
 
@@ -146,7 +146,7 @@ export default function WorkspaceResume({
                 className="rounded-[8px] bg-[#046C4E] px-3 py-[6px] text-[12px] font-semibold text-white hover:bg-[#035A40] disabled:opacity-50">
                 {busy === 'save' ? '저장 중...' : '저장'}
               </button>
-              <button type="button" onClick={() => printResumeHtml(renderResumeHtml(koRender()), `${fileBase}_ko`)} className={dlBtn}>
+              <button type="button" onClick={() => downloadResumePdf(renderResumeHtml(koRender()), `${fileBase}_ko`)} className={dlBtn}>
                 <FileText size={13} /> PDF
               </button>
               <button type="button" onClick={() => downloadResumeDocx(koRender(), `${fileBase}_ko`)} className={dlBtn}>DOCX</button>
@@ -166,7 +166,7 @@ export default function WorkspaceResume({
               <span className="text-[13px] font-semibold text-[#046C4E]">{labels.translated}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <button type="button" onClick={() => printResumeHtml(renderResumeHtml(enRender()), `${fileBase}_en`)} className={dlBtn}>
+              <button type="button" onClick={() => downloadResumePdf(renderResumeHtml(enRender()), `${fileBase}_en`)} className={dlBtn}>
                 <FileText size={13} /> PDF
               </button>
               <button type="button" onClick={() => downloadResumeDocx(enRender(), `${fileBase}_en`)} className={dlBtn}>DOCX</button>

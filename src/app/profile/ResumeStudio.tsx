@@ -4,7 +4,7 @@ import { useState } from 'react'
 import SkillChipInput from '@/components/SkillChipInput'
 import { RESUME_FONT_CSS } from '@/lib/matchda/resume-design'
 import { studioToRender, renderResumeHtml } from '@/lib/resume'
-import { downloadResumeDocx, printResumeHtml } from '@/lib/download'
+import { downloadResumeDocx, downloadResumePdf } from '@/lib/download'
 import {
   saveResumeStudio,
   syncResumeEnglish,
@@ -554,7 +554,7 @@ export default function ResumeStudio({
           return (
             <div className="mb-3 flex items-center gap-1.5">
               <span className="mr-1 text-[12px] text-[#98A2B3]">다운로드</span>
-              <button type="button" className={dl} onClick={() => printResumeHtml(renderResumeHtml(render), fileBase)}>PDF</button>
+              <button type="button" className={dl} onClick={() => downloadResumePdf(renderResumeHtml(render), fileBase)}>PDF</button>
               <button type="button" className={dl} onClick={() => downloadResumeDocx(render, fileBase)}>DOCX</button>
             </div>
           )
