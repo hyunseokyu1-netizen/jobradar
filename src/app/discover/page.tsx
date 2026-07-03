@@ -3,6 +3,7 @@ import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import AddSourceForm from '@/components/discover/AddSourceForm'
 import SourceList, { type SourceItem } from '@/components/discover/SourceList'
 import DiscoveredJobList, { type DiscoveredJobItem } from '@/components/discover/DiscoveredJobList'
+import PoolJobList, { type PoolJobItem } from '@/components/discover/PoolJobList'
 import AppShell from '@/components/matchda/AppShell'
 
 export const dynamic = 'force-dynamic'
@@ -41,6 +42,19 @@ export default async function DiscoverPage() {
     source_name: sourceNameMap.get(j.source_id) ?? '?',
   }))
 
+  // 공유 공고 풀 — 아직 지원현황(matches)에 없는 jobs. '관리 보내기'로 지원현황에 추가
+  const { data: myMatches } = await supabaseAdmin
+    .from('matches')
+    .select('job_id')
+    .eq('user_id', profile.id)
+  const matchedIds = new Set((myMatches ?? []).map(m => m.job_id))
+  const { data: allJobs } = await supabaseAdmin
+    .from('jobs')
+    .select('id, title, company, location, salary, url, source, scraped_at')
+    .order('scraped_at', { ascending: false })
+    .limit(300)
+  const poolJobs: PoolJobItem[] = (allJobs ?? []).filter(j => !matchedIds.has(j.id))
+
   return (
     <AppShell activeKey="discover" userName={profile.name as string} userEmail={email}>
       <div className="mb-6">
@@ -52,7 +66,21 @@ export default async function DiscoverPage() {
 
       <AddSourceForm />
       <SourceList sources={(sources ?? []) as SourceItem[]} />
-      <DiscoveredJobList jobs={jobs} />
+
+      {jobs.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-base font-semibold text-[#1F2A37]">내 채용페이지 수집 공고</h2>
+          <DiscoveredJobList jobs={jobs} />
+        </section>
+      )}
+
+      <section>
+        <h2 className="mb-1 text-base font-semibold text-[#1F2A37]">전체 수집 공고</h2>
+        <p className="mb-3 text-xs text-[#98A2B3]">
+          수집된 공고를 둘러보고 &quot;관리 보내기&quot;로 지원 현황에 추가하세요.
+        </p>
+        <PoolJobList jobs={poolJobs} />
+      </section>
     </AppShell>
   )
 }

@@ -7,6 +7,35 @@ import { detectPlatform } from '@/lib/detect-platform'
 import { detectAtsType, scrapeJobSource } from '@/lib/discover/ats'
 import { prefilterPostings, scorePostings } from '@/lib/discover/scoring'
 
+/**
+ * 잡 탐색의 공유 공고 풀에서 공고를 지원 현황으로 보낸다 (관리 보내기).
+ * jobs 풀의 공고에 대해 현재 유저의 match(status='new')를 생성한다.
+ */
+export async function addJobToApplications(jobId: string): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  // 존재하는 공고인지 확인
+  const { data: job } = await supabaseAdmin.from('jobs').select('id').eq('id', jobId).single()
+  if (!job) return { error: '공고를 찾을 수 없습니다.' }
+
+  const { error } = await supabaseAdmin
+    .from('matches')
+    .upsert(
+      { user_id: profile.id, job_id: jobId, status: 'new' },
+      { onConflict: 'user_id,job_id' }
+    )
+  if (error) return { error: error.message }
+
+  revalidatePath('/discover')
+  revalidatePath('/dashboard')
+  revalidatePath('/applications')
+  return {}
+}
+
 export async function addJobSource(formData: FormData): Promise<{ error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
