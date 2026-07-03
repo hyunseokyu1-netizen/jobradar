@@ -166,13 +166,101 @@ export async function translateCoverLetter(content: string): Promise<{ translati
   return { translation }
 }
 
-export async function generateTailoredResume(jobId: string): Promise<{ content?: string; error?: string }> {
+// ── RAG 검색 헬퍼 ────────────────────────────────────────────
+// JD에서 핵심 키워드 추출 (불용어 제거, 소문자)
+const RAG_STOPWORDS = new Set([
+  'the', 'and', 'for', 'with', 'you', 'our', 'are', 'will', 'that', 'this', 'have', 'has',
+  'from', 'your', 'who', 'all', 'any', 'can', 'not', 'but', 'they', 'their', 'been', 'were',
+  'about', 'into', 'more', 'other', 'such', 'than', 'then', 'them', 'these', 'those', 'work',
+  'role', 'team', 'job', 'per', 'via', 'etc', 'a', 'an', 'to', 'of', 'in', 'on', 'as', 'at', 'is', 'be', 'or', 'we',
+])
+function ragKeywords(text: string): Set<string> {
+  const words = text.toLowerCase().match(/[a-z][a-z+#.-]{2,}/g) ?? []
+  return new Set(words.filter(w => !RAG_STOPWORDS.has(w)))
+}
+function ragScore(text: string, kws: Set<string>): number {
+  const words = text.toLowerCase().match(/[a-z][a-z+#.-]{2,}/g) ?? []
+  let s = 0
+  for (const w of words) if (kws.has(w)) s++
+  return s
+}
+
+/**
+ * RAG 검색: 사용자의 과거 맞춤 이력서 코퍼스에서 이번 JD에 가장 관련된 항목을 골라
+ * 표현·강조 참고용 컨텍스트로 반환한다. (현재 공고는 제외, 상위 3건)
+ */
+async function retrievePastResumes(profileId: string, jobId: string, jd: string): Promise<string> {
+  const { data: past } = await supabaseAdmin
+    .from('tailored_resumes')
+    .select('job_id, content')
+    .eq('user_id', profileId)
+    .neq('job_id', jobId)
+    .not('content', 'is', null)
+    .limit(30)
+  if (!past?.length) return ''
+
+  // 관련 공고 제목 매핑
+  const jobIds = past.map(p => p.job_id)
+  const { data: jobRows } = await supabaseAdmin
+    .from('jobs')
+    .select('id, title, company')
+    .in('id', jobIds)
+  const titleMap = new Map((jobRows ?? []).map(j => [j.id, `${j.title}${j.company ? ` @ ${j.company}` : ''}`]))
+
+  const kws = ragKeywords(jd)
+  const ranked = past
+    .map(p => ({ ...p, score: ragScore(p.content ?? '', kws) }))
+    .sort((a, b) => b.score - a.score)
+    .filter(p => p.score > 0)
+    .slice(0, 3)
+  if (!ranked.length) return ''
+
+  return ranked
+    .map((p, i) => `### 참고 이력서 ${i + 1} — 유사 공고 "${titleMap.get(p.job_id) ?? '이전 공고'}"에 작성했던 버전\n${(p.content ?? '').slice(0, 2500)}`)
+    .join('\n\n')
+}
+
+// onboarding_en(구조화 영문 이력서)에서 사실 기반 텍스트 조립 (resume_text 보완)
+function structuredResumeText(onboardingEn: unknown): string {
+  const r = (onboardingEn && typeof onboardingEn === 'object' ? onboardingEn : {}) as Record<string, unknown>
+  const s = (v: unknown) => (typeof v === 'string' ? v : '')
+  const arr = (v: unknown) => (Array.isArray(v) ? v : [])
+  const lines: string[] = []
+  if (s(r.name)) lines.push(s(r.name))
+  if (s(r.title)) lines.push(s(r.title))
+  if (s(r.summary)) lines.push('', 'SUMMARY', s(r.summary))
+  const exps = arr(r.experience) as Record<string, unknown>[]
+  if (exps.length) {
+    lines.push('', 'EXPERIENCE')
+    for (const e of exps) {
+      if (e?.hidden) continue
+      lines.push(`${s(e.company)} — ${s(e.position)} (${s(e.period)})`)
+      if (s(e.description)) lines.push(s(e.description))
+    }
+  }
+  const skills = (arr(r.skills) as string[]).filter(x => typeof x === 'string')
+  if (skills.length) lines.push('', 'SKILLS', skills.join(', '))
+  const edu = arr(r.education) as Record<string, unknown>[]
+  if (edu.length) {
+    lines.push('', 'EDUCATION')
+    for (const e of edu) lines.push(`${s(e.school)} — ${s(e.major)} ${s(e.degree)} (${s(e.period)})`)
+  }
+  return lines.join('\n').trim()
+}
+
+export async function generateTailoredResume(jobId: string): Promise<{ content?: string; ragSources?: number; error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
 
   const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }
-  if (!profile.resume_text) return { error: '프로필 페이지에서 이력서를 먼저 업로드해주세요.' }
+
+  // 사실 기반 이력서: 업로드 원문 + 구조화 프로필(둘 중 있는 것 모두 활용)
+  const structured = structuredResumeText(profile.onboarding_en)
+  const baseResume = [profile.resume_text ?? '', structured].filter(Boolean).join('\n\n').trim()
+  if (!baseResume) {
+    return { error: '프로필 페이지에서 이력서를 먼저 업로드하거나 작성해주세요.' }
+  }
 
   const { data: job } = await supabaseAdmin
     .from('jobs')
@@ -182,6 +270,12 @@ export async function generateTailoredResume(jobId: string): Promise<{ content?:
 
   if (!job) return { error: 'Job not found' }
 
+  const jd = (job.description ?? `${job.title} at ${job.company}`).slice(0, 3000)
+
+  // RAG: 과거 맞춤 이력서 코퍼스에서 이 JD에 관련된 표현·강조 검색
+  const pastContext = await retrievePastResumes(profile.id, jobId, `${job.title} ${job.company} ${jd}`)
+  const ragSources = pastContext ? pastContext.split('### 참고 이력서').length - 1 : 0
+
   const { anthropic } = await import('@/lib/claude')
 
   const message = await anthropic.messages.create({
@@ -190,7 +284,7 @@ export async function generateTailoredResume(jobId: string): Promise<{ content?:
     thinking: { type: 'adaptive' },
     messages: [{
       role: 'user',
-      content: `당신은 전문 이력서 컨설턴트입니다. 아래 지원자의 원본 이력서를 채용공고(JD)에 맞춰 재구성한 맞춤 이력서를 영어로 작성해주세요.
+      content: `당신은 전문 이력서 컨설턴트입니다. 아래 지원자의 이력서를 채용공고(JD)에 맞춰 재구성한 맞춤 이력서를 영어로 작성해주세요.
 
 ## 지원 포지션
 - 직책: ${job.title}
@@ -198,13 +292,14 @@ export async function generateTailoredResume(jobId: string): Promise<{ content?:
 - 위치: ${job.location ?? ''}
 
 ## 채용공고 (JD)
-${(job.description ?? `${job.title} at ${job.company}`).slice(0, 3000)}
+${jd}
 
-## 원본 이력서
-${profile.resume_text.slice(0, 6000)}
-
+## 원본 이력서 (사실의 유일한 출처)
+${baseResume.slice(0, 7000)}
+${pastContext ? `\n## 과거에 유사 공고에 작성한 맞춤 이력서 (표현·강조 방식만 참고, 새로운 사실 추가 금지)\n${pastContext}\n` : ''}
 ## 작성 요구사항
-- 원본 이력서에 있는 사실만 사용할 것. 경력, 스킬, 수치, 회사명을 절대 지어내거나 과장하지 말 것
+- **사실은 오직 "원본 이력서"에서만** 가져올 것. 경력·스킬·수치·회사명을 절대 지어내거나 과장하지 말 것
+- "과거 맞춤 이력서"는 강조점·표현·bullet 스타일을 참고하는 용도이며, 거기서 새로운 사실을 끌어오지 말 것
 - JD의 핵심 요구사항과 키워드에 맞춰 강조점과 항목 순서를 재구성할 것
 - 구성: 이름·연락처 → PROFESSIONAL SUMMARY (3~4줄, 이 포지션 맞춤) → KEY SKILLS (JD 관련 스킬 우선) → WORK EXPERIENCE (JD와 관련된 성과 중심 bullet, 액션 동사로 시작) → EDUCATION 및 기타
 - ATS 친화적인 평문 텍스트로 작성 (표나 마크다운 기호 없이, 섹션 제목은 대문자)
@@ -226,7 +321,7 @@ ${profile.resume_text.slice(0, 6000)}
 
   if (error) return { error: error.message }
 
-  return { content }
+  return { content, ragSources }
 }
 
 // 맞춤 이력서를 한국어로 번역 (참고용) — 결과를 DB에 캐싱

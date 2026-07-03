@@ -39,6 +39,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [ragNote, setRagNote] = useState('')
 
   const filename = `resume_${company.replace(/\s+/g, '_')}_${jobTitle.replace(/\s+/g, '_')}`.slice(0, 60)
   const isDirty = content !== savedContent
@@ -85,6 +86,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
       setSavedContent(res.content)
       setTranslation('')
       setTranslationStale(false)
+      setRagNote(res.ragSources ? `✨ 이전에 작성한 맞춤 이력서 ${res.ragSources}건을 참고해 이 공고에 맞췄어요.` : '')
     }
   }
 
@@ -248,6 +250,9 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
 
           {error && content && !busyOverlay && (
             <p className="text-xs text-red-500 mt-2">{error}</p>
+          )}
+          {ragNote && content && !busyOverlay && (
+            <p className="text-xs text-[#046C4E] mt-2">{ragNote}</p>
           )}
         </div>
 
