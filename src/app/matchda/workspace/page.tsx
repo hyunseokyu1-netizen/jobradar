@@ -4,10 +4,11 @@ import { getMatchdaWorkspace } from '@/lib/matchda/data'
 import WorkspaceTopbar from '@/components/matchda/workspace/WorkspaceTopbar'
 import OptimizationBanner from '@/components/matchda/workspace/OptimizationBanner'
 import ResumeDocument from '@/components/matchda/workspace/ResumeDocument'
-import GenerateOptimizationButton from '@/components/matchda/workspace/GenerateOptimizationButton'
 import WorkspaceActions from '@/components/matchda/workspace/WorkspaceActions'
+import WorkspaceResume from '@/components/matchda/workspace/WorkspaceResume'
 import ConnectResumeGate from '@/components/matchda/workspace/ConnectResumeGate'
 import { Sparkle } from '@/components/matchda/ui/icons'
+import { toStudioResume } from '@/lib/resume'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,47 +58,59 @@ export default async function MatchdaWorkspacePage({
       />
       <OptimizationBanner t={t} data={data} />
 
-      <div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-[22px] px-4 pb-20 pt-6 sm:px-7 lg:grid-cols-2">
-        {/* 좌: 원본 (한국어) */}
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 rounded-lg border border-[#E2E6EA] bg-white px-3 py-[6px]">
-              <span className="h-[7px] w-[7px] rounded-full bg-[#98A2B3]" />
-              <span className="text-[13px] font-semibold text-[#475467]">
-                {t.workspace.originalLabel}
-              </span>
+      {real && jobId ? (
+        /* 실데이터: 편집 가능한 한국어 원본 + 영문 + AI 어시스턴트 채팅 */
+        <WorkspaceResume
+          jobId={jobId}
+          initialKo={data.koStudio ?? toStudioResume(null)}
+          initialEnDoc={data.translated}
+          design={data.design}
+          note={data.optimizationNote}
+          optimizable={!!data.optimizable}
+          contact={data.translated.contact}
+          jobContext={{
+            title: data.target.role,
+            company: data.target.company,
+            description: data.jobExtra?.description ?? null,
+          }}
+          labels={{
+            original: t.workspace.originalLabel,
+            translated: t.workspace.translatedLabel,
+            sections: t.workspace.sections,
+            sectionsEn: t.workspace.sectionsEn,
+            optimizeButton: t.workspace.optimizeButton,
+            optimizing: t.workspace.optimizing,
+          }}
+        />
+      ) : (
+        /* 목업 데모: 읽기 전용 비교 뷰 */
+        <div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-[22px] px-4 pb-20 pt-6 sm:px-7 lg:grid-cols-2">
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 rounded-lg border border-[#E2E6EA] bg-white px-3 py-[6px]">
+                <span className="h-[7px] w-[7px] rounded-full bg-[#98A2B3]" />
+                <span className="text-[13px] font-semibold text-[#475467]">{t.workspace.originalLabel}</span>
+              </div>
             </div>
+            <ResumeDocument doc={data.original} labels={t.workspace.sections} variant="original" design={data.design} />
           </div>
-          <ResumeDocument doc={data.original} labels={t.workspace.sections} variant="original" design={data.design} />
-        </div>
-
-        {/* 우: AI 번역 · 맞춤화 (영어) */}
-        <div>
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 rounded-lg border border-[#CEEBDC] bg-[#ECFDF3] px-3 py-[6px]">
-              <Sparkle size={14} strokeWidth={1.8} className="text-[#046C4E]" />
-              <span className="text-[13px] font-semibold text-[#046C4E]">
-                {t.workspace.translatedLabel}
-              </span>
+          <div>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 rounded-lg border border-[#CEEBDC] bg-[#ECFDF3] px-3 py-[6px]">
+                <Sparkle size={14} strokeWidth={1.8} className="text-[#046C4E]" />
+                <span className="text-[13px] font-semibold text-[#046C4E]">{t.workspace.translatedLabel}</span>
+              </div>
             </div>
-            {/* 실데이터 + 아직 미분석 시 AI 최적화 분석 버튼 */}
-            {real && data.optimizable && jobId && (
-              <GenerateOptimizationButton
-                jobId={jobId}
-                label={t.workspace.optimizeButton}
-                loadingLabel={t.workspace.optimizing}
-              />
-            )}
+            <ResumeDocument
+              doc={data.translated}
+              labels={t.workspace.sectionsEn}
+              variant="translated"
+              note={data.optimizationNote}
+              design={data.design}
+            />
           </div>
-          <ResumeDocument
-            doc={data.translated}
-            labels={t.workspace.sectionsEn}
-            variant="translated"
-            note={data.optimizationNote}
-            design={data.design}
-          />
         </div>
-      </div>
+      )}
     </div>
   )
 }

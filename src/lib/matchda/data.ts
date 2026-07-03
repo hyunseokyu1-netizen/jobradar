@@ -5,6 +5,7 @@
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { normalizeResumeDesign } from './resume-design'
+import { toStudioResume } from '@/lib/resume'
 import type {
   ApplicationStatus,
   DashboardSummary,
@@ -314,5 +315,8 @@ export async function getMatchdaWorkspace(
     },
     // 스튜디오 디자인 설정 (ko에 저장, 한/영 문서 공통 적용)
     design: ko.design ? normalizeResumeDesign(ko.design) : undefined,
+    // 편집·AI 수정·다운로드용 원본 구조화 이력서
+    koStudio: toStudioResume(profile.onboarding_ko, name, (profile.phone as string) ?? ''),
+    enStudio: toStudioResume(profile.onboarding_en, name, (profile.phone as string) ?? ''),
   }
 }

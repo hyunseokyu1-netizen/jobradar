@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { parseResumeFile } from '@/lib/resume-parser'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
+import type { StudioResume, StudioExp, StudioEdu, StudioDesign } from '@/lib/resume'
+export type { StudioResume, StudioExp, StudioEdu, StudioDesign } from '@/lib/resume'
 
 // 매칭 설정 저장 (이름·스킬·경력 요약은 이력서 스튜디오에서 관리)
 export async function saveProfile(formData: FormData): Promise<{ error?: string }> {
@@ -180,38 +182,6 @@ export async function translateResumeSection(
 
 // ── 이력서 스튜디오 (섹션 에디터 + 실시간 미리보기) ──────────────
 
-export interface StudioExp {
-  company: string
-  position: string
-  period: string
-  description: string
-  hidden?: boolean
-}
-export interface StudioEdu {
-  school: string
-  major: string
-  degree: string
-  period: string
-  hidden?: boolean
-}
-export interface StudioDesign {
-  template: 'classic' | 'modern'
-  font: 'plex' | 'geist' | 'serif'
-  lineHeight: number // 1.4 ~ 2.0
-  accent: string     // 화이트리스트 색상만 허용
-}
-export interface StudioResume {
-  name: string
-  phone: string
-  title: string
-  summary: string
-  skills: string[]
-  hidden_skills: string[]
-  experience: StudioExp[]
-  education: StudioEdu[]
-  design?: StudioDesign
-}
-
 const ACCENT_WHITELIST = ['#046C4E', '#1A56DB', '#1F2A37', '#B45309']
 
 // 클라이언트 입력을 신뢰하지 않고 필드별로 정제 (길이 상한 포함)
@@ -374,6 +344,116 @@ ${JSON.stringify({ name: ko.name, phone: ko.phone, title: ko.title, summary: ko.
   revalidatePath('/')
   revalidatePath('/matchda/workspace')
   return { en }
+}
+
+/**
+ * AI 어시스턴트로 이력서(한국어 원본)를 대화형으로 수정한다.
+ * 지시사항에 따라 ko를 재작성 → 영어(en) 재동기화 → 저장 → 갱신된 ko/en 반환.
+ * 워크스페이스 하단 채팅에서 호출한다.
+ */
+export async function chatEditResume(
+  instruction: string,
+  current: StudioResume,
+  jobContext?: { title?: string; company?: string; description?: string }
+): Promise<{ ko?: StudioResume; en?: StudioResume; reply?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+  if (!instruction.trim()) return { error: '수정 요청을 입력해주세요.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const ko = sanitizeStudio(current)
+
+  const jobBlock = jobContext?.title
+    ? `\n\n[참고: 타깃 공고]\n${jobContext.title}${jobContext.company ? ` @ ${jobContext.company}` : ''}\n${(jobContext.description ?? '').slice(0, 2000)}`
+    : ''
+
+  interface RawKo {
+    title?: string; summary?: string
+    skills?: string[]
+    experience?: { company?: string; position?: string; period?: string; description?: string }[]
+    education?: { school?: string; major?: string; degree?: string; period?: string }[]
+    reply?: string
+  }
+  let raw: RawKo
+  try {
+    const { anthropic } = await import('@/lib/claude')
+    const message = await anthropic.messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 8000,
+      thinking: { type: 'adaptive' },
+      messages: [{
+        role: 'user',
+        content: `당신은 해외 취업 이력서 컨설턴트입니다. 아래 구직자의 [현재 이력서(한국어)]를 [수정 요청]에 따라 다시 작성하세요. JSON으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
+
+형식:
+{
+  "title": "직함",
+  "summary": "경력 요약",
+  "skills": ["스킬..."],
+  "experience": [{"company": "", "position": "", "period": "", "description": "성과를 줄바꿈(\\n)으로 구분"}],
+  "education": [{"school": "", "major": "", "degree": "", "period": ""}],
+  "reply": "수정 내용을 한국어 한두 문장으로 요약한 답변"
+}
+
+규칙:
+- 이력서에 있는 사실만 사용하고 경력·수치·회사명을 절대 지어내거나 과장하지 마세요.
+- 수정 요청과 무관한 항목은 현재 내용을 그대로 유지하세요.
+- 모든 텍스트는 한국어로 작성하세요(회사명·기간·고유명사 제외).
+- experience/education의 개수와 순서는 요청이 없으면 유지하세요.
+- reply 에는 무엇을 어떻게 바꿨는지 사용자에게 설명하는 한국어 문장을 넣으세요.
+
+[현재 이력서(한국어)]
+${JSON.stringify({ title: ko.title, summary: ko.summary, skills: ko.skills, experience: ko.experience.filter(e => !e.hidden).map(({ hidden: _h, ...e }) => e), education: ko.education.filter(e => !e.hidden).map(({ hidden: _h, ...e }) => e) })}
+
+[수정 요청]
+${instruction}${jobBlock}`,
+      }],
+    })
+    const textBlock = message.content.find(b => b.type === 'text')
+    const text = textBlock?.type === 'text' ? textBlock.text : ''
+    const m = text.match(/\{[\s\S]*\}/)
+    if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
+    raw = JSON.parse(m[0])
+  } catch (e) {
+    console.error('Resume chat edit error:', e)
+    return { error: '수정 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+  }
+
+  // 숨김 항목은 보존하고, 보이던 항목만 AI 결과로 교체
+  const hiddenExp = ko.experience.filter(e => e.hidden)
+  const hiddenEdu = ko.education.filter(e => e.hidden)
+  const nextKo: StudioResume = sanitizeStudio({
+    ...ko,
+    title: raw.title ?? ko.title,
+    summary: raw.summary ?? ko.summary,
+    skills: Array.isArray(raw.skills) && raw.skills.length ? raw.skills.map(String) : ko.skills,
+    experience: [
+      ...(raw.experience ?? []).map(e => ({
+        company: e.company ?? '', position: e.position ?? '', period: e.period ?? '',
+        description: e.description ?? '', hidden: false,
+      })),
+      ...hiddenExp,
+    ],
+    education: [
+      ...(raw.education ?? []).map(e => ({
+        school: e.school ?? '', major: e.major ?? '', degree: e.degree ?? '', period: e.period ?? '',
+        hidden: false,
+      })),
+      ...hiddenEdu,
+    ],
+  })
+
+  // 저장 + 영어 재동기화 (syncResumeEnglish가 ko/en 모두 저장)
+  const sync = await syncResumeEnglish(nextKo)
+  if (sync.error) return { error: sync.error }
+
+  return {
+    ko: nextKo,
+    en: sync.en,
+    reply: typeof raw.reply === 'string' && raw.reply.trim() ? raw.reply.trim() : '요청하신 대로 이력서를 수정했어요.',
+  }
 }
 
 /**

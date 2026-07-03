@@ -1,0 +1,407 @@
+'use client'
+
+import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import ResumeDocument from './ResumeDocument'
+import GenerateOptimizationButton from './GenerateOptimizationButton'
+import { Sparkle, FileText } from '../ui/icons'
+import { saveResumeStudio, syncResumeEnglish, chatEditResume } from '@/app/profile/actions'
+import { studioToDoc, studioToText, type StudioResume } from '@/lib/resume'
+import { RESUME_FONT_CSS, type ResumeDesign } from '@/lib/matchda/resume-design'
+import type { ResumeDocumentData, ResumeWorkspaceData } from '@/lib/matchda/types'
+import { downloadTxt, downloadDocx, printResumeHtml } from '@/lib/download'
+
+type SectionLabels = { experience: string; skills: string; education: string }
+
+/**
+ * 워크스페이스 이력서 패널 — 좌: 한국어 원본(직접 편집 + AI 채팅 수정), 우: 영문(공고 맞춤).
+ * 상단에 PDF/DOCX 다운로드, 하단에 AI 어시스턴트 채팅.
+ */
+export default function WorkspaceResume({
+  jobId,
+  initialKo,
+  initialEnDoc,
+  design,
+  note,
+  optimizable,
+  contact,
+  jobContext,
+  labels,
+}: {
+  jobId: string
+  initialKo: StudioResume
+  initialEnDoc: ResumeDocumentData
+  design?: ResumeDesign
+  note?: ResumeWorkspaceData['optimizationNote']
+  optimizable: boolean
+  contact: string
+  jobContext: { title: string; company: string; description: string | null }
+  labels: {
+    original: string
+    translated: string
+    sections: SectionLabels
+    sectionsEn: SectionLabels
+    optimizeButton: string
+    optimizing: string
+  }
+}) {
+  const router = useRouter()
+  const [ko, setKo] = useState<StudioResume>(initialKo)
+  const [enDoc, setEnDoc] = useState<ResumeDocumentData>(initialEnDoc)
+  const [editKey, setEditKey] = useState(0) // AI 수정 시 contentEditable 강제 remount
+  const [busy, setBusy] = useState<'save' | 'chat' | null>(null)
+  const [savedAt, setSavedAt] = useState(false)
+  const [dirty, setDirty] = useState(false)
+
+  const koRef = useRef(ko)
+  koRef.current = ko
+
+  const [messages, setMessages] = useState<{ role: 'ai' | 'user'; text: string }[]>([
+    { role: 'ai', text: '이력서를 어떻게 다듬을까요? 예: "경력 요약을 더 임팩트 있게", "리더십 경험을 강조해줘", "이 공고에 맞게 다시 써줘"' },
+  ])
+  const [input, setInput] = useState('')
+  const [error, setError] = useState('')
+  const chatRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })
+  }, [messages, busy])
+
+  // contentEditable blur → ko 상태 커밋
+  function commit(mut: (d: StudioResume) => StudioResume, value: string, prev: string) {
+    if (value === prev) return
+    setKo(d => mut(d))
+    setDirty(true)
+    setSavedAt(false)
+  }
+
+  async function handleSave() {
+    setBusy('save')
+    setError('')
+    // 한국어 저장 + 영어 재동기화 (EN 패널 최신화)
+    const saveRes = await saveResumeStudio(koRef.current)
+    if (saveRes.error) { setError(saveRes.error); setBusy(null); return }
+    const sync = await syncResumeEnglish(koRef.current)
+    setBusy(null)
+    if (sync.error) { setError(sync.error); return }
+    if (sync.en) setEnDoc(studioToDoc(sync.en, contact))
+    setDirty(false)
+    setSavedAt(true)
+    setTimeout(() => setSavedAt(false), 2500)
+    router.refresh()
+  }
+
+  async function handleChatSend() {
+    const instruction = input.trim()
+    if (!instruction || busy) return
+    setInput('')
+    setError('')
+    setMessages(m => [...m, { role: 'user', text: instruction }])
+    setBusy('chat')
+    const res = await chatEditResume(instruction, koRef.current, {
+      title: jobContext.title,
+      company: jobContext.company,
+      description: jobContext.description ?? undefined,
+    })
+    setBusy(null)
+    if (res.error) {
+      setError(res.error)
+      setMessages(m => [...m, { role: 'ai', text: `⚠️ ${res.error}` }])
+      return
+    }
+    if (res.ko) { setKo(res.ko); setEditKey(k => k + 1); setDirty(false) }
+    if (res.en) setEnDoc(studioToDoc(res.en, contact))
+    setMessages(m => [...m, { role: 'ai', text: res.reply ?? '수정했어요.' }])
+    router.refresh()
+  }
+
+  const fileBase = `resume_${(ko.name || 'resume').replace(/\s+/g, '_')}`
+  function koText() { return studioToText(ko, contact) }
+  function enText() {
+    const lines: string[] = [enDoc.name]
+    if (enDoc.title) lines.push(enDoc.title)
+    lines.push(enDoc.contact, '', 'EXPERIENCE')
+    for (const e of enDoc.experiences) {
+      lines.push('', `${e.org}  (${e.period})`)
+      for (const b of e.bullets) lines.push(`• ${b.text}`)
+    }
+    lines.push('', 'SKILLS', enDoc.skills.join(', '))
+    if (enDoc.education.org) lines.push('', 'EDUCATION', `${enDoc.education.org}  (${enDoc.education.period})`)
+    return lines.join('\n')
+  }
+
+  const font = design ? RESUME_FONT_CSS[design.font] : RESUME_FONT_CSS.plex
+  const accent = design?.accent ?? '#046C4E'
+
+  const dlBtn = 'flex items-center gap-1 rounded-[8px] border border-[#E2E6EA] bg-white px-2.5 py-[6px] text-[12px] font-semibold text-[#475467] hover:bg-[#F4F6F8]'
+
+  return (
+    <>
+      <div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-[22px] px-4 pb-6 pt-6 sm:px-7 lg:grid-cols-2">
+        {/* 좌: 한국어 원본 (편집 가능) */}
+        <div>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 rounded-lg border border-[#E2E6EA] bg-white px-3 py-[6px]">
+              <span className="h-[7px] w-[7px] rounded-full bg-[#98A2B3]" />
+              <span className="text-[13px] font-semibold text-[#475467]">{labels.original}</span>
+              <span className="ml-1 text-[11px] text-[#98A2B3]">· 클릭해서 수정</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {savedAt && <span className="text-[11px] text-green-600">✓ 저장됨</span>}
+              {dirty && !savedAt && <span className="text-[11px] text-amber-600">저장 안 됨</span>}
+              <button type="button" onClick={handleSave} disabled={busy !== null}
+                className="rounded-[8px] bg-[#046C4E] px-3 py-[6px] text-[12px] font-semibold text-white hover:bg-[#035A40] disabled:opacity-50">
+                {busy === 'save' ? '저장 중...' : '저장'}
+              </button>
+              <button type="button" onClick={() => printResumeHtml(buildResumeHtml(ko, contact), `${fileBase}_ko`)} className={dlBtn}>
+                <FileText size={13} /> PDF
+              </button>
+              <button type="button" onClick={() => downloadDocx(koText(), `${fileBase}_ko`)} className={dlBtn}>DOCX</button>
+            </div>
+          </div>
+
+          <EditableKoDoc ko={ko} contact={contact} font={font} accent={accent}
+            modern={design?.template === 'modern'} lineHeight={design?.lineHeight ?? 1.75}
+            editKey={editKey} commit={commit} />
+        </div>
+
+        {/* 우: 영문 (공고 맞춤) */}
+        <div>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 rounded-lg border border-[#CEEBDC] bg-[#ECFDF3] px-3 py-[6px]">
+              <Sparkle size={14} strokeWidth={1.8} className="text-[#046C4E]" />
+              <span className="text-[13px] font-semibold text-[#046C4E]">{labels.translated}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button type="button" onClick={() => printResumeHtml(buildDocHtml(enDoc), `${fileBase}_en`)} className={dlBtn}>
+                <FileText size={13} /> PDF
+              </button>
+              <button type="button" onClick={() => downloadDocx(enText(), `${fileBase}_en`)} className={dlBtn}>DOCX</button>
+              {optimizable && (
+                <GenerateOptimizationButton jobId={jobId} label={labels.optimizeButton} loadingLabel={labels.optimizing} />
+              )}
+            </div>
+          </div>
+          <ResumeDocument doc={enDoc} labels={labels.sectionsEn} variant="translated" note={note} design={design} />
+        </div>
+      </div>
+
+      {/* AI 어시스턴트 채팅 */}
+      <div className="mx-auto max-w-[1320px] px-4 pb-20 sm:px-7">
+        <div className="rounded-[16px] border border-[#E7EBEE] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+          <div className="flex items-center gap-2 border-b border-[#F0F2F4] px-5 py-3">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ECFDF3]">
+              <Sparkle size={15} strokeWidth={1.8} className="text-[#046C4E]" />
+            </span>
+            <div>
+              <div className="text-[14px] font-bold text-[#101828]">이력서 AI 어시스턴트</div>
+              <div className="text-[11px] text-[#98A2B3]">대화로 이력서를 수정하면 좌·우 패널이 함께 갱신됩니다</div>
+            </div>
+          </div>
+
+          <div ref={chatRef} className="max-h-[280px] space-y-3 overflow-y-auto px-5 py-4">
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed ${
+                  m.role === 'user' ? 'rounded-br-sm bg-[#046C4E] text-white' : 'rounded-bl-sm bg-[#F4F6F8] text-[#344054]'
+                }`}>{m.text}</div>
+              </div>
+            ))}
+            {busy === 'chat' && (
+              <div className="flex justify-start">
+                <div className="rounded-2xl rounded-bl-sm bg-[#F4F6F8] px-4 py-2.5 text-[13.5px] text-[#98A2B3]">
+                  이력서를 수정하는 중<span className="animate-pulse">...</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-[#F0F2F4] p-3">
+            {error && <p className="px-2 pb-2 text-xs text-red-500">{error}</p>}
+            <div className="flex items-end gap-2">
+              <textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChatSend() } }}
+                disabled={busy === 'chat'}
+                rows={1}
+                placeholder="예: 이 공고에 맞게 경력 요약을 다시 써줘"
+                className="max-h-32 flex-1 resize-none rounded-xl border border-[#E2E6EA] px-4 py-2.5 text-sm outline-none focus:border-[#046C4E] focus:ring-2 focus:ring-[#046C4E]/10 disabled:bg-[#F4F6F8]"
+              />
+              <button type="button" onClick={handleChatSend} disabled={busy === 'chat' || !input.trim()}
+                className="whitespace-nowrap rounded-xl bg-[#046C4E] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#035A40] disabled:opacity-40">
+                보내기
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── 편집 가능한 한국어 이력서 문서 ──────────────────────────────
+function EditableKoDoc({
+  ko, contact, font, accent, modern, lineHeight, editKey, commit,
+}: {
+  ko: StudioResume
+  contact: string
+  font: string
+  accent: string
+  modern: boolean
+  lineHeight: number
+  editKey: number
+  commit: (mut: (d: StudioResume) => StudioResume, value: string, prev: string) => void
+}) {
+  const exps = ko.experience.filter(e => !e.hidden)
+  const edu = ko.education.filter(e => !e.hidden)[0]
+  const skills = ko.skills.filter(s => !ko.hidden_skills.includes(s))
+
+  // 편집 가능한 텍스트 (blur 시 커밋, editKey로 remount)
+  const Ed = ({ v, cls, onCommit }: { v: string; cls: string; onCommit: (val: string) => void }) => (
+    <span
+      key={editKey}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={e => onCommit(e.currentTarget.textContent ?? '')}
+      className={`${cls} rounded outline-none focus:bg-[#ECFDF3] focus:ring-1 focus:ring-[#CEEBDC]`}
+    >{v}</span>
+  )
+
+  const label = (text: string) => (
+    <div className="mb-3 mt-6 border-b border-[#EEF0F2] pb-1.5 text-[11px] font-semibold uppercase tracking-[0.09em]"
+      style={modern ? { color: accent } : { color: '#9AA3AD' }}>{text}</div>
+  )
+
+  return (
+    <div className="overflow-hidden rounded-[14px] border border-[#ECEEF0] bg-white shadow-[0_2px_14px_rgba(16,24,40,0.04)]"
+      style={{ fontFamily: font, lineHeight }}>
+      {modern && <div className="h-[6px] w-full" style={{ background: accent }} />}
+      <div className="px-6 py-8 sm:px-12 sm:py-11">
+        <div className={modern ? 'text-center' : ''}>
+          <Ed v={ko.name} cls="text-[23px] font-bold tracking-[-0.01em] text-[#101828]"
+            onCommit={val => commit(d => ({ ...d, name: val }), val, ko.name)} />
+          <div className="mt-[3px] text-[15px] font-semibold" style={{ color: accent }}>
+            <Ed v={ko.title} cls="" onCommit={val => commit(d => ({ ...d, title: val }), val, ko.title)} />
+          </div>
+          <div className="mt-[6px] font-[family-name:var(--font-plex-mono)] text-[13px] text-[#98A2B3]">{contact}</div>
+        </div>
+
+        {(ko.summary || true) && (
+          <>
+            {label('경력 요약')}
+            <p className="whitespace-pre-wrap text-[13.5px] text-[#475467]">
+              <Ed v={ko.summary} cls="block min-h-[1.4em]"
+                onCommit={val => commit(d => ({ ...d, summary: val }), val, ko.summary)} />
+            </p>
+          </>
+        )}
+
+        {exps.length > 0 && (
+          <>
+            {label('경력')}
+            {exps.map((exp, i) => {
+              // ko.experience 내 실제 인덱스 (숨김 항목 고려)
+              const realIdx = ko.experience.indexOf(exp)
+              const bullets = exp.description.split('\n').map(l => l.replace(/^[-•\s]+/, '').trim()).filter(Boolean)
+              return (
+                <div key={i} className={i > 0 ? 'mt-4' : ''}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="text-[14px] font-semibold text-[#1F2A37]">
+                      <Ed v={exp.company} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { company: val }), val, exp.company)} />
+                      {' — '}
+                      <Ed v={exp.position} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { position: val }), val, exp.position)} />
+                    </div>
+                    <div className="shrink-0 text-[11.5px] text-[#98A2B3]">
+                      <Ed v={exp.period} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { period: val }), val, exp.period)} />
+                    </div>
+                  </div>
+                  <ul className="mt-1.5 list-disc pl-[18px] text-[13px] text-[#475467]">
+                    {bullets.map((b, bi) => (
+                      <li key={bi}>
+                        <Ed v={b} cls="block"
+                          onCommit={val => {
+                            const next = [...bullets]; next[bi] = val
+                            const desc = next.filter(Boolean).join('\n')
+                            commit(d => patchExp(d, realIdx, { description: desc }), desc, exp.description)
+                          }} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+          </>
+        )}
+
+        {skills.length > 0 && (
+          <>
+            {label('스킬')}
+            <div className="flex flex-wrap gap-1.5">
+              {skills.map(s => (
+                <span key={s} className="rounded-[7px] border px-2.5 py-1 text-[12px]"
+                  style={{ background: `${accent}0D`, borderColor: `${accent}30`, color: accent }}>{s}</span>
+              ))}
+            </div>
+          </>
+        )}
+
+        {edu && (
+          <>
+            {label('학력')}
+            <div className="flex items-baseline justify-between gap-2 text-[13px] font-semibold text-[#1F2A37]">
+              <span>{[edu.school, edu.major, edu.degree].filter(Boolean).join(' · ')}</span>
+              <span className="shrink-0 text-[11.5px] font-normal text-[#98A2B3]">{edu.period}</span>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function patchExp(d: StudioResume, idx: number, patch: Partial<StudioResume['experience'][number]>): StudioResume {
+  return { ...d, experience: d.experience.map((e, i) => (i === idx ? { ...e, ...patch } : e)) }
+}
+
+// 인쇄용 HTML (한국어 스튜디오 문서)
+function buildResumeHtml(r: StudioResume, contact: string): string {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const parts: string[] = []
+  parts.push(`<h1>${esc(r.name)}</h1>`)
+  if (r.title) parts.push(`<div class="title">${esc(r.title)}</div>`)
+  parts.push(`<div class="contact">${esc([contact, r.phone].filter(Boolean).join(' • '))}</div>`)
+  if (r.summary) parts.push(`<div class="label">경력 요약</div><p>${esc(r.summary).replace(/\n/g, '<br>')}</p>`)
+  const exps = r.experience.filter(e => !e.hidden)
+  if (exps.length) {
+    parts.push(`<div class="label">경력</div>`)
+    for (const e of exps) {
+      const bullets = e.description.split('\n').map(l => l.replace(/^[-•\s]+/, '').trim()).filter(Boolean)
+      parts.push(`<div class="exp"><div class="exp-head"><span>${esc([e.company, e.position].filter(Boolean).join(' — '))}</span><span class="period">${esc(e.period)}</span></div><ul>${bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>`)
+    }
+  }
+  const skills = r.skills.filter(s => !r.hidden_skills.includes(s))
+  if (skills.length) parts.push(`<div class="label">스킬</div><div>${skills.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>`)
+  const edu = r.education.filter(e => !e.hidden)
+  if (edu.length) {
+    parts.push(`<div class="label">학력</div>`)
+    for (const e of edu) parts.push(`<div class="exp-head"><span>${esc([e.school, e.major, e.degree].filter(Boolean).join(' · '))}</span><span class="period">${esc(e.period)}</span></div>`)
+  }
+  return parts.join('')
+}
+
+// 인쇄용 HTML (영문 ResumeDocumentData)
+function buildDocHtml(doc: ResumeDocumentData): string {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const parts: string[] = []
+  parts.push(`<h1>${esc(doc.name)}</h1>`)
+  if (doc.title) parts.push(`<div class="title">${esc(doc.title)}</div>`)
+  parts.push(`<div class="contact">${esc(doc.contact)}</div>`)
+  parts.push(`<div class="label">Experience</div>`)
+  for (const e of doc.experiences) {
+    parts.push(`<div class="exp"><div class="exp-head"><span>${esc(e.org)}</span><span class="period">${esc(e.period)}</span></div><ul>${e.bullets.map(b => `<li>${esc(b.text)}</li>`).join('')}</ul></div>`)
+  }
+  if (doc.skills.length) parts.push(`<div class="label">Skills</div><div>${doc.skills.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>`)
+  if (doc.education.org) parts.push(`<div class="label">Education</div><div class="exp-head"><span>${esc(doc.education.org)}</span><span class="period">${esc(doc.education.period)}</span></div>`)
+  return parts.join('')
+}

@@ -107,4 +107,7 @@ export interface ResumeWorkspaceData {
   }
   /** 이력서 스튜디오에서 설정한 문서 디자인 (폰트·줄간격·포인트 컬러·템플릿) */
   design?: import('./resume-design').ResumeDesign
+  /** 편집·AI 수정·다운로드용 원본 구조화 이력서 (실데이터에서만 제공) */
+  koStudio?: import('@/lib/resume').StudioResume
+  enStudio?: import('@/lib/resume').StudioResume
 }
