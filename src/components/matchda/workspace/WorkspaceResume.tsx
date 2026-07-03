@@ -13,7 +13,7 @@ import { RESUME_FONT_CSS, type ResumeDesign } from '@/lib/matchda/resume-design'
 import type { ResumeDocumentData, ResumeWorkspaceData } from '@/lib/matchda/types'
 import { downloadResumeDocx, downloadResumePdf } from '@/lib/download'
 
-type SectionLabels = { experience: string; skills: string; education: string }
+type SectionLabels = { summary?: string; experience: string; skills: string; education: string }
 
 /**
  * 워크스페이스 이력서 패널 — 좌: 한국어 원본(직접 편집 + AI 채팅 수정), 우: 영문(공고 맞춤).
@@ -74,6 +74,15 @@ export default function WorkspaceResume({
   function commit(mut: (d: StudioResume) => StudioResume, value: string, prev: string) {
     if (value === prev) return
     setKo(d => mut(d))
+    setDirty(true)
+    setSavedAt(false)
+  }
+
+  // 구조 변경(항목·경력 추가/삭제)용 — 값 비교 없이 항상 적용.
+  // editKey를 올려 uncontrolled 편집 필드를 최신 데이터로 remount한다.
+  function mutate(mut: (d: StudioResume) => StudioResume) {
+    setKo(d => mut(d))
+    setEditKey(k => k + 1)
     setDirty(true)
     setSavedAt(false)
   }
@@ -155,7 +164,7 @@ export default function WorkspaceResume({
 
           <EditableKoDoc ko={ko} contact={contact} font={font} accent={accent}
             modern={design?.template === 'modern'} lineHeight={design?.lineHeight ?? 1.75}
-            editKey={editKey} commit={commit} />
+            editKey={editKey} commit={commit} mutate={mutate} />
         </div>
 
         {/* 우: 영문 (공고 맞춤) */}
@@ -256,7 +265,7 @@ function EditableText({
 
 // ── 편집 가능한 한국어 이력서 문서 ──────────────────────────────
 function EditableKoDoc({
-  ko, contact, font, accent, modern, lineHeight, editKey, commit,
+  ko, contact, font, accent, modern, lineHeight, editKey, commit, mutate,
 }: {
   ko: StudioResume
   contact: string
@@ -266,6 +275,7 @@ function EditableKoDoc({
   lineHeight: number
   editKey: number
   commit: (mut: (d: StudioResume) => StudioResume, value: string, prev: string) => void
+  mutate: (mut: (d: StudioResume) => StudioResume) => void
 }) {
   const exps = ko.experience.filter(e => !e.hidden)
   const edu = ko.education.filter(e => !e.hidden)[0]
@@ -306,34 +316,51 @@ function EditableKoDoc({
             {exps.map((exp, i) => {
               // ko.experience 내 실제 인덱스 (숨김 항목 고려)
               const realIdx = ko.experience.indexOf(exp)
-              const bullets = exp.description.split('\n').map(l => l.replace(/^[-•\s]+/, '').trim()).filter(Boolean)
+              // 편집 중 빈 항목이 사라지지 않도록 filter 없이 유지 (내보내기 단계에서 빈 줄 제거됨)
+              const bullets = exp.description ? exp.description.split('\n').map(l => l.replace(/^[-•\s]+/, '').trim()) : []
+              // 항목 추가/삭제(구조 변경) — 필드 remount 필요
+              const setBullets = (next: string[]) => mutate(d => patchExp(d, realIdx, { description: next.join('\n') }))
               return (
-                <div key={i} className={i > 0 ? 'mt-4' : ''}>
+                <div key={realIdx} className={`group/exp ${i > 0 ? 'mt-4' : ''}`}>
                   <div className="flex items-baseline justify-between gap-2">
                     <div className="text-[14px] font-semibold text-[#1F2A37]">
                       <EditableText editKey={editKey} v={exp.company} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { company: val }), val, exp.company)} />
                       {' — '}
                       <EditableText editKey={editKey} v={exp.position} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { position: val }), val, exp.position)} />
                     </div>
-                    <div className="shrink-0 text-[11.5px] text-[#98A2B3]">
+                    <div className="flex shrink-0 items-baseline gap-1.5 text-[11.5px] text-[#98A2B3]">
                       <EditableText editKey={editKey} v={exp.period} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { period: val }), val, exp.period)} />
+                      <button type="button" title="이 경력 삭제"
+                        onClick={() => mutate(d => ({ ...d, experience: d.experience.filter((_, j) => j !== realIdx) }))}
+                        className="opacity-0 transition-opacity hover:text-red-500 group-hover/exp:opacity-100">✕</button>
                     </div>
                   </div>
                   <ul className="mt-1.5 list-disc pl-[18px] text-[13px] text-[#475467]">
                     {bullets.map((b, bi) => (
-                      <li key={bi}>
-                        <EditableText editKey={editKey} v={b} cls="block"
-                          onCommit={val => {
-                            const next = [...bullets]; next[bi] = val
-                            const desc = next.filter(Boolean).join('\n')
-                            commit(d => patchExp(d, realIdx, { description: desc }), desc, exp.description)
-                          }} />
+                      <li key={bi} className="group/li">
+                        <span className="flex items-start gap-1">
+                          <EditableText editKey={editKey} v={b} cls="block flex-1"
+                            onCommit={val => {
+                              const next = [...bullets]; next[bi] = val
+                              const desc = next.join('\n')
+                              commit(d => patchExp(d, realIdx, { description: desc }), desc, exp.description)
+                            }} />
+                          <button type="button" title="항목 삭제"
+                            onClick={() => setBullets(bullets.filter((_, j) => j !== bi))}
+                            className="mt-[2px] shrink-0 text-[11px] leading-none text-[#C4CAD2] opacity-0 transition-opacity hover:text-red-500 group-hover/li:opacity-100">✕</button>
+                        </span>
                       </li>
                     ))}
                   </ul>
+                  <button type="button"
+                    onClick={() => setBullets([...bullets, ''])}
+                    className="mt-1 ml-[18px] text-[12px] font-medium text-[#98A2B3] hover:text-[#046C4E]">+ 항목 추가</button>
                 </div>
               )
             })}
+            <button type="button"
+              onClick={() => mutate(d => ({ ...d, experience: [...d.experience, { company: '', position: '', period: '', description: '' }] }))}
+              className="mt-4 rounded-[8px] border border-dashed border-[#D0D5DB] px-3 py-1.5 text-[12px] font-medium text-[#667085] hover:border-[#046C4E] hover:text-[#046C4E]">+ 경력 추가</button>
           </>
         )}
 

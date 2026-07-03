@@ -67,6 +67,8 @@ export interface ResumeDocumentData {
   name: string
   title: string
   contact: string
+  /** 경력 요약 (있으면 EXPERIENCE 위에 표시) */
+  summary?: string
   experiences: ResumeExperience[]
   skills: string[]
   education: ResumeEducation

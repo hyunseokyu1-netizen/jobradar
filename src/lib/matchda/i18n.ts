@@ -121,11 +121,13 @@ const ko = {
     optimizeButton: '이 공고에 맞춰 AI 분석',
     optimizing: 'AI 분석 중...',
     sections: {
+      summary: '경력 요약',
       experience: '경력',
       skills: '기술',
       education: '학력',
     },
     sectionsEn: {
+      summary: 'Summary',
       experience: 'Experience',
       skills: 'Skills',
       education: 'Education',
@@ -249,11 +251,13 @@ const en: typeof ko = {
     optimizeButton: 'Analyze for this job with AI',
     optimizing: 'Analyzing...',
     sections: {
+      summary: '경력 요약',
       experience: '경력',
       skills: '기술',
       education: '학력',
     },
     sectionsEn: {
+      summary: 'Summary',
       experience: 'Experience',
       skills: 'Skills',
       education: 'Education',

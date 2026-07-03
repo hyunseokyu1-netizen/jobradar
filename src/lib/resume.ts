@@ -107,6 +107,7 @@ export function docToRender(doc: ResumeDocumentData, accent = '#046C4E'): Render
     name: doc.name,
     title: doc.title,
     contact: doc.contact,
+    summary: doc.summary || undefined,
     labels: EN_LABELS,
     experiences: doc.experiences.map(e => ({ org: e.org, period: e.period, bullets: e.bullets.map(b => b.text) })),
     skills: doc.skills,
@@ -145,6 +146,7 @@ export function studioToDoc(r: StudioResume, contact: string): ResumeDocumentDat
     name: r.name,
     title: r.title || exps[0]?.position || '',
     contact,
+    summary: r.summary || undefined,
     experiences: exps.map(e => ({
       org: [e.company, e.position].filter(Boolean).join(' — '),
       period: e.period,

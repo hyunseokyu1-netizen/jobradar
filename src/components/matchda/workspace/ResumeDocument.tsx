@@ -35,7 +35,7 @@ export default function ResumeDocument({
   design,
 }: {
   doc: ResumeDocumentData
-  labels: { experience: string; skills: string; education: string }
+  labels: { summary?: string; experience: string; skills: string; education: string }
   variant: 'original' | 'translated'
   note?: ResumeWorkspaceData['optimizationNote']
   /** 이력서 스튜디오에서 설정한 디자인 (폰트·줄간격·포인트 컬러·템플릿) */
@@ -63,6 +63,13 @@ export default function ResumeDocument({
           {doc.contact}
         </div>
       </div>
+
+      {doc.summary && (
+        <>
+          <SectionLabel>{labels.summary ?? 'Summary'}</SectionLabel>
+          <p className="whitespace-pre-wrap text-[13.5px] text-[#475467]">{doc.summary}</p>
+        </>
+      )}
 
       <SectionLabel>{labels.experience}</SectionLabel>
       {doc.experiences.map((exp, ei) => (

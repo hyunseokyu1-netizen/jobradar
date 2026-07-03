@@ -198,6 +198,7 @@ function buildDoc(
     name,
     title: resume.title || exps[0]?.position || fallbackTitle || '',
     contact,
+    summary: resume.summary || undefined,
     experiences: exps.map((e) => ({
       org: [e.company, e.position].filter(Boolean).join(' — '),
       period: e.period ?? '',
