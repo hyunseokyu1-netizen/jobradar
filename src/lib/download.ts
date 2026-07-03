@@ -1,5 +1,116 @@
 // 텍스트 콘텐츠를 TXT / DOCX / PDF 파일로 다운로드하는 클라이언트 헬퍼
 
+import type { RenderResume } from '@/lib/resume'
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// 화면 디자인과 동일한 서식(굵기·색·섹션 구분선·불릿·기간 우측정렬)의 이력서 DOCX 생성
+export async function downloadResumeDocx(r: RenderResume, filename: string) {
+  const {
+    Document, Packer, Paragraph, TextRun, BorderStyle, TabStopType,
+  } = await import('docx')
+
+  const accent = r.accent.replace('#', '')
+  const GRAY = '98A2B3'
+  const INK = '1F2A37'
+  const RIGHT_TAB = 9020 // 우측 탭 위치(twips, ≈ A4 본문폭)
+
+  const children: InstanceType<typeof Paragraph>[] = []
+
+  // 이름
+  children.push(new Paragraph({
+    spacing: { after: 40 },
+    children: [new TextRun({ text: r.name, bold: true, size: 40, color: '101828' })],
+  }))
+  // 직함
+  if (r.title) children.push(new Paragraph({
+    spacing: { after: 40 },
+    children: [new TextRun({ text: r.title, bold: true, size: 24, color: accent })],
+  }))
+  // 연락처
+  children.push(new Paragraph({
+    spacing: { after: 160 },
+    children: [new TextRun({ text: r.contact, size: 18, color: GRAY })],
+  }))
+
+  const sectionLabel = (text: string) => new Paragraph({
+    spacing: { before: 240, after: 120 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: 'EEEEEE', space: 4 } },
+    children: [new TextRun({ text: text.toUpperCase(), bold: true, size: 17, color: '9AA3AD', characterSpacing: 12 })],
+  })
+
+  // 경력 요약
+  if (r.summary) {
+    children.push(sectionLabel(r.labels.summary))
+    for (const line of r.summary.split('\n')) {
+      children.push(new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ text: line, size: 21, color: '475467' })] }))
+    }
+  }
+
+  // 경력
+  if (r.experiences.length) {
+    children.push(sectionLabel(r.labels.experience))
+    r.experiences.forEach((e, i) => {
+      children.push(new Paragraph({
+        spacing: { before: i === 0 ? 0 : 160, after: 60 },
+        tabStops: [{ type: TabStopType.RIGHT, position: RIGHT_TAB }],
+        children: [
+          new TextRun({ text: e.org, bold: true, size: 22, color: INK }),
+          new TextRun({ text: `\t${e.period}`, size: 18, color: GRAY }),
+        ],
+      }))
+      for (const b of e.bullets) {
+        children.push(new Paragraph({
+          bullet: { level: 0 },
+          spacing: { after: 40 },
+          children: [new TextRun({ text: b, size: 21, color: '475467' })],
+        }))
+      }
+    })
+  }
+
+  // 스킬
+  if (r.skills.length) {
+    children.push(sectionLabel(r.labels.skills))
+    children.push(new Paragraph({
+      spacing: { after: 40 },
+      children: [new TextRun({ text: r.skills.join('   •   '), size: 21, color: accent })],
+    }))
+  }
+
+  // 학력
+  if (r.education.length) {
+    children.push(sectionLabel(r.labels.education))
+    for (const e of r.education) {
+      children.push(new Paragraph({
+        spacing: { after: 40 },
+        tabStops: [{ type: TabStopType.RIGHT, position: RIGHT_TAB }],
+        children: [
+          new TextRun({ text: e.text, bold: true, size: 20, color: INK }),
+          new TextRun({ text: `\t${e.period}`, size: 18, color: GRAY }),
+        ],
+      }))
+    }
+  }
+
+  const doc = new Document({
+    styles: { default: { document: { run: { font: 'Calibri' } } } },
+    sections: [{
+      properties: { page: { margin: { top: 900, bottom: 900, left: 1000, right: 1000 } } },
+      children,
+    }],
+  })
+  const blob = await Packer.toBlob(doc)
+  triggerDownload(blob, `${filename}.docx`)
+}
+
 export async function downloadTxt(content: string, filename: string) {
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -70,7 +181,10 @@ export async function printResumeHtml(bodyHtml: string, filename: string) {
 export async function printPdfFromDocx(base64: string, filename: string) {
   const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
   const mammoth = await import('mammoth')
-  const { value: html } = await (mammoth as any).convertToHtml({ arrayBuffer: bytes.buffer })
+  const convertToHtml = (mammoth as unknown as {
+    convertToHtml: (input: { arrayBuffer: ArrayBuffer }) => Promise<{ value: string }>
+  }).convertToHtml
+  const { value: html } = await convertToHtml({ arrayBuffer: bytes.buffer })
 
   const iframe = document.createElement('iframe')
   iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none'

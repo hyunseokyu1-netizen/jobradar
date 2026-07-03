@@ -59,6 +59,84 @@ export function toStudioResume(raw: unknown, fallbackName = '', fallbackPhone = 
 
 import type { ResumeDocumentData } from '@/lib/matchda/types'
 
+// ── 다운로드(PDF/DOCX)용 정규화 렌더 모델 ──────────────────────
+export interface RenderResume {
+  name: string
+  title: string
+  contact: string
+  summary?: string
+  labels: { summary: string; experience: string; skills: string; education: string }
+  experiences: { org: string; period: string; bullets: string[] }[]
+  skills: string[]
+  education: { text: string; period: string }[]
+  accent: string
+}
+
+const KO_LABELS = { summary: '경력 요약', experience: '경력', skills: '스킬', education: '학력' }
+const EN_LABELS = { summary: 'Summary', experience: 'Experience', skills: 'Skills', education: 'Education' }
+
+// StudioResume(한/영) → RenderResume (숨김 항목 제외)
+export function studioToRender(
+  r: StudioResume,
+  contact: string,
+  lang: 'ko' | 'en',
+  accent = '#046C4E'
+): RenderResume {
+  const exps = r.experience.filter(e => !e.hidden)
+  const edu = r.education.filter(e => !e.hidden)
+  return {
+    name: r.name,
+    title: r.title || exps[0]?.position || '',
+    contact,
+    summary: r.summary || undefined,
+    labels: lang === 'ko' ? KO_LABELS : EN_LABELS,
+    experiences: exps.map(e => ({
+      org: [e.company, e.position].filter(Boolean).join(' — '),
+      period: e.period,
+      bullets: e.description.split('\n').map(l => l.replace(/^[-•\s]+/, '').trim()).filter(Boolean),
+    })),
+    skills: r.skills.filter(s => !r.hidden_skills.includes(s)),
+    education: edu.map(e => ({ text: [e.school, e.major, e.degree].filter(Boolean).join(' · '), period: e.period })),
+    accent,
+  }
+}
+
+// ResumeDocumentData(영문 표시 문서) → RenderResume
+export function docToRender(doc: ResumeDocumentData, accent = '#046C4E'): RenderResume {
+  return {
+    name: doc.name,
+    title: doc.title,
+    contact: doc.contact,
+    labels: EN_LABELS,
+    experiences: doc.experiences.map(e => ({ org: e.org, period: e.period, bullets: e.bullets.map(b => b.text) })),
+    skills: doc.skills,
+    education: doc.education.org ? [{ text: doc.education.org, period: doc.education.period }] : [],
+    accent,
+  }
+}
+
+// RenderResume → 인쇄용 body HTML (download.ts의 printResumeHtml 스타일과 매칭)
+export function renderResumeHtml(r: RenderResume): string {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const parts: string[] = []
+  parts.push(`<h1>${esc(r.name)}</h1>`)
+  if (r.title) parts.push(`<div class="title">${esc(r.title)}</div>`)
+  parts.push(`<div class="contact">${esc(r.contact)}</div>`)
+  if (r.summary) parts.push(`<div class="label">${esc(r.labels.summary)}</div><p>${esc(r.summary).replace(/\n/g, '<br>')}</p>`)
+  if (r.experiences.length) {
+    parts.push(`<div class="label">${esc(r.labels.experience)}</div>`)
+    for (const e of r.experiences) {
+      parts.push(`<div class="exp"><div class="exp-head"><span>${esc(e.org)}</span><span class="period">${esc(e.period)}</span></div><ul>${e.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>`)
+    }
+  }
+  if (r.skills.length) parts.push(`<div class="label">${esc(r.labels.skills)}</div><div>${r.skills.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>`)
+  if (r.education.length) {
+    parts.push(`<div class="label">${esc(r.labels.education)}</div>`)
+    for (const e of r.education) parts.push(`<div class="exp-head"><span>${esc(e.text)}</span><span class="period">${esc(e.period)}</span></div>`)
+  }
+  return parts.join('')
+}
+
 // StudioResume → 렌더용 ResumeDocumentData (숨김 항목 제외). 클라이언트에서도 사용 가능.
 export function studioToDoc(r: StudioResume, contact: string): ResumeDocumentData {
   const exps = r.experience.filter(e => !e.hidden)

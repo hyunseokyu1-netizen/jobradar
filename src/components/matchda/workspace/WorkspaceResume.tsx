@@ -6,10 +6,12 @@ import ResumeDocument from './ResumeDocument'
 import GenerateOptimizationButton from './GenerateOptimizationButton'
 import { Sparkle, FileText } from '../ui/icons'
 import { saveResumeStudio, syncResumeEnglish, chatEditResume } from '@/app/profile/actions'
-import { studioToDoc, studioToText, type StudioResume } from '@/lib/resume'
+import {
+  studioToDoc, studioToRender, docToRender, renderResumeHtml, type StudioResume,
+} from '@/lib/resume'
 import { RESUME_FONT_CSS, type ResumeDesign } from '@/lib/matchda/resume-design'
 import type { ResumeDocumentData, ResumeWorkspaceData } from '@/lib/matchda/types'
-import { downloadTxt, downloadDocx, printResumeHtml } from '@/lib/download'
+import { downloadResumeDocx, printResumeHtml } from '@/lib/download'
 
 type SectionLabels = { experience: string; skills: string; education: string }
 
@@ -53,8 +55,9 @@ export default function WorkspaceResume({
   const [savedAt, setSavedAt] = useState(false)
   const [dirty, setDirty] = useState(false)
 
+  // 핸들러가 최신 ko를 읽도록 ref 동기화 (blur 커밋 직후 클릭 시 stale 방지)
   const koRef = useRef(ko)
-  koRef.current = ko
+  useEffect(() => { koRef.current = ko }, [ko])
 
   const [messages, setMessages] = useState<{ role: 'ai' | 'user'; text: string }[]>([
     { role: 'ai', text: '이력서를 어떻게 다듬을까요? 예: "경력 요약을 더 임팩트 있게", "리더십 경험을 강조해줘", "이 공고에 맞게 다시 써줘"' },
@@ -116,19 +119,9 @@ export default function WorkspaceResume({
   }
 
   const fileBase = `resume_${(ko.name || 'resume').replace(/\s+/g, '_')}`
-  function koText() { return studioToText(ko, contact) }
-  function enText() {
-    const lines: string[] = [enDoc.name]
-    if (enDoc.title) lines.push(enDoc.title)
-    lines.push(enDoc.contact, '', 'EXPERIENCE')
-    for (const e of enDoc.experiences) {
-      lines.push('', `${e.org}  (${e.period})`)
-      for (const b of e.bullets) lines.push(`• ${b.text}`)
-    }
-    lines.push('', 'SKILLS', enDoc.skills.join(', '))
-    if (enDoc.education.org) lines.push('', 'EDUCATION', `${enDoc.education.org}  (${enDoc.education.period})`)
-    return lines.join('\n')
-  }
+  const accentHex = design?.accent ?? '#046C4E'
+  const koRender = () => studioToRender(ko, contact, 'ko', accentHex)
+  const enRender = () => docToRender(enDoc, accentHex)
 
   const font = design ? RESUME_FONT_CSS[design.font] : RESUME_FONT_CSS.plex
   const accent = design?.accent ?? '#046C4E'
@@ -153,10 +146,10 @@ export default function WorkspaceResume({
                 className="rounded-[8px] bg-[#046C4E] px-3 py-[6px] text-[12px] font-semibold text-white hover:bg-[#035A40] disabled:opacity-50">
                 {busy === 'save' ? '저장 중...' : '저장'}
               </button>
-              <button type="button" onClick={() => printResumeHtml(buildResumeHtml(ko, contact), `${fileBase}_ko`)} className={dlBtn}>
+              <button type="button" onClick={() => printResumeHtml(renderResumeHtml(koRender()), `${fileBase}_ko`)} className={dlBtn}>
                 <FileText size={13} /> PDF
               </button>
-              <button type="button" onClick={() => downloadDocx(koText(), `${fileBase}_ko`)} className={dlBtn}>DOCX</button>
+              <button type="button" onClick={() => downloadResumeDocx(koRender(), `${fileBase}_ko`)} className={dlBtn}>DOCX</button>
             </div>
           </div>
 
@@ -173,10 +166,10 @@ export default function WorkspaceResume({
               <span className="text-[13px] font-semibold text-[#046C4E]">{labels.translated}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <button type="button" onClick={() => printResumeHtml(buildDocHtml(enDoc), `${fileBase}_en`)} className={dlBtn}>
+              <button type="button" onClick={() => printResumeHtml(renderResumeHtml(enRender()), `${fileBase}_en`)} className={dlBtn}>
                 <FileText size={13} /> PDF
               </button>
-              <button type="button" onClick={() => downloadDocx(enText(), `${fileBase}_en`)} className={dlBtn}>DOCX</button>
+              <button type="button" onClick={() => downloadResumeDocx(enRender(), `${fileBase}_en`)} className={dlBtn}>DOCX</button>
               {optimizable && (
                 <GenerateOptimizationButton jobId={jobId} label={labels.optimizeButton} loadingLabel={labels.optimizing} />
               )}
@@ -240,6 +233,27 @@ export default function WorkspaceResume({
   )
 }
 
+// 편집 가능한 텍스트 조각 (uncontrolled contentEditable, blur 시 커밋)
+// editKey가 바뀌면 remount되어 AI 수정 결과가 반영된다.
+function EditableText({
+  v, cls, onCommit, editKey,
+}: {
+  v: string
+  cls: string
+  onCommit: (val: string) => void
+  editKey: number
+}) {
+  return (
+    <span
+      key={editKey}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={e => onCommit(e.currentTarget.textContent ?? '')}
+      className={`${cls} rounded outline-none focus:bg-[#ECFDF3] focus:ring-1 focus:ring-[#CEEBDC]`}
+    >{v}</span>
+  )
+}
+
 // ── 편집 가능한 한국어 이력서 문서 ──────────────────────────────
 function EditableKoDoc({
   ko, contact, font, accent, modern, lineHeight, editKey, commit,
@@ -257,17 +271,6 @@ function EditableKoDoc({
   const edu = ko.education.filter(e => !e.hidden)[0]
   const skills = ko.skills.filter(s => !ko.hidden_skills.includes(s))
 
-  // 편집 가능한 텍스트 (blur 시 커밋, editKey로 remount)
-  const Ed = ({ v, cls, onCommit }: { v: string; cls: string; onCommit: (val: string) => void }) => (
-    <span
-      key={editKey}
-      contentEditable
-      suppressContentEditableWarning
-      onBlur={e => onCommit(e.currentTarget.textContent ?? '')}
-      className={`${cls} rounded outline-none focus:bg-[#ECFDF3] focus:ring-1 focus:ring-[#CEEBDC]`}
-    >{v}</span>
-  )
-
   const label = (text: string) => (
     <div className="mb-3 mt-6 border-b border-[#EEF0F2] pb-1.5 text-[11px] font-semibold uppercase tracking-[0.09em]"
       style={modern ? { color: accent } : { color: '#9AA3AD' }}>{text}</div>
@@ -279,10 +282,10 @@ function EditableKoDoc({
       {modern && <div className="h-[6px] w-full" style={{ background: accent }} />}
       <div className="px-6 py-8 sm:px-12 sm:py-11">
         <div className={modern ? 'text-center' : ''}>
-          <Ed v={ko.name} cls="text-[23px] font-bold tracking-[-0.01em] text-[#101828]"
+          <EditableText editKey={editKey} v={ko.name} cls="text-[23px] font-bold tracking-[-0.01em] text-[#101828]"
             onCommit={val => commit(d => ({ ...d, name: val }), val, ko.name)} />
           <div className="mt-[3px] text-[15px] font-semibold" style={{ color: accent }}>
-            <Ed v={ko.title} cls="" onCommit={val => commit(d => ({ ...d, title: val }), val, ko.title)} />
+            <EditableText editKey={editKey} v={ko.title} cls="" onCommit={val => commit(d => ({ ...d, title: val }), val, ko.title)} />
           </div>
           <div className="mt-[6px] font-[family-name:var(--font-plex-mono)] text-[13px] text-[#98A2B3]">{contact}</div>
         </div>
@@ -291,7 +294,7 @@ function EditableKoDoc({
           <>
             {label('경력 요약')}
             <p className="whitespace-pre-wrap text-[13.5px] text-[#475467]">
-              <Ed v={ko.summary} cls="block min-h-[1.4em]"
+              <EditableText editKey={editKey} v={ko.summary} cls="block min-h-[1.4em]"
                 onCommit={val => commit(d => ({ ...d, summary: val }), val, ko.summary)} />
             </p>
           </>
@@ -308,18 +311,18 @@ function EditableKoDoc({
                 <div key={i} className={i > 0 ? 'mt-4' : ''}>
                   <div className="flex items-baseline justify-between gap-2">
                     <div className="text-[14px] font-semibold text-[#1F2A37]">
-                      <Ed v={exp.company} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { company: val }), val, exp.company)} />
+                      <EditableText editKey={editKey} v={exp.company} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { company: val }), val, exp.company)} />
                       {' — '}
-                      <Ed v={exp.position} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { position: val }), val, exp.position)} />
+                      <EditableText editKey={editKey} v={exp.position} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { position: val }), val, exp.position)} />
                     </div>
                     <div className="shrink-0 text-[11.5px] text-[#98A2B3]">
-                      <Ed v={exp.period} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { period: val }), val, exp.period)} />
+                      <EditableText editKey={editKey} v={exp.period} cls="" onCommit={val => commit(d => patchExp(d, realIdx, { period: val }), val, exp.period)} />
                     </div>
                   </div>
                   <ul className="mt-1.5 list-disc pl-[18px] text-[13px] text-[#475467]">
                     {bullets.map((b, bi) => (
                       <li key={bi}>
-                        <Ed v={b} cls="block"
+                        <EditableText editKey={editKey} v={b} cls="block"
                           onCommit={val => {
                             const next = [...bullets]; next[bi] = val
                             const desc = next.filter(Boolean).join('\n')
@@ -362,46 +365,4 @@ function EditableKoDoc({
 
 function patchExp(d: StudioResume, idx: number, patch: Partial<StudioResume['experience'][number]>): StudioResume {
   return { ...d, experience: d.experience.map((e, i) => (i === idx ? { ...e, ...patch } : e)) }
-}
-
-// 인쇄용 HTML (한국어 스튜디오 문서)
-function buildResumeHtml(r: StudioResume, contact: string): string {
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const parts: string[] = []
-  parts.push(`<h1>${esc(r.name)}</h1>`)
-  if (r.title) parts.push(`<div class="title">${esc(r.title)}</div>`)
-  parts.push(`<div class="contact">${esc([contact, r.phone].filter(Boolean).join(' • '))}</div>`)
-  if (r.summary) parts.push(`<div class="label">경력 요약</div><p>${esc(r.summary).replace(/\n/g, '<br>')}</p>`)
-  const exps = r.experience.filter(e => !e.hidden)
-  if (exps.length) {
-    parts.push(`<div class="label">경력</div>`)
-    for (const e of exps) {
-      const bullets = e.description.split('\n').map(l => l.replace(/^[-•\s]+/, '').trim()).filter(Boolean)
-      parts.push(`<div class="exp"><div class="exp-head"><span>${esc([e.company, e.position].filter(Boolean).join(' — '))}</span><span class="period">${esc(e.period)}</span></div><ul>${bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>`)
-    }
-  }
-  const skills = r.skills.filter(s => !r.hidden_skills.includes(s))
-  if (skills.length) parts.push(`<div class="label">스킬</div><div>${skills.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>`)
-  const edu = r.education.filter(e => !e.hidden)
-  if (edu.length) {
-    parts.push(`<div class="label">학력</div>`)
-    for (const e of edu) parts.push(`<div class="exp-head"><span>${esc([e.school, e.major, e.degree].filter(Boolean).join(' · '))}</span><span class="period">${esc(e.period)}</span></div>`)
-  }
-  return parts.join('')
-}
-
-// 인쇄용 HTML (영문 ResumeDocumentData)
-function buildDocHtml(doc: ResumeDocumentData): string {
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const parts: string[] = []
-  parts.push(`<h1>${esc(doc.name)}</h1>`)
-  if (doc.title) parts.push(`<div class="title">${esc(doc.title)}</div>`)
-  parts.push(`<div class="contact">${esc(doc.contact)}</div>`)
-  parts.push(`<div class="label">Experience</div>`)
-  for (const e of doc.experiences) {
-    parts.push(`<div class="exp"><div class="exp-head"><span>${esc(e.org)}</span><span class="period">${esc(e.period)}</span></div><ul>${e.bullets.map(b => `<li>${esc(b.text)}</li>`).join('')}</ul></div>`)
-  }
-  if (doc.skills.length) parts.push(`<div class="label">Skills</div><div>${doc.skills.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>`)
-  if (doc.education.org) parts.push(`<div class="label">Education</div><div class="exp-head"><span>${esc(doc.education.org)}</span><span class="period">${esc(doc.education.period)}</span></div>`)
-  return parts.join('')
 }

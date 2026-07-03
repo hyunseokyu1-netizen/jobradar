@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import SkillChipInput from '@/components/SkillChipInput'
 import { RESUME_FONT_CSS } from '@/lib/matchda/resume-design'
+import { studioToRender, renderResumeHtml } from '@/lib/resume'
+import { downloadResumeDocx, printResumeHtml } from '@/lib/download'
 import {
   saveResumeStudio,
   syncResumeEnglish,
@@ -541,6 +543,22 @@ export default function ResumeStudio({
             </button>
           </div>
         </div>
+
+        {/* 다운로드 — 현재 보고 있는 언어의 이력서 (PDF·DOCX) */}
+        {(() => {
+          const source = lang === 'en' ? en : ko
+          if (!source) return null
+          const render = studioToRender(source, email, lang, design.accent)
+          const fileBase = `resume_${(source.name || 'resume').replace(/\s+/g, '_')}_${lang}`
+          const dl = 'flex items-center gap-1 rounded-[8px] border border-[#E2E6EA] bg-white px-3 py-[6px] text-[12px] font-semibold text-[#475467] hover:bg-[#F4F6F8]'
+          return (
+            <div className="mb-3 flex items-center gap-1.5">
+              <span className="mr-1 text-[12px] text-[#98A2B3]">다운로드</span>
+              <button type="button" className={dl} onClick={() => printResumeHtml(renderResumeHtml(render), fileBase)}>PDF</button>
+              <button type="button" className={dl} onClick={() => downloadResumeDocx(render, fileBase)}>DOCX</button>
+            </div>
+          )
+        })()}
 
         {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
         {lang === 'en' && enStale && en && (
