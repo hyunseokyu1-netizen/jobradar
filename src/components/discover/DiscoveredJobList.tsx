@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { addDiscoveredJobToMyList, dismissDiscoveredJob } from '@/app/discover/actions'
 import { matchSingleJob } from '@/app/actions'
+import { Search } from '@/components/matchda/ui/icons'
 
 export interface DiscoveredJobItem {
   id: string
@@ -20,6 +21,7 @@ export interface DiscoveredJobItem {
 }
 
 type ScoreFilter = 'all' | '70' | '40'
+type SortKey = 'recent' | 'score' | 'oldest'
 
 function scoreBadgeClass(score: number | null): string {
   if (score === null) return 'bg-[#F4F6F8] text-[#98A2B3]'
@@ -31,6 +33,8 @@ function scoreBadgeClass(score: number | null): string {
 export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] }) {
   const [sourceFilter, setSourceFilter] = useState<string>('all')
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>('all')
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<SortKey>('recent')
   const [addingId, setAddingId] = useState<string | null>(null)
   const [addingStep, setAddingStep] = useState('')
   const [error, setError] = useState('')
@@ -45,11 +49,23 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
     return [...map.entries()]
   }, [jobs])
 
-  const visible = jobs.filter(j => {
-    if (sourceFilter !== 'all' && j.source_id !== sourceFilter) return false
-    if (scoreFilter !== 'all' && (j.match_score === null || j.match_score < Number(scoreFilter))) return false
-    return true
-  })
+  const q = search.trim().toLowerCase()
+  const visible = jobs
+    .filter(j => {
+      if (sourceFilter !== 'all' && j.source_id !== sourceFilter) return false
+      if (scoreFilter !== 'all' && (j.match_score === null || j.match_score < Number(scoreFilter))) return false
+      if (q) {
+        const hay = `${j.title} ${j.source_name} ${j.location ?? ''} ${j.department ?? ''}`.toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      return true
+    })
+    .sort((a, b) => {
+      if (sort === 'score') return (b.match_score ?? -1) - (a.match_score ?? -1)
+      const ta = new Date(a.scraped_at).getTime()
+      const tb = new Date(b.scraped_at).getTime()
+      return sort === 'oldest' ? ta - tb : tb - ta
+    })
 
   async function handleAdd(job: DiscoveredJobItem) {
     setAddingId(job.id)
@@ -98,6 +114,29 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
 
   return (
     <div>
+      {/* 검색 + 정렬 */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="공고·회사·지역 검색"
+            className="w-full rounded-lg border border-[#ECEEF0] bg-white py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-[#046C4E]"
+          />
+        </div>
+        <select
+          value={sort}
+          onChange={e => setSort(e.target.value as SortKey)}
+          className="rounded-lg border border-[#ECEEF0] bg-white px-3 py-2 text-sm text-[#344054] outline-none transition-colors focus:border-[#046C4E]"
+        >
+          <option value="recent">최신순</option>
+          <option value="oldest">오래된순</option>
+          <option value="score">매칭 점수순</option>
+        </select>
+      </div>
+
       {/* 필터 */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <div className="flex gap-1.5">

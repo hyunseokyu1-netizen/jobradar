@@ -26,6 +26,7 @@ export default function AppChrome({
     pathname === '/' ||
     pathname?.startsWith('/matchda') ||
     pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/applications') ||
     pathname?.startsWith('/workspace') ||
     pathname?.startsWith('/discover') ||
     pathname?.startsWith('/profile') ||

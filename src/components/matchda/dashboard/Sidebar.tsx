@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { HandshakeMark, LayoutDashboard, FileText, Target } from '../ui/icons'
+import { HandshakeMark, LayoutDashboard, FileText, Target, Briefcase } from '../ui/icons'
 import { Avatar } from '../ui/primitives'
 import { signOut } from '@/app/auth-actions'
 import type { Dictionary } from '@/lib/matchda/i18n'
@@ -17,10 +17,11 @@ export default function Sidebar({
   t: Dictionary
   userName?: string
   userEmail?: string | null
-  activeKey?: 'dashboard' | 'discover' | 'profile'
+  activeKey?: 'dashboard' | 'applications' | 'discover' | 'profile'
 }) {
   const navItems = [
     { key: 'dashboard', label: t.dashboard.nav.dashboard, Icon: LayoutDashboard, href: '/dashboard' },
+    { key: 'applications', label: t.dashboard.nav.applications, Icon: Briefcase, href: '/applications' },
     { key: 'discover', label: t.dashboard.nav.discover, Icon: Target, href: '/discover' },
     { key: 'profile', label: t.dashboard.nav.myResume, Icon: FileText, href: '/profile' },
   ] as const

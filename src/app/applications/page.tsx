@@ -3,8 +3,8 @@ import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getMatchdaDict } from '@/lib/matchda/i18n'
 import { getMatchdaDashboard } from '@/lib/matchda/data'
-import { getDashboardSummary } from '@/lib/matchda/mock-data'
-import DashboardScreen from '@/components/matchda/dashboard/DashboardScreen'
+import { getDashboardSummary, getKanbanColumns } from '@/lib/matchda/mock-data'
+import ApplicationsScreen from '@/components/matchda/dashboard/ApplicationsScreen'
 import type { JobItem } from '@/components/JobList'
 
 export const dynamic = 'force-dynamic'
@@ -51,7 +51,7 @@ async function getListJobs(profileId: string): Promise<JobItem[]> {
   })
 }
 
-export default async function DashboardPage() {
+export default async function ApplicationsPage() {
   const email = await getAuthUserEmail()
   if (!email) redirect('/login')
 
@@ -59,17 +59,18 @@ export default async function DashboardPage() {
   const profile = await getOrCreateProfile(email)
   const real = await getMatchdaDashboard()
   const summary = real?.summary ?? getDashboardSummary()
-  const recentJobs = real && profile ? await getListJobs(profile.id) : []
+  const columns = real?.columns ?? getKanbanColumns()
+  const listJobs = real && profile ? await getListJobs(profile.id) : []
 
   return (
-    <DashboardScreen
+    <ApplicationsScreen
       t={t}
-      summary={summary}
-      deltas={real?.deltas}
+      userName={summary.userName}
+      columns={columns}
       real={!!real}
+      unmatchedCount={real?.unmatchedCount ?? 0}
       userEmail={email}
-      needsOnboarding={!profile?.onboarding_completed}
-      recentJobs={recentJobs}
+      listJobs={listJobs}
     />
   )
 }
