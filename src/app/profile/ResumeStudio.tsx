@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import SkillChipInput from '@/components/SkillChipInput'
 import { RESUME_FONT_CSS } from '@/lib/matchda/resume-design'
 import { studioToRender, renderResumeHtml } from '@/lib/resume'
@@ -8,6 +8,7 @@ import { downloadResumeDocx, downloadResumePdf } from '@/lib/download'
 import {
   saveResumeStudio,
   syncResumeEnglish,
+  analyzeResumeFile,
   type StudioResume,
   type StudioDesign,
   type StudioExp,
@@ -53,7 +54,35 @@ export default function ResumeStudio({
   const [enStale, setEnStale] = useState(false)
   const [error, setError] = useState('')
 
+  // 이력서 파일 업로드 → AI 분석 → 기본 정보 자동 채우기
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analyzeMsg, setAnalyzeMsg] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+
   const design = ko.design ?? DEFAULT_DESIGN
+
+  async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAnalyzing(true)
+    setError('')
+    setAnalyzeMsg('')
+    const fd = new FormData()
+    fd.append('resume', file)
+    const res = await analyzeResumeFile(fd)
+    setAnalyzing(false)
+    if (fileRef.current) fileRef.current.value = ''
+    if (res.error) {
+      setError(res.error)
+      return
+    }
+    if (res.ko) setKo(prev => ({ ...res.ko!, design: prev.design ?? DEFAULT_DESIGN }))
+    if (res.en) setEn(res.en)
+    setEnStale(false)
+    setSaved(true)
+    setAnalyzeMsg('이력서를 분석해 기본 정보를 채웠어요. 내용을 확인하고 필요하면 수정하세요.')
+    setTimeout(() => { setSaved(false); setAnalyzeMsg('') }, 6000)
+  }
 
   // 내용 수정 → 영문판은 재동기화 전까지 구버전
   function edit(mut: (d: StudioResume) => StudioResume) {
@@ -103,6 +132,33 @@ export default function ResumeStudio({
     }`
 
   return (
+    <>
+    {/* ── 이력서 업로드 → 자동 분석 → 기본 정보 채우기 ── */}
+    <div className="mb-5 flex flex-col gap-3 rounded-[14px] border border-[#CEEBDC] bg-[#F4FBF7] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <div className="text-[14px] font-semibold text-[#046C4E]">📄 이력서 파일로 자동 채우기</div>
+        <p className="mt-0.5 text-[12.5px] text-[#3D7A63]">
+          PDF·DOCX를 올리면 AI가 이름·경력·스킬을 분석해 아래 항목을 자동으로 채워드려요.
+        </p>
+      </div>
+      <label className={`inline-flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg bg-[#046C4E] px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#035A40] ${analyzing ? 'pointer-events-none opacity-60' : ''}`}>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".pdf,.docx"
+          className="hidden"
+          onChange={handleResumeUpload}
+          disabled={analyzing}
+        />
+        {analyzing ? 'AI 분석 중…' : '이력서 업로드'}
+      </label>
+    </div>
+    {analyzeMsg && (
+      <p className="mb-4 rounded-lg border border-[#CEEBDC] bg-[#ECFDF3] px-3 py-2 text-xs text-[#046C4E]">
+        ✓ {analyzeMsg}
+      </p>
+    )}
+
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* ── 좌: 에디터 ───────────────────────────────── */}
       <div>
@@ -580,6 +636,7 @@ export default function ResumeStudio({
         )}
       </div>
     </div>
+    </>
   )
 }
 

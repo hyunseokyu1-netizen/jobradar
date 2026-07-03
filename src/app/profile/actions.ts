@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { parseResumeFile } from '@/lib/resume-parser'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import type { StudioResume, StudioExp, StudioEdu, StudioDesign } from '@/lib/resume'
+import { toStudioResume } from '@/lib/resume'
 export type { StudioResume, StudioExp, StudioEdu, StudioDesign } from '@/lib/resume'
 
 // 매칭 설정 저장 (이름·스킬·경력 요약은 이력서 스튜디오에서 관리)
@@ -560,6 +561,144 @@ ${profile.resume_text.slice(0, 8000)}`,
   revalidatePath('/profile')
   revalidatePath('/workspace')
   return {}
+}
+
+/**
+ * 이력서 파일 업로드 → 텍스트 추출 → AI 구조화 → 스튜디오 기본 정보 채우기.
+ * 프로필 페이지에서 파일을 올리면 이름·직함·요약·경력·스킬을 자동으로 채운다.
+ * 구조화 결과(ko/en)를 저장하고 클라이언트 즉시 반영용으로 반환한다.
+ */
+export async function analyzeResumeFile(
+  formData: FormData
+): Promise<{ ko?: StudioResume; en?: StudioResume; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const file = formData.get('resume') as File | null
+  if (!file || file.size === 0) return { error: '파일을 선택해주세요.' }
+  if (file.size > 5 * 1024 * 1024) return { error: '파일 크기는 5MB 이하여야 합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  let text: string
+  try {
+    text = await parseResumeFile(file)
+  } catch {
+    return { error: '파일에서 텍스트를 추출할 수 없어요. PDF 또는 DOCX 파일인지 확인해주세요.' }
+  }
+  if (!text?.trim()) return { error: '이력서에서 텍스트를 찾지 못했어요.' }
+
+  // DOCX 원본 보관 — 양식 유지 맞춤 이력서 생성에 사용
+  let resumeFilePath: string | null = null
+  if (file.name.toLowerCase().endsWith('.docx')) {
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer())
+      const path = `${profile.id}/original.docx`
+      const doUpload = () =>
+        supabaseAdmin.storage.from('resumes').upload(path, buffer, {
+          upsert: true,
+          contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        })
+      let { error: uploadError } = await doUpload()
+      if (uploadError?.message?.includes('Bucket not found')) {
+        await supabaseAdmin.storage.createBucket('resumes', { public: false })
+        ;({ error: uploadError } = await doUpload())
+      }
+      if (!uploadError) resumeFilePath = path
+    } catch (e) {
+      console.error('Resume file store error:', e)
+    }
+  }
+
+  interface StructuredResume {
+    name?: string; phone?: string; title?: string; summary?: string
+    skills?: string[]
+    experience?: { company?: string; position?: string; period?: string; description?: string }[]
+    education?: { school?: string; major?: string; degree?: string; period?: string }[]
+  }
+  let parsed: { ko?: StructuredResume; en?: StructuredResume; career_summary_en?: string }
+  try {
+    const { anthropic } = await import('@/lib/claude')
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 8000,
+      messages: [{
+        role: 'user',
+        content: `당신은 이력서 구조화 도우미입니다. 아래 이력서 원문을 구조화하고 한국어/영어 두 버전으로 정리하세요. JSON으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
+
+형식:
+{
+  "ko": {
+    "name": "", "phone": "", "title": "직함(예: 백엔드 엔지니어)", "summary": "",
+    "skills": [],
+    "experience": [{"company": "", "position": "", "period": "", "description": ""}],
+    "education": [{"school": "", "major": "", "degree": "", "period": ""}]
+  },
+  "en": { "...ko와 동일 구조, 영어..." },
+  "career_summary_en": ""
+}
+
+규칙:
+- 이력서에 있는 사실만 사용하고 절대 지어내지 마세요. 정보가 없는 필드는 "" 또는 [].
+- experience.description 은 각 성과·업무를 줄바꿈(\\n)으로 구분한 문장들로 정리 (마크다운 기호 없이).
+- 이력서가 영어면 en은 원문 표현을 최대한 유지하고 ko는 자연스러운 한국어 번역. 한국어 이력서면 반대.
+- 이름(name)·전화번호(phone)·기간(period)은 번역하지 않고 원본 표기 유지.
+- title 은 대표 직함 한 줄. skills 는 개별 항목 배열, 최대 40개.
+- career_summary_en 은 3~5문장 영어 경력 요약 (평문, 마크다운 없이).
+
+이력서 원문:
+${text.slice(0, 8000)}`,
+      }],
+    })
+    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+    const m = raw.match(/\{[\s\S]*\}/)
+    if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
+    parsed = JSON.parse(m[0])
+  } catch (e) {
+    console.error('Resume analyze error:', e)
+    return { error: '이력서 분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+  }
+
+  const koSrc = parsed.ko ?? {}
+  const enSrc = parsed.en ?? {}
+  if (!koSrc.experience?.length && !koSrc.skills?.length && !koSrc.summary) {
+    return { error: '이력서에서 경력 정보를 찾지 못했어요. 다른 파일로 시도해주세요.' }
+  }
+
+  // 기존 design·hidden 등은 보존하면서 추출값으로 채움
+  const prevKo = (profile.onboarding_ko ?? {}) as Record<string, unknown>
+  const prevEn = (profile.onboarding_en ?? {}) as Record<string, unknown>
+  const koObj = { ...prevKo, ...koSrc }
+  const enObj = { ...prevEn, ...enSrc }
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({
+      resume_text: text,
+      onboarding_ko: koObj,
+      onboarding_en: enObj,
+      onboarding_completed: true,
+      ...(resumeFilePath ? { resume_file_path: resumeFilePath } : {}),
+      ...(koSrc.name ? { name: koSrc.name } : {}),
+      skills: profile.skills?.length ? profile.skills : (enSrc.skills ?? []),
+      career_summary: profile.career_summary?.trim()
+        ? profile.career_summary
+        : (parsed.career_summary_en ?? ''),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', profile.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/profile')
+  revalidatePath('/')
+  revalidatePath('/workspace')
+
+  return {
+    ko: toStudioResume(koObj, koSrc.name ?? '', koSrc.phone ?? ''),
+    en: toStudioResume(enObj),
+  }
 }
 
 interface ExtractedProfile {
