@@ -6,6 +6,7 @@ import OptimizationBanner from '@/components/matchda/workspace/OptimizationBanne
 import ResumeDocument from '@/components/matchda/workspace/ResumeDocument'
 import GenerateOptimizationButton from '@/components/matchda/workspace/GenerateOptimizationButton'
 import WorkspaceActions from '@/components/matchda/workspace/WorkspaceActions'
+import ConnectResumeGate from '@/components/matchda/workspace/ConnectResumeGate'
 import { Sparkle } from '@/components/matchda/ui/icons'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +20,18 @@ export default async function MatchdaWorkspacePage({
   const { jobId } = await searchParams
 
   // 로그인 + jobId + 영어 이력서 작성 시 실데이터, 그 외 목업 데모로 폴백
-  const real = await getMatchdaWorkspace(jobId)
+  const result = await getMatchdaWorkspace(jobId)
+
+  // 내 공고인데 구조화 이력서가 없음 → 목업(가짜 이력서) 대신 연결 안내
+  if (result && 'gate' in result) {
+    return (
+      <div className="min-h-screen bg-[#F4F6F8] text-[#111827]">
+        <ConnectResumeGate hasResumeText={result.hasResumeText} />
+      </div>
+    )
+  }
+
+  const real = result
   const data = real ?? getWorkspaceData()
 
   return (

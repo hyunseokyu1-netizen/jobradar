@@ -182,6 +182,112 @@ export async function translateResumeSection(
   return { ko: savedKo, en: savedEn }
 }
 
+/**
+ * 업로드된 이력서 원문(resume_text)을 구조화 이력서(onboarding_ko/en)로 변환한다.
+ * 온보딩 채팅을 건너뛴 유저도 워크스페이스(원본↔영문 비교·AI 최적화)를 쓸 수 있게 하는 연결 고리.
+ */
+export async function structureResumeForWorkspace(): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+  if (!profile.resume_text?.trim()) {
+    return { error: '프로필 페이지에서 이력서를 먼저 업로드해주세요.' }
+  }
+
+  interface StructuredResume {
+    name?: string
+    phone?: string
+    summary?: string
+    skills?: string[]
+    experience?: { company?: string; position?: string; period?: string; description?: string }[]
+    education?: { school?: string; major?: string; degree?: string; period?: string }[]
+  }
+  let parsed: { ko?: StructuredResume; en?: StructuredResume; career_summary_en?: string }
+  try {
+    const { anthropic } = await import('@/lib/claude')
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 8000,
+      messages: [{
+        role: 'user',
+        content: `당신은 이력서 구조화 도우미입니다. 아래 이력서 원문을 구조화하고 한국어/영어 두 버전으로 정리하세요. JSON으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
+
+형식:
+{
+  "ko": {
+    "name": "", "phone": "", "summary": "",
+    "skills": [],
+    "experience": [{"company": "", "position": "", "period": "", "description": ""}],
+    "education": [{"school": "", "major": "", "degree": "", "period": ""}]
+  },
+  "en": { "...ko와 동일 구조, 영어..." },
+  "career_summary_en": ""
+}
+
+규칙:
+- 이력서에 있는 사실만 사용하고 절대 지어내지 마세요. 정보가 없는 필드는 "" 또는 [].
+- experience.description 은 각 성과·업무를 줄바꿈(\\n)으로 구분한 문장들로 정리 (마크다운 기호 없이).
+- 이력서가 영어면 en은 원문 표현을 최대한 유지하고 ko는 자연스러운 한국어 번역. 한국어 이력서면 반대.
+- 이름(name)·전화번호(phone)·기간(period)은 번역하지 않고 원본 표기 유지.
+- skills 는 개별 항목 배열, 최대 40개.
+- career_summary_en 은 3~5문장 영어 경력 요약 (평문, 마크다운 없이).
+
+이력서 원문:
+${profile.resume_text.slice(0, 8000)}`,
+      }],
+    })
+    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const m = text.match(/\{[\s\S]*\}/)
+    if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
+    parsed = JSON.parse(m[0])
+  } catch (e) {
+    console.error('Resume structuring error:', e)
+    return { error: '이력서 분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+  }
+
+  const ko = parsed.ko ?? {}
+  const en = parsed.en ?? {}
+  if (!en.experience?.length && !en.skills?.length && !en.summary) {
+    return { error: '이력서에서 경력 정보를 찾지 못했어요. 프로필에서 이력서를 확인해주세요.' }
+  }
+
+  // 기존 onboarding 데이터가 일부 있으면 보존하며 병합 (이번 추출이 비어있는 키는 덮지 않음)
+  const koObj = { ...((profile.onboarding_ko ?? {}) as Record<string, unknown>) }
+  const enObj = { ...((profile.onboarding_en ?? {}) as Record<string, unknown>) }
+  for (const [target, src] of [[koObj, ko], [enObj, en]] as const) {
+    if (src.summary) target.summary = src.summary
+    if (src.skills?.length) target.skills = src.skills
+    if (src.experience?.length) target.experience = src.experience
+    if (src.education?.length) target.education = src.education
+    if (src.name) target.name = src.name
+    if (src.phone) target.phone = src.phone
+  }
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({
+      onboarding_ko: koObj,
+      onboarding_en: enObj,
+      onboarding_completed: true,
+      // 매칭/커버레터가 읽는 flat 컬럼 동기화 (기존 값이 있으면 유지)
+      skills: profile.skills?.length ? profile.skills : (en.skills ?? []),
+      career_summary: profile.career_summary?.trim()
+        ? profile.career_summary
+        : (parsed.career_summary_en ?? ''),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', profile.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/')
+  revalidatePath('/profile')
+  revalidatePath('/matchda/workspace')
+  return {}
+}
+
 interface ExtractedProfile {
   name?: string
   skills?: string[]

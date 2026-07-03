@@ -201,13 +201,21 @@ function buildDoc(
   }
 }
 
+/** 내 공고는 맞지만 구조화 이력서가 없어 연결이 필요한 상태 (목업 대신 연결 안내 렌더) */
+export interface WorkspaceGate {
+  gate: 'needs-resume'
+  /** 업로드된 이력서 원문 존재 여부 — 있으면 "자동 연결" 버튼 노출 */
+  hasResumeText: boolean
+}
+
 /**
  * 로그인 유저의 실제 이력서(한/영 구조화) + 타깃 공고로 워크스페이스 데이터 구성.
- * 비로그인 / jobId 없음 / 공고 없음 / 영어 이력서 미작성 → null (목업 폴백)
+ * - 비로그인 / jobId 없음 / 내 공고 아님 → null (목업 데모 폴백)
+ * - 내 공고인데 구조화 이력서(onboarding_en) 미작성 → WorkspaceGate (연결 안내)
  */
 export async function getMatchdaWorkspace(
   jobId?: string
-): Promise<ResumeWorkspaceData | null> {
+): Promise<ResumeWorkspaceData | WorkspaceGate | null> {
   if (!jobId) return null
   const email = await getAuthUserEmail()
   if (!email) return null
@@ -216,9 +224,7 @@ export async function getMatchdaWorkspace(
 
   const ko = (profile.onboarding_ko ?? {}) as OnboardingResume
   const en = (profile.onboarding_en ?? {}) as OnboardingResume
-  // 영어 이력서가 비어 있으면 보여줄 게 없으므로 목업 폴백
   const hasEn = (en.experience?.length ?? 0) > 0 || (en.skills?.length ?? 0) > 0 || !!en.summary
-  if (!hasEn) return null
 
   // 타깃 공고 (유저 소유 확인). select('*') 로 optimization 컬럼 유무에 안전하게 대응
   const { data: match } = await supabaseAdmin
@@ -228,6 +234,11 @@ export async function getMatchdaWorkspace(
     .eq('job_id', jobId)
     .maybeSingle()
   if (!match) return null
+
+  // 내 공고는 맞는데 구조화 이력서가 없음 → 목업(가짜 이력서) 대신 연결 안내
+  if (!hasEn) {
+    return { gate: 'needs-resume', hasResumeText: !!profile.resume_text?.trim() }
+  }
 
   const { data: job } = await supabaseAdmin
     .from('jobs')
