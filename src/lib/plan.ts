@@ -10,7 +10,7 @@ export const FREE_LIMITS = {
   tailoredResumes: 2,
 } as const
 
-export const PREMIUM_PRICE_LABEL = '월 ₩9,900'
+export const PREMIUM_PRICE_LABEL = '$7.99 / 월'
 
 // 결제(구독)가 설정된 환경에서만 무료 한도를 적용한다.
 // STRIPE_PRICE_ID 가 없으면 업그레이드 경로가 없으므로 한도를 강제하지 않는다.
