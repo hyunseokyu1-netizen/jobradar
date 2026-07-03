@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import AddSourceForm from '@/components/discover/AddSourceForm'
+import PresetCompanies from '@/components/discover/PresetCompanies'
 import SourceList, { type SourceItem } from '@/components/discover/SourceList'
 import DiscoveredJobList, { type DiscoveredJobItem } from '@/components/discover/DiscoveredJobList'
 import PoolJobList, { type PoolJobItem } from '@/components/discover/PoolJobList'
@@ -65,6 +66,7 @@ export default async function DiscoverPage() {
       </div>
 
       <AddSourceForm />
+      <PresetCompanies />
       <SourceList sources={(sources ?? []) as SourceItem[]} />
 
       {jobs.length > 0 && (

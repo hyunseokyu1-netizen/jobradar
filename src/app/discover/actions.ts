@@ -36,6 +36,46 @@ export async function addJobToApplications(jobId: string): Promise<{ error?: str
   return {}
 }
 
+/**
+ * 추천 기업 프리셋을 채용페이지로 등록하고 sourceId를 반환한다.
+ * 이미 등록돼 있으면 기존 sourceId를 돌려준다 (클라이언트가 바로 수집 호출).
+ */
+export async function addPresetSource(
+  name: string,
+  url: string
+): Promise<{ sourceId?: string; already?: boolean; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  try {
+    new URL(url)
+  } catch {
+    return { error: '유효하지 않은 URL입니다.' }
+  }
+
+  const { data: existing } = await supabaseAdmin
+    .from('job_sources')
+    .select('id')
+    .eq('user_id', profile.id)
+    .eq('url', url)
+    .maybeSingle()
+  if (existing) return { sourceId: existing.id, already: true }
+
+  const { type } = detectAtsType(url)
+  const { data, error } = await supabaseAdmin
+    .from('job_sources')
+    .insert({ user_id: profile.id, name, url, source_type: type })
+    .select('id')
+    .single()
+  if (error) return { error: error.message }
+
+  revalidatePath('/discover')
+  return { sourceId: data.id }
+}
+
 export async function addJobSource(formData: FormData): Promise<{ error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
