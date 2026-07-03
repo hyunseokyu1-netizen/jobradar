@@ -5,15 +5,14 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { parseResumeFile } from '@/lib/resume-parser'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 
+// 매칭 설정 저장 (이름·스킬·경력 요약은 이력서 스튜디오에서 관리)
 export async function saveProfile(formData: FormData): Promise<{ error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
 
-  const skillsRaw = formData.get('skills') as string
-  const positionsRaw = formData.get('desired_positions') as string
-  const locationsRaw = formData.get('desired_locations') as string
+  const positionsRaw = (formData.get('desired_positions') as string) ?? ''
+  const locationsRaw = (formData.get('desired_locations') as string) ?? ''
 
-  const skills = skillsRaw.split(',').map(s => s.trim()).filter(Boolean)
   const desired_positions = positionsRaw.split(',').map(s => s.trim()).filter(Boolean)
   const desired_locations = locationsRaw.split(',').map(s => s.trim()).filter(Boolean)
 
@@ -27,11 +26,8 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
   const { error } = await supabaseAdmin
     .from('profiles')
     .update({
-      name: formData.get('name') as string,
-      skills,
       desired_positions,
       desired_locations,
-      career_summary: formData.get('career_summary') as string,
       preferences: { salary_min, salary_max, salary_currency },
       updated_at: new Date().toISOString(),
     })
@@ -180,6 +176,204 @@ export async function translateResumeSection(
   revalidatePath('/profile')
   revalidatePath('/')
   return { ko: savedKo, en: savedEn }
+}
+
+// ── 이력서 스튜디오 (섹션 에디터 + 실시간 미리보기) ──────────────
+
+export interface StudioExp {
+  company: string
+  position: string
+  period: string
+  description: string
+  hidden?: boolean
+}
+export interface StudioEdu {
+  school: string
+  major: string
+  degree: string
+  period: string
+  hidden?: boolean
+}
+export interface StudioDesign {
+  template: 'classic' | 'modern'
+  font: 'plex' | 'geist' | 'serif'
+  lineHeight: number // 1.4 ~ 2.0
+  accent: string     // 화이트리스트 색상만 허용
+}
+export interface StudioResume {
+  name: string
+  phone: string
+  title: string
+  summary: string
+  skills: string[]
+  hidden_skills: string[]
+  experience: StudioExp[]
+  education: StudioEdu[]
+  design?: StudioDesign
+}
+
+const ACCENT_WHITELIST = ['#046C4E', '#1A56DB', '#1F2A37', '#B45309']
+
+// 클라이언트 입력을 신뢰하지 않고 필드별로 정제 (길이 상한 포함)
+function sanitizeStudio(input: StudioResume): StudioResume {
+  const s = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+  const arr = <T,>(v: unknown, max: number): T[] => (Array.isArray(v) ? v.slice(0, max) : [])
+  const design = input.design
+  return {
+    name: s(input.name, 100),
+    phone: s(input.phone, 50),
+    title: s(input.title, 100),
+    summary: s(input.summary, 3000),
+    skills: arr<string>(input.skills, 60).map(v => s(v, 60)).filter(Boolean),
+    hidden_skills: arr<string>(input.hidden_skills, 60).map(v => s(v, 60)).filter(Boolean),
+    experience: arr<StudioExp>(input.experience, 20).map(e => ({
+      company: s(e?.company), position: s(e?.position), period: s(e?.period, 60),
+      description: s(e?.description, 4000), hidden: !!e?.hidden,
+    })),
+    education: arr<StudioEdu>(input.education, 10).map(e => ({
+      school: s(e?.school), major: s(e?.major), degree: s(e?.degree), period: s(e?.period, 60),
+      hidden: !!e?.hidden,
+    })),
+    design: design
+      ? {
+          template: design.template === 'modern' ? 'modern' : 'classic',
+          font: ['plex', 'geist', 'serif'].includes(design.font) ? design.font : 'plex',
+          lineHeight: Math.min(2.0, Math.max(1.4, Number(design.lineHeight) || 1.75)),
+          accent: ACCENT_WHITELIST.includes(design.accent) ? design.accent : ACCENT_WHITELIST[0],
+        }
+      : undefined,
+  }
+}
+
+/** 이력서 스튜디오의 한국어 원본 + 디자인 설정 저장 */
+export async function saveResumeStudio(input: StudioResume): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const ko = sanitizeStudio(input)
+  const koObj = {
+    ...((profile.onboarding_ko ?? {}) as Record<string, unknown>),
+    ...ko,
+  }
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({
+      onboarding_ko: koObj,
+      ...(ko.name ? { name: ko.name } : {}),
+      ...(ko.phone ? { phone: ko.phone } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', profile.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/profile')
+  revalidatePath('/')
+  return {}
+}
+
+/**
+ * 스튜디오 원본(한국어/혼용)을 저장하고 영어판(onboarding_en)으로 동기화.
+ * 반환된 en으로 클라이언트 미리보기를 즉시 갱신한다.
+ */
+export async function syncResumeEnglish(
+  input: StudioResume
+): Promise<{ en?: StudioResume; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const ko = sanitizeStudio(input)
+
+  interface RawEn {
+    name?: string; phone?: string; title?: string; summary?: string
+    skills?: string[]
+    experience?: { company?: string; position?: string; period?: string; description?: string }[]
+    education?: { school?: string; major?: string; degree?: string; period?: string }[]
+  }
+  let raw: RawEn
+  try {
+    const { anthropic } = await import('@/lib/claude')
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 8000,
+      messages: [{
+        role: 'user',
+        content: `아래는 구조화된 이력서 JSON입니다(한국어 또는 한/영 혼용). 동일한 구조의 자연스러운 영어 버전으로 번역해 JSON으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
+
+규칙:
+- 이력서에 있는 사실만 사용하고 절대 지어내지 마세요.
+- skills 는 입력과 같은 개수·순서로 1:1 번역 (이미 영문인 항목은 그대로).
+- name/phone/period 는 번역하지 않고 원본 표기 유지.
+- experience.description 은 줄바꿈(\\n) 구분을 유지하고 줄 수도 동일하게.
+- hidden, hidden_skills, design 필드는 출력하지 마세요.
+
+입력:
+${JSON.stringify({ name: ko.name, phone: ko.phone, title: ko.title, summary: ko.summary, skills: ko.skills, experience: ko.experience.map(({ hidden: _h, ...e }) => e), education: ko.education.map(({ hidden: _h, ...e }) => e) })}`,
+      }],
+    })
+    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const m = text.match(/\{[\s\S]*\}/)
+    if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
+    raw = JSON.parse(m[0])
+  } catch (e) {
+    console.error('Resume EN sync error:', e)
+    return { error: '영어 동기화 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+  }
+
+  // hidden 플래그는 인덱스 기준으로 원본에서 복사 (skills 는 1:1 계약)
+  const en: StudioResume = {
+    name: raw.name || ko.name,
+    phone: raw.phone || ko.phone,
+    title: raw.title ?? '',
+    summary: raw.summary ?? '',
+    skills: Array.isArray(raw.skills) ? raw.skills.map(v => String(v)) : [],
+    hidden_skills: [],
+    experience: (raw.experience ?? []).map((e, i) => ({
+      company: e.company ?? '', position: e.position ?? '', period: e.period ?? '',
+      description: e.description ?? '', hidden: ko.experience[i]?.hidden ?? false,
+    })),
+    education: (raw.education ?? []).map((e, i) => ({
+      school: e.school ?? '', major: e.major ?? '', degree: e.degree ?? '', period: e.period ?? '',
+      hidden: ko.education[i]?.hidden ?? false,
+    })),
+    design: ko.design,
+  }
+  en.hidden_skills = ko.skills
+    .map((s, i) => (ko.hidden_skills.includes(s) ? en.skills[i] : null))
+    .filter((v): v is string => !!v)
+
+  const koObj = { ...((profile.onboarding_ko ?? {}) as Record<string, unknown>), ...ko }
+  const enObj = { ...((profile.onboarding_en ?? {}) as Record<string, unknown>), ...en }
+  const visibleEnSkills = en.skills.filter(s => !en.hidden_skills.includes(s))
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({
+      onboarding_ko: koObj,
+      onboarding_en: enObj,
+      onboarding_completed: true,
+      // 매칭/커버레터가 읽는 flat 컬럼 동기화
+      ...(ko.name ? { name: ko.name } : {}),
+      ...(ko.phone ? { phone: ko.phone } : {}),
+      ...(visibleEnSkills.length ? { skills: visibleEnSkills } : {}),
+      ...(en.summary ? { career_summary: en.summary } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', profile.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/profile')
+  revalidatePath('/')
+  revalidatePath('/matchda/workspace')
+  return { en }
 }
 
 /**

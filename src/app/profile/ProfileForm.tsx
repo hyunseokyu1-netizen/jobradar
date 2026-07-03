@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { saveProfile, uploadResume, generateCareerSummary } from './actions'
-import SkillChipInput from '@/components/SkillChipInput'
+import { saveProfile, uploadResume } from './actions'
 
 const CURRENCIES = [
   { code: 'AUD', label: 'AUD — 호주달러' },
@@ -16,31 +15,25 @@ const CURRENCIES = [
 ]
 
 interface Profile {
-  name: string | null
-  skills: string[] | null
   desired_positions: string[] | null
-  desired_sources: string[] | null
   desired_locations: string[] | null
-  career_summary: string | null
   resume_text: string | null
   preferences: { salary_min?: number; salary_max?: number; salary_currency?: string } | null
 }
 
+// 매칭 설정 폼 — 희망 포지션·지역·연봉 + 이력서 파일 업로드.
+// (이름·스킬·경력 요약은 이력서 스튜디오에서 관리)
 export default function ProfileForm({ initialData }: { initialData: Profile | null }) {
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
-  const [summaryGenerating, setSummaryGenerating] = useState(false)
-  const [summaryValue, setSummaryValue] = useState(initialData?.career_summary ?? '')
   const [resumeUploading, setResumeUploading] = useState(false)
   const [resumeStatus, setResumeStatus] = useState<'idle' | 'done' | 'error'>('idle')
   const [resumeError, setResumeError] = useState('')
   const [resumePreview, setResumePreview] = useState(initialData?.resume_text ?? '')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [nameValue, setNameValue] = useState(initialData?.name ?? '')
-  const [skillsValue, setSkillsValue] = useState(initialData?.skills?.join(', ') ?? '')
   const [positionsValue, setPositionsValue] = useState(initialData?.desired_positions?.join(', ') ?? '')
   const [locationsValue, setLocationsValue] = useState(initialData?.desired_locations?.join(', ') ?? '')
 
@@ -73,47 +66,18 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
     } else {
       setResumeStatus('done')
       setResumePreview(result.text ?? '')
-      if (result.extracted) {
-        const ex = result.extracted
-        if (ex.name) setNameValue(ex.name)
-        if (ex.skills?.length) setSkillsValue(ex.skills.join(', '))
-        if (ex.desired_positions?.length) setPositionsValue(ex.desired_positions.join(', '))
-        if (ex.desired_locations?.length) setLocationsValue(ex.desired_locations.join(', '))
+      if (result.extracted?.desired_positions?.length) {
+        setPositionsValue(result.extracted.desired_positions.join(', '))
+      }
+      if (result.extracted?.desired_locations?.length) {
+        setLocationsValue(result.extracted.desired_locations.join(', '))
       }
     }
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  async function handleGenerateSummary() {
-    setSummaryGenerating(true)
-    const result = await generateCareerSummary()
-    setSummaryGenerating(false)
-    if (result.error) alert(result.error)
-    else if (result.summary) setSummaryValue(result.summary)
-  }
-
   return (
     <form action={handleSubmit} className="space-y-6">
-      <Field label="이름">
-        <input
-          name="name"
-          value={nameValue}
-          onChange={e => setNameValue(e.target.value)}
-          className="input"
-          placeholder="Hyunseok Yu"
-        />
-      </Field>
-
-      <Field label="스킬" hint="입력하면 자동완성 제안이 표시됩니다">
-        <SkillChipInput
-          value={skillsValue.split(',').map(s => s.trim()).filter(Boolean)}
-          onChange={arr => setSkillsValue(arr.join(', '))}
-          placeholder="Node.js, React Native, TypeScript, ..."
-        />
-        {/* 서버 액션은 기존 그대로 쉼표 문자열(skills)을 읽는다 */}
-        <input type="hidden" name="skills" value={skillsValue} />
-      </Field>
-
       <Field label="원하는 포지션" hint="쉼표로 구분 (스크래핑 키워드)">
         <textarea
           name="desired_positions"
@@ -166,30 +130,7 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
         </div>
       </Field>
 
-      <Field
-        label="경력 요약"
-        hint="AI 매칭 및 커버레터에 활용됩니다"
-        action={
-          <button
-            type="button"
-            onClick={handleGenerateSummary}
-            disabled={summaryGenerating}
-            className="text-xs text-blue-500 hover:text-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {summaryGenerating ? '생성 중...' : '✦ AI 자동 입력'}
-          </button>
-        }
-      >
-        <textarea
-          name="career_summary"
-          value={summaryValue}
-          onChange={e => setSummaryValue(e.target.value)}
-          className="input min-h-28"
-          placeholder="10+ years backend/fullstack experience..."
-        />
-      </Field>
-
-      <Field label="이력서 업로드" hint="PDF 또는 DOCX · 최대 5MB">
+      <Field label="이력서 업로드" hint="PDF 또는 DOCX · 최대 5MB · 맞춤 이력서 DOCX 생성에 사용">
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <label className={`cursor-pointer inline-flex items-center gap-2 text-sm border border-[#E2E6EA] rounded-lg px-4 py-2 hover:bg-[#F4F6F8] transition-colors ${resumeUploading ? 'opacity-50 pointer-events-none' : ''}`}>

@@ -1,6 +1,7 @@
 import HighlightText from './HighlightText'
 import { Sparkle } from '../ui/icons'
 import type { ResumeDocumentData, ResumeWorkspaceData } from '@/lib/matchda/types'
+import { RESUME_FONT_CSS, type ResumeDesign } from '@/lib/matchda/resume-design'
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -31,20 +32,36 @@ export default function ResumeDocument({
   labels,
   variant,
   note,
+  design,
 }: {
   doc: ResumeDocumentData
   labels: { experience: string; skills: string; education: string }
   variant: 'original' | 'translated'
   note?: ResumeWorkspaceData['optimizationNote']
+  /** 이력서 스튜디오에서 설정한 디자인 (폰트·줄간격·포인트 컬러·템플릿) */
+  design?: ResumeDesign
 }) {
   const accent = variant === 'translated'
+  const accentColor = design?.accent ?? '#046C4E'
+  const modern = design?.template === 'modern'
 
   return (
-    <div className="rounded-[14px] border border-[#ECEEF0] bg-white px-6 py-8 shadow-[0_2px_14px_rgba(16,24,40,0.04)] sm:px-12 sm:py-11">
-      <div className="text-[23px] font-bold tracking-[-0.01em] text-[#101828]">{doc.name}</div>
-      <div className="mt-[3px] text-[15px] font-semibold text-[#046C4E]">{doc.title}</div>
-      <div className="mt-[6px] font-[family-name:var(--font-plex-mono)] text-[13px] text-[#98A2B3]">
-        {doc.contact}
+    <div
+      className="overflow-hidden rounded-[14px] border border-[#ECEEF0] bg-white shadow-[0_2px_14px_rgba(16,24,40,0.04)]"
+      style={
+        design
+          ? { fontFamily: RESUME_FONT_CSS[design.font], lineHeight: design.lineHeight }
+          : undefined
+      }
+    >
+      {modern && <div className="h-[6px] w-full" style={{ background: accentColor }} />}
+      <div className="px-6 py-8 sm:px-12 sm:py-11">
+      <div className={modern ? 'text-center' : ''}>
+        <div className="text-[23px] font-bold tracking-[-0.01em] text-[#101828]">{doc.name}</div>
+        <div className="mt-[3px] text-[15px] font-semibold" style={{ color: accentColor }}>{doc.title}</div>
+        <div className="mt-[6px] font-[family-name:var(--font-plex-mono)] text-[13px] text-[#98A2B3]">
+          {doc.contact}
+        </div>
       </div>
 
       <SectionLabel>{labels.experience}</SectionLabel>
@@ -85,6 +102,7 @@ export default function ResumeDocument({
       <div className="flex items-baseline justify-between">
         <div className="text-[14px] font-semibold text-[#1F2A37]">{doc.education.org}</div>
         <div className="text-[12px] text-[#98A2B3]">{doc.education.period}</div>
+      </div>
       </div>
     </div>
   )

@@ -68,7 +68,7 @@ export default async function MatchdaWorkspacePage({
               </span>
             </div>
           </div>
-          <ResumeDocument doc={data.original} labels={t.workspace.sections} variant="original" />
+          <ResumeDocument doc={data.original} labels={t.workspace.sections} variant="original" design={data.design} />
         </div>
 
         {/* 우: AI 번역 · 맞춤화 (영어) */}
@@ -94,6 +94,7 @@ export default async function MatchdaWorkspacePage({
             labels={t.workspace.sectionsEn}
             variant="translated"
             note={data.optimizationNote}
+            design={data.design}
           />
         </div>
       </div>

@@ -888,11 +888,12 @@ export async function generateWorkspaceOptimization(
   }
 
   const en = (profile.onboarding_en ?? {}) as {
-    experience?: { company?: string; position?: string; description?: string }[]
+    experience?: { company?: string; position?: string; description?: string; hidden?: boolean }[]
     skills?: string[]
   }
-  // 이력서 경력 문장들(하이라이트 후보) 수집
+  // 이력서 경력 문장들(하이라이트 후보) 수집 — 스튜디오에서 제외한 항목은 스킵
   const bullets = (en.experience ?? [])
+    .filter((e) => !e.hidden)
     .flatMap((e) => (e.description ?? '').split('\n'))
     .map((l) => l.replace(/^[-•\s]+/, '').trim())
     .filter(Boolean)

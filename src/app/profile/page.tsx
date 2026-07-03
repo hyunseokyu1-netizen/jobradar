@@ -1,9 +1,38 @@
 import Link from 'next/link'
 import ProfileForm from './ProfileForm'
-import ResumeEditor from './ResumeEditor'
+import ResumeStudio from './ResumeStudio'
+import type { StudioResume, StudioExp, StudioEdu, StudioDesign } from './actions'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { redirect } from 'next/navigation'
 import AppShell from '@/components/matchda/AppShell'
+
+// onboarding_ko/en(JSONB)을 스튜디오 초기값으로 정규화
+function toStudio(raw: unknown, fallbackName = '', fallbackPhone = ''): StudioResume {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const s = (v: unknown) => (typeof v === 'string' ? v : '')
+  const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : [])
+  return {
+    name: s(r.name) || fallbackName,
+    phone: s(r.phone) || fallbackPhone,
+    title: s(r.title),
+    summary: s(r.summary),
+    skills: arr<string>(r.skills).filter(v => typeof v === 'string'),
+    hidden_skills: arr<string>(r.hidden_skills).filter(v => typeof v === 'string'),
+    experience: arr<StudioExp>(r.experience).map(e => ({
+      company: s(e?.company), position: s(e?.position), period: s(e?.period),
+      description: s(e?.description), hidden: !!e?.hidden,
+    })),
+    education: arr<StudioEdu>(r.education).map(e => ({
+      school: s(e?.school), major: s(e?.major), degree: s(e?.degree), period: s(e?.period),
+      hidden: !!e?.hidden,
+    })),
+    design: (r.design as StudioDesign | undefined) ?? undefined,
+  }
+}
+
+function hasContent(r: StudioResume): boolean {
+  return !!(r.summary || r.skills.length || r.experience.length || r.education.length)
+}
 
 export default async function ProfilePage() {
   const email = await getAuthUserEmail()
@@ -11,46 +40,35 @@ export default async function ProfilePage() {
 
   const profile = await getOrCreateProfile(email)
 
-  // 한/영 구조화 프로필에서 이력서 에디터 초기값 구성
-  const ko = (profile?.onboarding_ko ?? {}) as Record<string, unknown>
-  const en = (profile?.onboarding_en ?? {}) as Record<string, unknown>
-  const asArr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : [])
+  const ko = toStudio(profile?.onboarding_ko, (profile?.name as string) ?? '', (profile?.phone as string) ?? '')
+  const en = toStudio(profile?.onboarding_en)
 
   return (
     <AppShell activeKey="profile" userName={(profile?.name as string) ?? undefined} userEmail={email}>
-      <div className="max-w-2xl">
-      <div className="flex items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold">내 프로파일</h1>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">이력서 스튜디오</h1>
+          <p className="mt-0.5 text-sm text-[#98A2B3]">
+            한국어로 편집하면 실시간으로 미리보고, 영어로 동기화해 매칭·커버레터에 사용합니다.
+          </p>
+        </div>
         <Link
           href="/onboarding?redo=1"
-          className="text-sm font-medium bg-[#046C4E] text-white px-4 py-2 rounded-lg hover:bg-[#035A40] transition-colors whitespace-nowrap"
+          className="whitespace-nowrap rounded-lg bg-[#046C4E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#035A40]"
         >
           ✨ AI로 다시 작성
         </Link>
       </div>
 
-      <section className="mb-8">
-        <h2 className="text-base font-semibold mb-1">이력서 (한글 작성 → 번역)</h2>
-        <p className="text-xs text-[#98A2B3] mb-3">
-          섹션별로 한국어로 작성하고 ‘번역해서 저장’을 누르면 영어로 저장돼 매칭·커버레터에 사용됩니다.
-        </p>
-        <ResumeEditor
-          email={email}
-          name={(profile?.name as string) ?? ''}
-          phone={(profile?.phone as string) ?? ''}
-          summaryKo={(ko.summary as string) ?? ''}
-          summaryEn={(en.summary as string) ?? (profile?.career_summary as string) ?? ''}
-          skillsKo={asArr<string>(ko.skills)}
-          skillsEn={asArr<string>(en.skills).length ? asArr<string>(en.skills) : asArr<string>(profile?.skills)}
-          experienceKo={asArr(ko.experience)}
-          experienceEn={asArr(en.experience)}
-          educationKo={asArr(ko.education)}
-          educationEn={asArr(en.education)}
-        />
-      </section>
+      <ResumeStudio initialKo={ko} initialEn={hasContent(en) ? en : null} email={email} />
 
-      <ProfileForm initialData={profile} />
-      </div>
+      <section className="mt-12 max-w-2xl">
+        <h2 className="mb-1 text-base font-semibold">매칭 설정</h2>
+        <p className="mb-4 text-xs text-[#98A2B3]">
+          희망 포지션·지역·연봉과 이력서 파일은 AI 매칭과 잡 탐색 채점에 사용됩니다.
+        </p>
+        <ProfileForm initialData={profile} />
+      </section>
     </AppShell>
   )
 }

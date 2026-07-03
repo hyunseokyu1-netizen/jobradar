@@ -25,7 +25,8 @@ export default function Sidebar({
     { key: 'profile', label: t.dashboard.nav.myResume, Icon: FileText, href: '/profile' },
   ] as const
 
-  const displayName = userName || '김지민'
+  // 이름 미설정 유저는 이메일 앞부분으로 표시 (목업 이름은 비로그인 데모 전용)
+  const displayName = userName || userEmail?.split('@')[0] || '회원'
 
   return (
     <aside className="sticky top-0 hidden min-h-screen w-[248px] flex-shrink-0 flex-col self-start border-r border-[#ECEEF0] bg-white px-[14px] py-5 lg:flex">

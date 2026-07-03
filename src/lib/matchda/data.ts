@@ -4,6 +4,7 @@
 // (이 모듈은 supabaseAdmin/쿠키에 접근하므로 서버 컴포넌트·액션에서만 import 할 것)
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { normalizeResumeDesign } from './resume-design'
 import type {
   ApplicationStatus,
   DashboardSummary,
@@ -155,18 +156,23 @@ interface OnboardingExperience {
   position?: string
   period?: string
   description?: string
+  hidden?: boolean // 이력서 스튜디오에서 "포함" 해제한 항목
 }
 interface OnboardingEducation {
   school?: string
   major?: string
   degree?: string
   period?: string
+  hidden?: boolean
 }
 interface OnboardingResume {
+  title?: string
   summary?: string
   skills?: string[]
+  hidden_skills?: string[]
   experience?: OnboardingExperience[]
   education?: OnboardingEducation[]
+  design?: unknown // 이력서 스튜디오 디자인 설정 (normalizeResumeDesign으로 정규화)
 }
 
 function expToBullets(description?: string) {
@@ -183,18 +189,20 @@ function buildDoc(
   contact: string,
   fallbackTitle: string
 ): ResumeDocumentData {
-  const exps = resume.experience ?? []
-  const edu = (resume.education ?? [])[0]
+  // 스튜디오에서 "포함" 해제(hidden)한 항목·스킬은 문서에서 제외
+  const exps = (resume.experience ?? []).filter((e) => !e.hidden)
+  const edu = (resume.education ?? []).filter((e) => !e.hidden)[0]
+  const hiddenSkills = resume.hidden_skills ?? []
   return {
     name,
-    title: exps[0]?.position || fallbackTitle || '',
+    title: resume.title || exps[0]?.position || fallbackTitle || '',
     contact,
     experiences: exps.map((e) => ({
       org: [e.company, e.position].filter(Boolean).join(' — '),
       period: e.period ?? '',
       bullets: expToBullets(e.description),
     })),
-    skills: resume.skills ?? [],
+    skills: (resume.skills ?? []).filter((s) => !hiddenSkills.includes(s)),
     education: edu
       ? { org: [edu.school, edu.major || edu.degree].filter(Boolean).join(' — '), period: edu.period ?? '' }
       : { org: '', period: '' },
@@ -304,5 +312,7 @@ export async function getMatchdaWorkspace(
       location: job.location ?? null,
       appliedAt: matchRow.applied_at ?? null,
     },
+    // 스튜디오 디자인 설정 (ko에 저장, 한/영 문서 공통 적용)
+    design: ko.design ? normalizeResumeDesign(ko.design) : undefined,
   }
 }

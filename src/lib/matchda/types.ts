@@ -105,4 +105,6 @@ export interface ResumeWorkspaceData {
     location: string | null
     appliedAt: string | null
   }
+  /** 이력서 스튜디오에서 설정한 문서 디자인 (폰트·줄간격·포인트 컬러·템플릿) */
+  design?: import('./resume-design').ResumeDesign
 }
