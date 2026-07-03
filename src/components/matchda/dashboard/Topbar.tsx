@@ -4,7 +4,17 @@ import { Avatar, Logo } from '../ui/primitives'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
 /** 대시보드 상단바 (68px) */
-export default function Topbar({ t }: { t: Dictionary }) {
+export default function Topbar({
+  t,
+  userName,
+  userEmail,
+}: {
+  t: Dictionary
+  userName?: string
+  userEmail?: string | null
+}) {
+  // 로그인 유저 이니셜 (이름 → 이메일 순 폴백, 없으면 데모용 '지')
+  const initial = (userName?.trim()?.[0] ?? userEmail?.trim()?.[0])?.toUpperCase() ?? '지'
   return (
     <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between gap-3 border-b border-[#ECEEF0] bg-white px-4 sm:px-6 lg:px-9">
       {/* 모바일: 사이드바가 숨겨지므로 로고 노출 */}
@@ -28,7 +38,7 @@ export default function Topbar({ t }: { t: Dictionary }) {
           <Bell size={20} />
           <span className="absolute -right-[2px] -top-[2px] h-2 w-2 rounded-full border-2 border-white bg-[#046C4E]" />
         </button>
-        <Avatar initial="지" size={36} fontSize={14} />
+        <Avatar initial={initial} size={36} fontSize={14} />
       </div>
     </header>
   )

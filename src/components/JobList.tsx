@@ -64,19 +64,19 @@ function ScoreBadge({ score, jobId, onMatched }: { score: number | null; jobId: 
       <button
         onClick={handleMatch}
         disabled={matching}
-        className="text-xs text-zinc-400 hover:text-blue-500 hover:underline disabled:opacity-50 transition-colors"
+        className="text-xs text-[#98A2B3] hover:text-blue-500 hover:underline disabled:opacity-50 transition-colors"
       >
         {matching ? '매칭 중...' : '미매칭'}
       </button>
     )
   }
-  const color = score >= 70 ? 'bg-green-100 text-green-700 hover:bg-green-200' : score >= 50 ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
+  const color = score >= 70 ? 'bg-green-100 text-green-700 hover:bg-green-200' : score >= 50 ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-[#F4F6F8] text-[#667085] hover:bg-[#ECEEF0]'
   return (
     <button
       onClick={handleMatch}
       disabled={matching}
       title="클릭해서 재매칭"
-      className={`text-xs font-bold px-2 py-0.5 rounded-full transition-colors disabled:opacity-50 ${matching ? 'bg-zinc-100 text-zinc-400' : color}`}
+      className={`text-xs font-bold px-2 py-0.5 rounded-full transition-colors disabled:opacity-50 ${matching ? 'bg-[#F4F6F8] text-[#98A2B3]' : color}`}
     >
       {matching ? '매칭 중...' : `${score}점`}
     </button>
@@ -205,9 +205,9 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
       ref={setNodeRef}
       style={style}
       className={`border rounded-xl p-5 transition-colors ${
-        needsJdInput ? 'bg-white' : 'bg-zinc-100/70'
+        needsJdInput ? 'bg-white' : 'bg-[#F4F6F8]/70'
       } ${
-        job.match_score !== null ? 'border-zinc-300' : 'border-zinc-200'
+        job.match_score !== null ? 'border-[#E2E6EA]' : 'border-[#ECEEF0]'
       } ${isDragging ? 'shadow-lg' : ''}`}
     >
       <div className="flex items-start gap-3">
@@ -219,8 +219,8 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
           title={draggable ? '드래그해서 순서 변경' : '‘직접 정렬’에서 순서를 바꿀 수 있어요'}
           className={`mt-1 shrink-0 ${
             draggable
-              ? 'text-zinc-400 hover:text-zinc-600 cursor-grab active:cursor-grabbing'
-              : 'text-zinc-200 cursor-not-allowed'
+              ? 'text-[#98A2B3] hover:text-[#475467] cursor-grab active:cursor-grabbing'
+              : 'text-[#E4E7EB] cursor-not-allowed'
           }`}
           aria-label="드래그"
         >
@@ -248,7 +248,7 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
             {appliedAt && !editingDate && (
               <button
                 onClick={startEditDate}
-                className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+                className="text-xs text-[#98A2B3] hover:text-[#475467] transition-colors"
                 title="지원 날짜 수정"
               >
                 지원 후 {daysElapsed(appliedAt)}일
@@ -257,7 +257,7 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
             {!appliedAt && job.match_status === 'applied' && !editingDate && (
               <button
                 onClick={startEditDate}
-                className="text-xs text-zinc-300 hover:text-zinc-500 transition-colors"
+                className="text-xs text-[#D0D5DB] hover:text-[#667085] transition-colors"
               >
                 날짜 입력
               </button>
@@ -268,14 +268,14 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
                   type="date"
                   value={dateInput}
                   onChange={e => setDateInput(e.target.value)}
-                  className="text-xs border border-zinc-300 rounded px-1.5 py-0.5 outline-none focus:border-zinc-500"
+                  className="text-xs border border-[#E2E6EA] rounded px-1.5 py-0.5 outline-none focus:border-[#046C4E]"
                   autoFocus
                 />
                 <button onClick={handleSaveDate} className="text-xs text-blue-500 hover:text-blue-700 px-1">저장</button>
-                <button onClick={() => setEditingDate(false)} className="text-xs text-zinc-400 hover:text-zinc-600 px-1">취소</button>
+                <button onClick={() => setEditingDate(false)} className="text-xs text-[#98A2B3] hover:text-[#475467] px-1">취소</button>
               </span>
             )}
-            <span className="text-xs text-zinc-400">
+            <span className="text-xs text-[#98A2B3]">
               {job.posted_at ? timeAgo(job.posted_at) : timeAgo(job.scraped_at)}
             </span>
           </div>
@@ -290,12 +290,12 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
                   if (e.key === 'Escape') setEditingTitle(false)
                 }}
                 autoFocus
-                className="flex-1 text-sm font-semibold border border-zinc-300 rounded-lg px-2 py-1 outline-none focus:border-zinc-500"
+                className="flex-1 text-sm font-semibold border border-[#E2E6EA] rounded-lg px-2 py-1 outline-none focus:border-[#046C4E]"
               />
               <button onClick={handleSaveTitle} disabled={savingTitle} className="text-xs text-blue-500 hover:text-blue-700 px-1 disabled:opacity-50">
                 {savingTitle ? '...' : '저장'}
               </button>
-              <button onClick={() => setEditingTitle(false)} className="text-xs text-zinc-400 hover:text-zinc-600 px-1">취소</button>
+              <button onClick={() => setEditingTitle(false)} className="text-xs text-[#98A2B3] hover:text-[#475467] px-1">취소</button>
             </div>
           ) : (
             <div className="flex items-center gap-1.5 group/title">
@@ -303,13 +303,13 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
                 href={job.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-zinc-900 hover:text-blue-600 leading-snug truncate"
+                className="font-semibold text-[#101828] hover:text-blue-600 leading-snug truncate"
               >
                 {job.title}
               </a>
               <button
                 onClick={startEditTitle}
-                className="text-xs text-zinc-300 hover:text-zinc-600 transition-colors shrink-0 opacity-0 group-hover/title:opacity-100"
+                className="text-xs text-[#D0D5DB] hover:text-[#475467] transition-colors shrink-0 opacity-0 group-hover/title:opacity-100"
                 title="제목 수정"
                 aria-label="제목 수정"
               >
@@ -328,22 +328,22 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
                 }}
                 autoFocus
                 placeholder="회사명"
-                className="flex-1 text-sm border border-zinc-300 rounded-lg px-2 py-1 outline-none focus:border-zinc-500"
+                className="flex-1 text-sm border border-[#E2E6EA] rounded-lg px-2 py-1 outline-none focus:border-[#046C4E]"
               />
               <button onClick={handleSaveCompany} disabled={savingCompany} className="text-xs text-blue-500 hover:text-blue-700 px-1 disabled:opacity-50">
                 {savingCompany ? '...' : '저장'}
               </button>
-              <button onClick={() => setEditingCompany(false)} className="text-xs text-zinc-400 hover:text-zinc-600 px-1">취소</button>
+              <button onClick={() => setEditingCompany(false)} className="text-xs text-[#98A2B3] hover:text-[#475467] px-1">취소</button>
             </div>
           ) : (
-            <p className="text-sm text-zinc-500 mt-0.5 flex items-center gap-1.5 group/company">
+            <p className="text-sm text-[#667085] mt-0.5 flex items-center gap-1.5 group/company">
               <span>
-                {job.company || <span className="text-zinc-300">회사명 없음</span>}
+                {job.company || <span className="text-[#D0D5DB]">회사명 없음</span>}
                 {job.salary && <> · <span className="text-green-600">{job.salary}</span></>}
               </span>
               <button
                 onClick={startEditCompany}
-                className="text-xs text-zinc-300 hover:text-zinc-600 transition-colors shrink-0 opacity-0 group-hover/company:opacity-100"
+                className="text-xs text-[#D0D5DB] hover:text-[#475467] transition-colors shrink-0 opacity-0 group-hover/company:opacity-100"
                 title="회사명 수정"
                 aria-label="회사명 수정"
               >
@@ -362,21 +362,21 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
                 }}
                 autoFocus
                 placeholder="위치 (예: Sydney, Australia)"
-                className="flex-1 text-sm border border-zinc-300 rounded-lg px-2 py-1 outline-none focus:border-zinc-500"
+                className="flex-1 text-sm border border-[#E2E6EA] rounded-lg px-2 py-1 outline-none focus:border-[#046C4E]"
               />
               <button onClick={handleSaveLocation} disabled={savingLocation} className="text-xs text-blue-500 hover:text-blue-700 px-1 disabled:opacity-50">
                 {savingLocation ? '...' : '저장'}
               </button>
-              <button onClick={() => setEditingLocation(false)} className="text-xs text-zinc-400 hover:text-zinc-600 px-1">취소</button>
+              <button onClick={() => setEditingLocation(false)} className="text-xs text-[#98A2B3] hover:text-[#475467] px-1">취소</button>
             </div>
           ) : (
-            <p className="text-sm text-zinc-500 mt-0.5 flex items-center gap-1.5 group/location">
+            <p className="text-sm text-[#667085] mt-0.5 flex items-center gap-1.5 group/location">
               {job.location && !job.location.startsWith('(Location') ? (
                 <>
                   <span>📍 {job.location}</span>
                   <button
                     onClick={startEditLocation}
-                    className="text-xs text-zinc-300 hover:text-zinc-600 transition-colors shrink-0 opacity-0 group-hover/location:opacity-100"
+                    className="text-xs text-[#D0D5DB] hover:text-[#475467] transition-colors shrink-0 opacity-0 group-hover/location:opacity-100"
                     title="위치 수정"
                     aria-label="위치 수정"
                   >
@@ -386,7 +386,7 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
               ) : (
                 <button
                   onClick={startEditLocation}
-                  className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
+                  className="text-xs text-[#98A2B3] hover:text-[#344054] transition-colors"
                 >
                   + 위치 추가
                 </button>
@@ -397,7 +397,7 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
             <p
               onClick={() => setReasonExpanded(p => !p)}
               title={reasonExpanded ? '접기' : '더보기'}
-              className={`text-xs text-zinc-400 mt-1.5 cursor-pointer hover:text-zinc-500 transition-colors ${reasonExpanded ? '' : 'line-clamp-2'}`}
+              className={`text-xs text-[#98A2B3] mt-1.5 cursor-pointer hover:text-[#667085] transition-colors ${reasonExpanded ? '' : 'line-clamp-2'}`}
             >
               {job.match_reason}
             </p>
@@ -418,13 +418,13 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
             )}
             <button
               onClick={() => setShowMemo(prev => !prev)}
-              className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${memo ? 'border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100' : 'border-zinc-200 hover:bg-zinc-50'}`}
+              className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${memo ? 'border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100' : 'border-[#ECEEF0] hover:bg-[#F4F6F8]'}`}
             >
               {memo ? '📝 메모' : '메모'}
             </button>
             <button
               onClick={() => setShowCoverLetter(true)}
-              className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 hover:bg-zinc-50 transition-colors"
+              className="text-xs border border-[#ECEEF0] rounded-lg px-3 py-1.5 hover:bg-[#F4F6F8] transition-colors"
             >
               커버레터
             </button>
@@ -436,27 +436,33 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
             </button>
             <button
               onClick={() => setShowResume(true)}
-              className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${resumeFilename ? 'border-indigo-200 text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'border-zinc-200 hover:bg-zinc-50'}`}
+              className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${resumeFilename ? 'border-indigo-200 text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'border-[#ECEEF0] hover:bg-[#F4F6F8]'}`}
             >
               {resumeFilename ? '📄 이력서' : '이력서'}
             </button>
           </div>
         </div>
 
-        {/* 우측 — 보기, 삭제만 */}
+        {/* 우측 — 워크스페이스, 보기, 삭제 */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <a
+            href={`/matchda/workspace?jobId=${encodeURIComponent(job.id)}`}
+            className="text-xs border border-[#CEEBDC] text-[#046C4E] rounded-lg px-3 py-1.5 hover:bg-[#ECFDF3] whitespace-nowrap"
+          >
+            워크스페이스
+          </a>
           <a
             href={job.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 hover:bg-zinc-50 whitespace-nowrap"
+            className="text-xs border border-[#ECEEF0] rounded-lg px-3 py-1.5 hover:bg-[#F4F6F8] whitespace-nowrap"
           >
             보기 →
           </a>
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="text-xs text-zinc-300 hover:text-red-400 transition-colors px-1.5 py-1.5"
+            className="text-xs text-[#D0D5DB] hover:text-red-400 transition-colors px-1.5 py-1.5"
             aria-label="삭제"
           >
             ✕
@@ -470,21 +476,21 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
             value={memo}
             onChange={e => setMemo(e.target.value)}
             placeholder="메모를 입력하세요..."
-            className="w-full text-sm border border-zinc-200 rounded-lg p-3 outline-none focus:border-zinc-400 resize-none text-zinc-700 placeholder:text-zinc-300"
+            className="w-full text-sm border border-[#ECEEF0] rounded-lg p-3 outline-none focus:border-[#046C4E] resize-none text-[#344054] placeholder:text-[#D0D5DB]"
             rows={3}
             autoFocus
           />
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => { setMemo(job.memo ?? ''); setShowMemo(false) }}
-              className="text-xs text-zinc-400 hover:text-zinc-600 px-3 py-1.5"
+              className="text-xs text-[#98A2B3] hover:text-[#475467] px-3 py-1.5"
             >
               취소
             </button>
             <button
               onClick={handleSaveMemo}
               disabled={savingMemo}
-              className="text-xs bg-zinc-900 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+              className="text-xs bg-[#046C4E] text-white px-3 py-1.5 rounded-lg hover:bg-[#035A40] disabled:opacity-50 transition-colors"
             >
               {savingMemo ? '저장 중...' : '저장'}
             </button>
@@ -577,7 +583,7 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
     setJobs(prev => prev.map(j => j.id === id ? { ...j, ...patch } : j))
   }
 
-  if (!jobs.length) return <p className="text-zinc-400 text-center py-20">아직 공고가 없습니다.</p>
+  if (!jobs.length) return <p className="text-[#98A2B3] text-center py-20">아직 공고가 없습니다.</p>
 
   const statusCounts = jobs.reduce<Record<string, number>>((acc, j) => {
     acc[j.match_status] = (acc[j.match_status] ?? 0) + 1
@@ -605,8 +611,8 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
           onClick={() => setFilter('all')}
           className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
             filter === 'all'
-              ? 'bg-zinc-900 text-white border-zinc-900'
-              : 'text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+              ? 'bg-[#046C4E] text-white border-[#046C4E]'
+              : 'text-[#667085] border-[#ECEEF0] hover:bg-[#F4F6F8]'
           }`}
         >
           전체 {jobs.length}
@@ -616,18 +622,18 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
             key={opt.value}
             onClick={() => setFilter(prev => prev === opt.value ? 'all' : opt.value)}
             className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
-              filter === opt.value ? opt.pill + ' ring-1 ring-current' : 'text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+              filter === opt.value ? opt.pill + ' ring-1 ring-current' : 'text-[#667085] border-[#ECEEF0] hover:bg-[#F4F6F8]'
             }`}
           >
             {opt.label} {statusCounts[opt.value]}
           </button>
         ))}
         <div className="ml-auto flex items-center gap-1 text-xs">
-          <span className="text-zinc-400">정렬</span>
+          <span className="text-[#98A2B3]">정렬</span>
           <button
             onClick={() => setSortMode('score')}
             className={`px-2 py-1 rounded-full border transition-colors ${
-              sortMode === 'score' ? 'bg-zinc-900 text-white border-zinc-900' : 'text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+              sortMode === 'score' ? 'bg-[#046C4E] text-white border-[#046C4E]' : 'text-[#667085] border-[#ECEEF0] hover:bg-[#F4F6F8]'
             }`}
           >
             점수순
@@ -635,7 +641,7 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
           <button
             onClick={() => setSortMode('recent')}
             className={`px-2 py-1 rounded-full border transition-colors ${
-              sortMode === 'recent' ? 'bg-zinc-900 text-white border-zinc-900' : 'text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+              sortMode === 'recent' ? 'bg-[#046C4E] text-white border-[#046C4E]' : 'text-[#667085] border-[#ECEEF0] hover:bg-[#F4F6F8]'
             }`}
           >
             최신순
@@ -644,7 +650,7 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
             onClick={() => setSortMode('manual')}
             title="드래그해서 원하는 순서로 정렬"
             className={`px-2 py-1 rounded-full border transition-colors ${
-              sortMode === 'manual' ? 'bg-zinc-900 text-white border-zinc-900' : 'text-zinc-500 border-zinc-200 hover:bg-zinc-50'
+              sortMode === 'manual' ? 'bg-[#046C4E] text-white border-[#046C4E]' : 'text-[#667085] border-[#ECEEF0] hover:bg-[#F4F6F8]'
             }`}
           >
             직접 정렬
@@ -653,7 +659,7 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
       </div>
 
       {filteredJobs.length === 0 ? (
-        <p className="text-zinc-400 text-center py-20">해당 상태의 공고가 없습니다.</p>
+        <p className="text-[#98A2B3] text-center py-20">해당 상태의 공고가 없습니다.</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={filteredJobs.map(j => j.id)} strategy={verticalListSortingStrategy}>

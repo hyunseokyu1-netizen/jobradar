@@ -2,8 +2,10 @@ import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import StatCards from './StatCards'
 import KanbanBoard from './KanbanBoard'
+import ApplicationsView from './ApplicationsView'
 import AddJobForm from '@/components/AddJobForm'
 import RunMatchButton from '@/components/RunMatchButton'
+import JobList, { type JobItem } from '@/components/JobList'
 import type { Dictionary } from '@/lib/matchda/i18n'
 import type { DashboardSummary, KanbanColumn } from '@/lib/matchda/types'
 
@@ -21,6 +23,7 @@ export default function DashboardScreen({
   unmatchedCount,
   userEmail,
   needsOnboarding = false,
+  listJobs,
 }: {
   t: Dictionary
   summary: DashboardSummary
@@ -30,6 +33,8 @@ export default function DashboardScreen({
   unmatchedCount: number
   userEmail?: string | null
   needsOnboarding?: boolean
+  /** 리스트 뷰용 공고 데이터 (실데이터에서만 제공) */
+  listJobs?: JobItem[]
 }) {
   const today = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'full' }).format(new Date())
 
@@ -38,7 +43,7 @@ export default function DashboardScreen({
       <Sidebar t={t} userName={summary.userName} userEmail={userEmail} />
 
       <main className="min-w-0 flex-1">
-        <Topbar t={t} />
+        <Topbar t={t} userName={summary.userName} userEmail={userEmail} />
 
         <div className="px-4 pb-16 pt-[30px] sm:px-6 lg:px-9">
           {/* 온보딩 미완료 유저 → 프로필 완성 유도 (매칭·맞춤 이력서의 전제 조건) */}
@@ -80,27 +85,27 @@ export default function DashboardScreen({
             </div>
           )}
 
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="m-0 text-[18px] font-bold tracking-[-0.01em] text-[#101828]">
-                {t.dashboard.boardTitle}
-              </h2>
-              <p className="mt-1 text-[13px] text-[#98A2B3]">{t.dashboard.boardSub}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              {real && <RunMatchButton unmatchedCount={unmatchedCount} />}
-              <div className="flex rounded-[9px] bg-[#EEF1F3] p-[3px]">
-                <span className="cursor-pointer rounded-[7px] bg-white px-[14px] py-[6px] text-[13px] font-semibold text-[#1F2A37] shadow-[0_1px_2px_rgba(16,24,40,0.06)]">
-                  {t.dashboard.viewBoard}
-                </span>
-                <span className="cursor-pointer px-[14px] py-[6px] text-[13px] font-medium text-[#667085]">
-                  {t.dashboard.viewList}
-                </span>
+          <ApplicationsView
+            boardLabel={t.dashboard.viewBoard}
+            listLabel={t.dashboard.viewList}
+            header={
+              <div>
+                <h2 className="m-0 text-[18px] font-bold tracking-[-0.01em] text-[#101828]">
+                  {t.dashboard.boardTitle}
+                </h2>
+                <p className="mt-1 text-[13px] text-[#98A2B3]">{t.dashboard.boardSub}</p>
               </div>
-            </div>
-          </div>
-
-          <KanbanBoard columns={columns} t={t} interactive={real} />
+            }
+            actions={real ? <RunMatchButton unmatchedCount={unmatchedCount} /> : undefined}
+            board={<KanbanBoard columns={columns} t={t} interactive={real} />}
+            list={
+              real && listJobs ? (
+                <div className="rounded-[14px] border border-[#ECEEF0] bg-white p-4 sm:p-5">
+                  <JobList initialJobs={listJobs} />
+                </div>
+              ) : undefined
+            }
+          />
         </div>
       </main>
     </div>
