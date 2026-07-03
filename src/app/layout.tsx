@@ -4,6 +4,7 @@ import "./globals.css";
 import { getAuthUser, signOut } from "./auth-actions";
 import { getOrCreateProfile } from "@/lib/auth-helpers";
 import AppChrome from "@/components/AppChrome";
+import SupportChat from "@/components/SupportChat";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
@@ -39,6 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           {children}
         </AppChrome>
+        <SupportChat />
       </body>
     </html>
   );
