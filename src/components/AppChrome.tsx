@@ -33,6 +33,9 @@ export default function AppChrome({
     pathname?.startsWith('/pricing') ||
     pathname?.startsWith('/about') ||
     pathname?.startsWith('/settings') ||
+    pathname?.startsWith('/terms') ||
+    pathname?.startsWith('/privacy') ||
+    pathname?.startsWith('/support') ||
     pathname?.startsWith('/login') ||
     pathname?.startsWith('/onboarding')
 

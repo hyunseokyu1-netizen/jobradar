@@ -32,8 +32,9 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // 루트(/)와 소개·요금제 페이지는 공개 (로그인 여부와 무관)
-  if (pathname === '/' || pathname === '/about' || pathname === '/pricing') {
+  // 루트(/)와 소개·요금제·약관·정책·고객센터 페이지는 공개 (로그인 여부와 무관)
+  const PUBLIC_PATHS = ['/', '/about', '/pricing', '/terms', '/privacy', '/support']
+  if (PUBLIC_PATHS.includes(pathname)) {
     return supabaseResponse
   }
 

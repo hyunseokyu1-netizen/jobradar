@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
 /** 푸터 (저작권 + 링크) */
@@ -10,9 +11,9 @@ export default function SiteFooter({ t }: { t: Dictionary }) {
         <span className="text-[14px] text-[#667085]">{t.footer.copyright}</span>
       </div>
       <div className="flex gap-6 text-[14px] text-[#98A2B3]">
-        <span className="cursor-pointer">{t.footer.terms}</span>
-        <span className="cursor-pointer">{t.footer.privacy}</span>
-        <span className="cursor-pointer">{t.footer.support}</span>
+        <Link href="/terms" className="hover:text-[#475467]">{t.footer.terms}</Link>
+        <Link href="/privacy" className="hover:text-[#475467]">{t.footer.privacy}</Link>
+        <Link href="/support" className="hover:text-[#475467]">{t.footer.support}</Link>
       </div>
     </footer>
   )
