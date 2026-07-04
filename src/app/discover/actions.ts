@@ -268,6 +268,76 @@ export async function dismissDiscoveredJob(discoveredJobId: string): Promise<{ e
   return {}
 }
 
+/** 편집 모드 다중 선택 삭제 — 소프트 삭제(status='dismissed'), 행 삭제 아님 */
+export async function dismissDiscoveredJobs(
+  discoveredJobIds: string[]
+): Promise<{ dismissed?: number; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const ids = (discoveredJobIds ?? []).filter(Boolean).slice(0, 500)
+  if (ids.length === 0) return { error: '선택된 공고가 없습니다.' }
+
+  const { data, error } = await supabaseAdmin
+    .from('discovered_jobs')
+    .update({ status: 'dismissed' })
+    .in('id', ids)
+    .eq('user_id', profile.id)
+    .select('id')
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/discover')
+  return { dismissed: data?.length ?? 0 }
+}
+
+/** 미채점 공고 1건을 Haiku로 개별 채점 */
+export async function rescoreDiscoveredJob(
+  discoveredJobId: string
+): Promise<{ score?: number | null; reason?: string | null; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const { data: job } = await supabaseAdmin
+    .from('discovered_jobs')
+    .select('id, title, url, location, department')
+    .eq('id', discoveredJobId)
+    .eq('user_id', profile.id)
+    .single()
+
+  if (!job) return { error: '공고를 찾을 수 없습니다.' }
+
+  let scored
+  try {
+    scored = await scorePostings(
+      [{ title: job.title, url: job.url, location: job.location ?? undefined, department: job.department ?? undefined }],
+      profile
+    )
+  } catch (e) {
+    return { error: `채점 실패: ${String(e)}` }
+  }
+
+  const result = scored[0]
+  if (!result || result.score === null) return { error: '채점 결과를 받지 못했습니다.' }
+
+  const { error } = await supabaseAdmin
+    .from('discovered_jobs')
+    .update({ match_score: result.score, match_reason: result.reason })
+    .eq('id', discoveredJobId)
+    .eq('user_id', profile.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/discover')
+  return { score: result.score, reason: result.reason }
+}
+
 // 탐색 공고를 지원 관리(jobs + matches)로 넘긴다.
 // 반환된 jobId로 클라이언트가 기존 JD 스크래핑 → 정밀 매칭 플로우를 이어간다.
 export async function addDiscoveredJobToMyList(discoveredJobId: string): Promise<{

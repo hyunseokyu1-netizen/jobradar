@@ -2,7 +2,12 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { addDiscoveredJobToMyList, dismissDiscoveredJob } from '@/app/discover/actions'
+import {
+  addDiscoveredJobToMyList,
+  dismissDiscoveredJob,
+  dismissDiscoveredJobs,
+  rescoreDiscoveredJob,
+} from '@/app/discover/actions'
 import { matchSingleJob } from '@/app/actions'
 import { Search } from '@/components/matchda/ui/icons'
 
@@ -20,7 +25,7 @@ export interface DiscoveredJobItem {
   scraped_at: string
 }
 
-type ScoreFilter = 'all' | '70' | '40'
+type ScoreFilter = 'all' | '70' | '40' | 'unscored'
 type SortKey = 'recent' | 'score' | 'oldest'
 
 function scoreBadgeClass(score: number | null): string {
@@ -40,6 +45,12 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
   const [error, setError] = useState('')
   // 방금 추가한 공고의 jobId (워크스페이스 바로가기 링크용)
   const [addedJobIds, setAddedJobIds] = useState<Record<string, string>>({})
+  // 편집 모드 (체크박스 다중 선택 삭제)
+  const [editMode, setEditMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  // 개별 채점 중인 공고 id
+  const [scoringId, setScoringId] = useState<string | null>(null)
 
   const router = useRouter()
 
@@ -53,7 +64,11 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
   const visible = jobs
     .filter(j => {
       if (sourceFilter !== 'all' && j.source_id !== sourceFilter) return false
-      if (scoreFilter !== 'all' && (j.match_score === null || j.match_score < Number(scoreFilter))) return false
+      if (scoreFilter === 'unscored') {
+        if (j.match_score !== null) return false
+      } else if (scoreFilter !== 'all' && (j.match_score === null || j.match_score < Number(scoreFilter))) {
+        return false
+      }
       if (q) {
         const hay = `${j.title} ${j.source_name} ${j.location ?? ''} ${j.department ?? ''}`.toLowerCase()
         if (!hay.includes(q)) return false
@@ -104,6 +119,44 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
     else router.refresh()
   }
 
+  function toggleSelected(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    const selectable = visible.filter(j => j.status !== 'added').map(j => j.id)
+    setSelected(prev => (prev.size >= selectable.length ? new Set() : new Set(selectable)))
+  }
+
+  async function handleBulkDelete() {
+    if (selected.size === 0) return
+    setBulkDeleting(true)
+    setError('')
+    const res = await dismissDiscoveredJobs([...selected])
+    setBulkDeleting(false)
+    if (res.error) {
+      setError(res.error)
+      return
+    }
+    setSelected(new Set())
+    setEditMode(false)
+    router.refresh()
+  }
+
+  async function handleRescore(id: string) {
+    setScoringId(id)
+    setError('')
+    const res = await rescoreDiscoveredJob(id)
+    setScoringId(null)
+    if (res.error) setError(res.error)
+    else router.refresh()
+  }
+
   if (jobs.length === 0) {
     return (
       <p className="text-sm text-[#98A2B3] text-center py-12">
@@ -140,7 +193,7 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
       {/* 필터 */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <div className="flex gap-1.5">
-          {([['all', '전체'], ['70', '70점+'], ['40', '40점+']] as [ScoreFilter, string][]).map(([v, label]) => (
+          {([['all', '전체'], ['70', '70점+'], ['40', '40점+'], ['unscored', '미채점']] as [ScoreFilter, string][]).map(([v, label]) => (
             <button
               key={v}
               onClick={() => setScoreFilter(v)}
@@ -185,7 +238,37 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
           </>
         )}
         <span className="text-xs text-[#98A2B3] ml-auto">{visible.length}건</span>
+        <button
+          onClick={() => {
+            setEditMode(m => !m)
+            setSelected(new Set())
+          }}
+          className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+            editMode
+              ? 'bg-[#1F2A37] text-white border-[#1F2A37]'
+              : 'bg-white text-[#667085] border-[#ECEEF0] hover:border-[#98A2B3]'
+          }`}
+        >
+          {editMode ? '편집 완료' : '편집'}
+        </button>
       </div>
+
+      {/* 편집 모드 툴바 */}
+      {editMode && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-[#ECEEF0] bg-[#F7F8FA] px-4 py-2.5">
+          <button onClick={toggleSelectAll} className="text-xs font-medium text-[#344054] hover:text-[#046C4E]">
+            전체 선택/해제
+          </button>
+          <span className="text-xs text-[#98A2B3]">{selected.size}개 선택됨</span>
+          <button
+            onClick={handleBulkDelete}
+            disabled={selected.size === 0 || bulkDeleting}
+            className="ml-auto rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-40"
+          >
+            {bulkDeleting ? '삭제 중…' : `선택 삭제 (${selected.size})`}
+          </button>
+        </div>
+      )}
 
       {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
 
@@ -194,22 +277,49 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
         {visible.map(job => (
           <div
             key={job.id}
-            className={`bg-white border border-[#ECEEF0] rounded-xl px-5 py-4 ${
+            onClick={editMode && job.status !== 'added' ? () => toggleSelected(job.id) : undefined}
+            className={`bg-white border rounded-xl px-5 py-4 ${
               job.status === 'added' ? 'opacity-60' : ''
+            } ${
+              editMode && selected.has(job.id)
+                ? 'border-[#046C4E] bg-[#ECFDF3]/40 cursor-pointer'
+                : editMode && job.status !== 'added'
+                  ? 'border-[#ECEEF0] cursor-pointer hover:border-[#98A2B3]'
+                  : 'border-[#ECEEF0]'
             }`}
           >
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
+              {editMode && (
+                <input
+                  type="checkbox"
+                  checked={selected.has(job.id)}
+                  onChange={() => toggleSelected(job.id)}
+                  onClick={e => e.stopPropagation()}
+                  disabled={job.status === 'added'}
+                  className="mt-1 h-4 w-4 shrink-0 accent-[#046C4E]"
+                />
+              )}
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span
                     className={`text-xs font-bold rounded-md px-2 py-0.5 ${scoreBadgeClass(job.match_score)}`}
                   >
                     {job.match_score !== null ? `${job.match_score}점` : '미채점'}
                   </span>
+                  {job.match_score === null && !editMode && (
+                    <button
+                      onClick={() => handleRescore(job.id)}
+                      disabled={scoringId !== null}
+                      className="text-[11px] font-medium text-[#046C4E] border border-[#CEEBDC] rounded-md px-2 py-0.5 hover:bg-[#ECFDF3] disabled:opacity-40 transition-colors"
+                    >
+                      {scoringId === job.id ? '채점 중…' : '점수 매기기'}
+                    </button>
+                  )}
                   <a
                     href={job.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
                     className="text-sm font-semibold hover:underline truncate"
                   >
                     {job.title}
@@ -225,7 +335,7 @@ export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] 
                 )}
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className={`flex items-center gap-2 shrink-0 ${editMode ? 'hidden' : ''}`}>
                 {job.status === 'added' ? (
                   <span className="flex items-center gap-2 whitespace-nowrap text-xs">
                     <span className="text-green-600">✓ 추가됨</span>
