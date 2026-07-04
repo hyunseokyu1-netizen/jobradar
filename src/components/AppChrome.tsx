@@ -37,6 +37,8 @@ export default function AppChrome({
     pathname?.startsWith('/privacy') ||
     pathname?.startsWith('/support') ||
     pathname?.startsWith('/login') ||
+    pathname?.startsWith('/forgot-password') ||
+    pathname?.startsWith('/reset-password') ||
     pathname?.startsWith('/onboarding')
 
   if (usesMatchdaShell) {

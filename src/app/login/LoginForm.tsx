@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -56,13 +57,19 @@ export default function LoginForm() {
         router.refresh()
       }
     } else {
-      console.log('[Signup] signUp 시도:', email)
       const { data, error } = await supabase.auth.signUp({ email, password })
-      console.log('[Signup] 결과 - error:', error, '| user:', data.user?.email, '| confirmed:', data.user?.email_confirmed_at)
       if (error) {
-        setError(error.message)
+        setError(
+          error.message.includes('already registered')
+            ? '이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해주세요.'
+            : error.message
+        )
+      } else if (data.user && (data.user.identities?.length ?? 0) === 0) {
+        // 이메일 확인이 켜진 환경에서 기가입 이메일로 signUp 하면
+        // Supabase가 (이메일 존재 노출 방지를 위해) 성공처럼 응답하되 identities를 비워 보낸다.
+        setError('이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해주세요.')
       } else {
-        setMessage('가입이 완료됐습니다. 로그인해주세요.')
+        setMessage('확인 메일을 보냈어요. 메일함(스팸함 포함)에서 인증을 완료해주세요.')
       }
     }
 
@@ -138,6 +145,13 @@ export default function LoginForm() {
             minLength={mode === 'signup' ? 8 : undefined}
             className="w-full border border-[#E2E6EA] rounded-[9px] px-3 py-2.5 text-sm outline-none focus:border-[#046C4E] transition-colors"
           />
+          {mode === 'login' && (
+            <div className="mt-1.5 text-right">
+              <Link href="/forgot-password" className="text-xs text-[#98A2B3] hover:text-[#046C4E] hover:underline">
+                비밀번호를 잊으셨나요?
+              </Link>
+            </div>
+          )}
         </div>
 
         {error && (
