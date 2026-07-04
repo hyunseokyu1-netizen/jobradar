@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { HandshakeMark } from './icons'
+import Image from 'next/image'
 import type { CompanyBrand } from '@/lib/matchda/types'
 
 /** 로고: 그린 마크 + "MatchDa 매치다" */
@@ -15,12 +15,7 @@ export function Logo({
   const mark = size === 'sm' ? 30 : 32
   return (
     <Link href={href} className="flex items-center gap-[9px]">
-      <span
-        className="overflow-hidden rounded-[9px] bg-[#046C4E]"
-        style={{ width: mark, height: mark }}
-      >
-        <HandshakeMark size={mark} className="block text-white" />
-      </span>
+      <Image src="/matchda-mark.png" alt="MatchDa" width={mark} height={mark} className="rounded-[9px]" />
       <span className="text-[20px] font-bold tracking-[-0.02em] text-[#0C1A14]">MatchDa</span>
       {sub && <span className="mt-[3px] text-[13px] font-medium text-[#9AA3AD]">{sub}</span>}
     </Link>
