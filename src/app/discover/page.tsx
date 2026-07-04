@@ -13,7 +13,15 @@ export const dynamic = 'force-dynamic'
 // 기본 타임아웃을 넘길 수 있어, /api/scrape와 동일하게 상한을 넉넉히 둔다.
 export const maxDuration = 300
 
-export default async function DiscoverPage() {
+export default async function DiscoverPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  // 랜딩 히어로 검색바에서 넘어온 초기 검색어
+  const { q } = await searchParams
+  const initialSearch = (q ?? '').trim()
+
   const email = await getAuthUserEmail()
   const profile = email ? await getOrCreateProfile(email) : null
 
@@ -72,7 +80,7 @@ export default async function DiscoverPage() {
       {jobs.length > 0 && (
         <section className="mb-8">
           <h2 className="mb-3 text-base font-semibold text-[#1F2A37]">내 채용페이지 수집 공고</h2>
-          <DiscoveredJobList jobs={jobs} />
+          <DiscoveredJobList jobs={jobs} initialSearch={initialSearch} />
         </section>
       )}
 
@@ -81,7 +89,7 @@ export default async function DiscoverPage() {
         <p className="mb-3 text-xs text-[#98A2B3]">
           수집된 공고를 둘러보고 &quot;관리 보내기&quot;로 지원 현황에 추가하세요.
         </p>
-        <PoolJobList jobs={poolJobs} />
+        <PoolJobList jobs={poolJobs} initialSearch={initialSearch} />
       </section>
     </AppShell>
   )

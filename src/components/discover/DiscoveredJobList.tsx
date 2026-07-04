@@ -35,10 +35,16 @@ function scoreBadgeClass(score: number | null): string {
   return 'bg-[#F4F6F8] text-[#667085]'
 }
 
-export default function DiscoveredJobList({ jobs }: { jobs: DiscoveredJobItem[] }) {
+export default function DiscoveredJobList({
+  jobs,
+  initialSearch = '',
+}: {
+  jobs: DiscoveredJobItem[]
+  initialSearch?: string
+}) {
   const [sourceFilter, setSourceFilter] = useState<string>('all')
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>('all')
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch)
   const [sort, setSort] = useState<SortKey>('recent')
   const [addingId, setAddingId] = useState<string | null>(null)
   const [addingStep, setAddingStep] = useState('')

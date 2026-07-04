@@ -30,9 +30,15 @@ function timeAgo(dateStr: string): string {
 /**
  * 잡 탐색 — 공유 공고 풀(아직 지원현황에 없는 jobs). '관리 보내기'로 지원현황에 추가.
  */
-export default function PoolJobList({ jobs }: { jobs: PoolJobItem[] }) {
+export default function PoolJobList({
+  jobs,
+  initialSearch = '',
+}: {
+  jobs: PoolJobItem[]
+  initialSearch?: string
+}) {
   const router = useRouter()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch)
   const [sort, setSort] = useState<SortKey>('recent')
   const [addingId, setAddingId] = useState<string | null>(null)
   const [sentIds, setSentIds] = useState<Set<string>>(new Set())

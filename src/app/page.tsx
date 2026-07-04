@@ -16,7 +16,7 @@ export default async function HomePage() {
       authed={authed}
       loginHref="/login"
       signupHref={authed ? '/dashboard' : '/login?mode=signup'}
-      searchHref={authed ? '/dashboard' : '/login?mode=signup'}
+      searchHref={authed ? '/discover' : '/login?mode=signup'}
     />
   )
 }
