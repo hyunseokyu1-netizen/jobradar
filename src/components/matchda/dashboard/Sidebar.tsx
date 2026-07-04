@@ -18,7 +18,7 @@ export default function Sidebar({
   t: Dictionary
   userName?: string
   userEmail?: string | null
-  activeKey?: 'dashboard' | 'applications' | 'discover' | 'profile'
+  activeKey?: 'dashboard' | 'applications' | 'discover' | 'profile' | 'settings'
 }) {
   const navItems = [
     { key: 'dashboard', label: t.dashboard.nav.dashboard, Icon: LayoutDashboard, href: '/dashboard' },
@@ -70,13 +70,19 @@ export default function Sidebar({
       </div>
 
       <div className="border-t border-[#F0F2F4] pt-[10px]">
-        <div className="flex items-center gap-[10px] p-2">
+        <Link
+          href="/settings"
+          title="설정"
+          className={`flex items-center gap-[10px] rounded-[9px] p-2 transition-colors hover:bg-[#F4F6F8] ${
+            activeKey === 'settings' ? 'bg-[#ECFDF3]' : ''
+          }`}
+        >
           <Avatar initial={displayName.slice(0, 1)} size={34} fontSize={13} />
           <div className="min-w-0 flex-1">
             <div className="text-[13px] font-semibold text-[#1F2A37]">{displayName}</div>
             <div className="truncate text-[12px] text-[#98A2B3]">{userEmail || t.dashboard.plan}</div>
           </div>
-        </div>
+        </Link>
         {userEmail && (
           <form action={signOut}>
             <button

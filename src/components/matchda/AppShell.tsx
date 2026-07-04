@@ -13,7 +13,7 @@ export default function AppShell({
   userEmail,
   children,
 }: {
-  activeKey: 'dashboard' | 'discover' | 'profile'
+  activeKey: 'dashboard' | 'applications' | 'discover' | 'profile' | 'settings'
   userName?: string
   userEmail?: string | null
   children: React.ReactNode

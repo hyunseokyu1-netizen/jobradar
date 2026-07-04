@@ -38,7 +38,9 @@ export default function Topbar({
           <Bell size={20} />
           <span className="absolute -right-[2px] -top-[2px] h-2 w-2 rounded-full border-2 border-white bg-[#046C4E]" />
         </button>
-        <Avatar initial={initial} size={36} fontSize={14} />
+        <Link href="/settings" title="설정" className="rounded-full transition-opacity hover:opacity-80">
+          <Avatar initial={initial} size={36} fontSize={14} />
+        </Link>
       </div>
     </header>
   )
