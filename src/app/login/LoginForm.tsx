@@ -57,6 +57,14 @@ export default function LoginForm() {
         router.refresh()
       }
     } else {
+      // 1차: 서버에서 기가입 여부 확인 (Supabase signUp은 기가입이어도 성공처럼 응답하므로)
+      const { emailExists } = await import('@/app/auth-actions')
+      if (await emailExists(email)) {
+        setError('이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해주세요.')
+        setLoading(false)
+        return
+      }
+
       const { data, error } = await supabase.auth.signUp({ email, password })
       if (error) {
         setError(
@@ -65,8 +73,7 @@ export default function LoginForm() {
             : error.message
         )
       } else if (data.user && (data.user.identities?.length ?? 0) === 0) {
-        // 이메일 확인이 켜진 환경에서 기가입 이메일로 signUp 하면
-        // Supabase가 (이메일 존재 노출 방지를 위해) 성공처럼 응답하되 identities를 비워 보낸다.
+        // 2차 방어: 기가입 이메일이면 Supabase가 identities를 비워 보낸다
         setError('이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해주세요.')
       } else {
         setMessage('확인 메일을 보냈어요. 메일함(스팸함 포함)에서 인증을 완료해주세요.')
@@ -155,7 +162,23 @@ export default function LoginForm() {
         </div>
 
         {error && (
-          <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+          <div className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">
+            {error}
+            {error.includes('이미 가입된') && (
+              <span className="mt-1 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setMode('login'); setError(''); setMessage('') }}
+                  className="font-semibold text-[#046C4E] hover:underline"
+                >
+                  로그인하기
+                </button>
+                <Link href="/forgot-password" className="font-semibold text-[#046C4E] hover:underline">
+                  비밀번호 찾기
+                </Link>
+              </span>
+            )}
+          </div>
         )}
         {message && (
           <p className="text-xs text-green-600 bg-green-50 rounded-lg px-3 py-2">{message}</p>
