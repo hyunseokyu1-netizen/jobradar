@@ -1,0 +1,60 @@
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:#F4F6F8;padding:40px 16px;font-family:'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Helvetica,Arial,sans-serif;">
+  <tr>
+    <td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:480px;background-color:#ffffff;border:1px solid #ECEEF0;border-radius:16px;overflow:hidden;">
+        <!-- 헤더 -->
+        <tr>
+          <td style="background-color:#046C4E;padding:28px 32px;text-align:center;">
+            <img src="https://matchda.com/matchda-mark.png" width="44" height="44" alt="MatchDa" style="border-radius:10px;display:inline-block;" />
+            <div style="margin-top:10px;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">MatchDa <span style="font-size:13px;font-weight:500;color:#A7D8C4;">매치다</span></div>
+          </td>
+        </tr>
+        <!-- 본문 -->
+        <tr>
+          <td style="padding:36px 32px 32px;">
+            <h1 style="margin:0;font-size:21px;font-weight:700;color:#101828;letter-spacing:-0.02em;">이메일 인증을 완료해주세요</h1>
+            <p style="margin:14px 0 0;font-size:14px;line-height:1.7;color:#475467;">
+              안녕하세요! MatchDa에 가입해주셔서 감사합니다.<br />
+              아래 버튼을 누르면 가입이 완료되고, 바로 이력서 번역과 잡 매칭을 시작할 수 있어요.
+            </p>
+            <!-- CTA 버튼 -->
+            <table cellpadding="0" cellspacing="0" role="presentation" style="margin:28px auto 0;">
+              <tr>
+                <td style="border-radius:10px;background-color:#046C4E;">
+                  <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">
+                    이메일 인증하기
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:24px 0 0;font-size:12px;line-height:1.6;color:#98A2B3;text-align:center;">
+              버튼이 눌리지 않으면 아래 링크를 복사해 브라우저에 붙여넣어주세요.
+            </p>
+            <p style="margin:8px 0 0;font-size:11px;line-height:1.5;color:#98A2B3;text-align:center;word-break:break-all;">
+              <a href="{{ .ConfirmationURL }}" style="color:#046C4E;">{{ .ConfirmationURL }}</a>
+            </p>
+            <!-- 안내 박스 -->
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:28px;">
+              <tr>
+                <td style="background-color:#ECFDF3;border:1px solid #CEEBDC;border-radius:10px;padding:14px 16px;">
+                  <p style="margin:0;font-size:12.5px;line-height:1.6;color:#046C4E;">
+                    💡 가입 후 <b>이력서 파일(PDF·DOCX)만 올리면</b> AI가 자동 분석해 1분 안에 영어 이력서를 만들어드립니다.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- 푸터 -->
+        <tr>
+          <td style="border-top:1px solid #F0F2F4;padding:20px 32px;text-align:center;">
+            <p style="margin:0;font-size:11.5px;line-height:1.6;color:#98A2B3;">
+              본인이 가입하지 않았다면 이 메일을 무시하셔도 됩니다.<br />
+              © 2026 MatchDa · <a href="https://matchda.com" style="color:#98A2B3;text-decoration:underline;">matchda.com</a> · <a href="https://matchda.com/support" style="color:#98A2B3;text-decoration:underline;">고객센터</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
