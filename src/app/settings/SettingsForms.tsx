@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updatePersonalInfo, changePassword } from './actions'
+import PasswordInput from '@/components/ui/PasswordInput'
 
 const inputCls =
   'w-full rounded-lg border border-[#ECEEF0] px-3 py-2.5 text-sm outline-none transition-colors focus:border-[#046C4E] placeholder:text-[#D0D5DB]'
@@ -78,9 +79,8 @@ export function PasswordForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className={labelCls}>현재 비밀번호</label>
-        <input
+        <PasswordInput
           name="currentPassword"
-          type="password"
           autoComplete="current-password"
           required
           className={inputCls}
@@ -90,9 +90,8 @@ export function PasswordForm() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className={labelCls}>새 비밀번호 (8자 이상)</label>
-          <input
+          <PasswordInput
             name="newPassword"
-            type="password"
             autoComplete="new-password"
             minLength={8}
             required
@@ -102,9 +101,8 @@ export function PasswordForm() {
         </div>
         <div>
           <label className={labelCls}>새 비밀번호 확인</label>
-          <input
+          <PasswordInput
             name="confirmPassword"
-            type="password"
             autoComplete="new-password"
             minLength={8}
             required

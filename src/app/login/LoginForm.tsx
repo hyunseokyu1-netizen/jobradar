@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
+import PasswordInput from '@/components/ui/PasswordInput'
 
 type Mode = 'login' | 'signup'
 
@@ -143,8 +144,7 @@ export default function LoginForm() {
         </div>
         <div>
           <label className="block text-sm font-medium text-[#344054] mb-1.5">비밀번호</label>
-          <input
-            type="password"
+          <PasswordInput
             value={password}
             onChange={e => setPassword(e.target.value)}
             required

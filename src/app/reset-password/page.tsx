@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
+import PasswordInput from '@/components/ui/PasswordInput'
 
 /** 재설정 메일 링크로 진입해 새 비밀번호를 설정하는 페이지 (recovery 세션 필요) */
 export default function ResetPasswordPage() {
@@ -58,8 +59,7 @@ export default function ResetPasswordPage() {
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#344054]">새 비밀번호</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
@@ -72,8 +72,7 @@ export default function ResetPasswordPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#344054]">새 비밀번호 확인</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={confirm}
                   onChange={e => setConfirm(e.target.value)}
                   required
