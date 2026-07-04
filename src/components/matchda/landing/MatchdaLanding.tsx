@@ -1,6 +1,7 @@
 import { getMatchdaDict } from '@/lib/matchda/i18n'
 import LandingHeader from './LandingHeader'
 import SplitHero from './SplitHero'
+import WorkspaceShowcase from './WorkspaceShowcase'
 import FeatureCards from './FeatureCards'
 import StatsBand from './StatsBand'
 import SiteFooter from './SiteFooter'
@@ -36,6 +37,7 @@ export default function MatchdaLanding({
     <div className="min-h-screen bg-white font-[family-name:var(--font-plex-kr)] text-[#111827] antialiased">
       <LandingHeader t={t} authed={authed} loginHref={loginHref} signupHref={signupHref} />
       <SplitHero t={t} searchHref={searchHref} />
+      <WorkspaceShowcase ctaHref={authed ? '/profile' : signupHref ?? '/login?mode=signup'} />
       <FeatureCards t={t} />
       <StatsBand t={t} />
       <SiteFooter t={t} />
