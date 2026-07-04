@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { addJobManually } from '@/app/actions'
+import { addJobManually, parseJobText } from '@/app/actions'
 
 interface Props {
   onClose: () => void
@@ -20,8 +20,29 @@ export default function AddJobManualModal({ onClose }: Props) {
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<'idle' | 'saving' | 'matching'>('idle')
   const [error, setError] = useState('')
+  // 붙여넣기 자동 분석
+  const [pasteText, setPasteText] = useState('')
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analyzed, setAnalyzed] = useState(false)
 
-  const busy = status !== 'idle'
+  const busy = status !== 'idle' || analyzing
+
+  async function handleAnalyze() {
+    if (!pasteText.trim() || analyzing) return
+    setAnalyzing(true)
+    setError('')
+    const res = await parseJobText(pasteText)
+    setAnalyzing(false)
+    if (res.error || !res.parsed) {
+      setError(res.error ?? '분석 실패')
+      return
+    }
+    setTitle(res.parsed.title ?? '')
+    setCompany(res.parsed.company ?? '')
+    setLocation(res.parsed.location ?? '')
+    setDescription(res.parsed.description ?? '')
+    setAnalyzed(true)
+  }
 
   async function handleSubmit() {
     if (!title.trim() || busy) return
@@ -61,6 +82,34 @@ export default function AddJobManualModal({ onClose }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* 붙여넣기 자동 분석 */}
+          <div className="rounded-xl border border-[#CEEBDC] bg-[#ECFDF3]/50 p-4">
+            <p className="text-xs font-semibold text-[#046C4E] mb-1">📋 붙여넣기로 자동 채우기</p>
+            <p className="text-[11px] text-[#667085] mb-2">
+              공고 페이지에서 <kbd className="rounded bg-white border border-[#ECEEF0] px-1">Ctrl+A</kbd> → <kbd className="rounded bg-white border border-[#ECEEF0] px-1">Ctrl+C</kbd> 로 전체 복사 후 아래에 붙여넣으면 AI가 알아서 정리합니다.
+            </p>
+            <textarea
+              value={pasteText}
+              onChange={e => setPasteText(e.target.value)}
+              placeholder="복사한 공고 페이지 내용을 여기에 붙여넣기 (Ctrl+V)"
+              className="w-full text-xs border border-[#ECEEF0] rounded-lg p-3 outline-none focus:border-[#046C4E] resize-none placeholder:text-[#D0D5DB] bg-white"
+              rows={4}
+              disabled={busy}
+            />
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-[11px] text-[#98A2B3]">
+                {analyzed ? '✓ 분석 완료 — 아래 내용 확인 후 추가하세요' : pasteText.trim() ? `${pasteText.trim().length}자` : ''}
+              </span>
+              <button
+                onClick={handleAnalyze}
+                disabled={!pasteText.trim() || busy}
+                className="text-xs bg-[#046C4E] text-white px-3.5 py-1.5 rounded-lg hover:bg-[#035A40] disabled:opacity-40 transition-colors"
+              >
+                {analyzing ? 'AI 분석 중…' : 'AI로 분석해서 채우기'}
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-medium text-[#667085] mb-1">
               직무명 <span className="text-red-500">*</span>

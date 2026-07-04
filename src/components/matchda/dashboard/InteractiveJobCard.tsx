@@ -4,7 +4,11 @@ import { useRouter } from 'next/navigation'
 import { MapPin } from '../ui/icons'
 import { MonogramChip, MatchBadge } from '../ui/primitives'
 import StatusSelect from './StatusSelect'
+import FixJobButton from './FixJobButton'
 import type { JobCardData } from '@/lib/matchda/types'
+
+// URL 스크래핑이 제목을 못 읽은 카드 (JD 직접 입력으로 보정 유도)
+const PARSE_FAILED_TITLES = new Set(['제목 파싱 불가', 'Untitled', ''])
 
 /**
  * 인터랙티브 칸반 카드(로그인 실데이터).
@@ -40,6 +44,7 @@ export default function InteractiveJobCard({
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-semibold text-[#1F2A37]">{job.role}</div>
           <div className="text-[12px] text-[#98A2B3]">{job.company}</div>
+          {PARSE_FAILED_TITLES.has(job.role?.trim() ?? '') && <FixJobButton jobId={job.id} />}
         </div>
         {job.status && <StatusSelect jobId={job.id} initialStatus={job.status} />}
       </div>

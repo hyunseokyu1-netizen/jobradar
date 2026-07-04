@@ -966,6 +966,116 @@ export async function addJobManually(
   return { jobId: data.id, matched, score }
 }
 
+export interface ParsedJobText {
+  title?: string
+  company?: string
+  location?: string
+  salary?: string
+  description?: string
+}
+
+/**
+ * 잡 공고 사이트에서 Ctrl+A/C로 복사한 페이지 전문을 Haiku로 분석해
+ * 직무명·회사·위치·연봉·정제된 JD를 추출한다. (DB 쓰기 없음 — 분석만)
+ */
+export async function parseJobText(rawText: string): Promise<{ parsed?: ParsedJobText; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const text = (rawText ?? '').trim()
+  if (text.length < 50) return { error: '내용이 너무 짧아요. 공고 페이지 전체를 복사해서 붙여넣어주세요.' }
+
+  try {
+    const { anthropic } = await import('@/lib/claude')
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 3000,
+      messages: [{
+        role: 'user',
+        content: `아래는 채용공고 웹페이지에서 전체 선택(Ctrl+A) 후 복사한 원문입니다. 메뉴·광고·푸터 등 잡음이 섞여 있습니다. 채용공고 핵심 정보만 추출하세요.
+
+## 원문
+${text.slice(0, 15000)}
+
+## 추출 규칙
+- title: 직무명 (원문 언어 그대로)
+- company: 회사명
+- location: 근무지 (없으면 빈 문자열)
+- salary: 급여 정보 (명시된 경우만, 없으면 빈 문자열)
+- description: 채용공고 본문만 정제해 재구성 (주요 업무, 자격 요건, 우대 사항 등. 메뉴/광고/무관한 텍스트 제거. 원문 언어 유지, 최대 2000자)
+
+JSON으로만 응답하세요. 다른 텍스트 금지:
+{"title": "...", "company": "...", "location": "...", "salary": "...", "description": "..."}`,
+      }],
+    })
+
+    const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
+    const jsonMatch = raw.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return { error: '분석 결과를 해석하지 못했어요. 다시 시도해주세요.' }
+    const parsed = JSON.parse(jsonMatch[0]) as ParsedJobText
+    if (!parsed.title) return { error: '직무명을 찾지 못했어요. 공고 본문이 포함되게 다시 복사해주세요.' }
+    return { parsed }
+  } catch (e) {
+    console.error('parseJobText error:', e)
+    return { error: '분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+  }
+}
+
+/**
+ * 파싱 실패(제목 파싱 불가 등) 공고를 붙여넣은 원문으로 재분석해 보정하고 AI 매칭까지 실행.
+ */
+export async function fixJobWithText(
+  jobId: string,
+  rawText: string
+): Promise<{ matched?: boolean; score?: number; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  // 내 지원 목록에 있는 공고만 수정 가능
+  const { data: myMatch } = await supabaseAdmin
+    .from('matches')
+    .select('id')
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+    .maybeSingle()
+  if (!myMatch) return { error: '내 지원 목록에 없는 공고입니다.' }
+
+  const res = await parseJobText(rawText)
+  if (res.error || !res.parsed) return { error: res.error ?? '분석 실패' }
+  const p = res.parsed
+
+  const { error } = await supabaseAdmin
+    .from('jobs')
+    .update({
+      title: p.title,
+      company: p.company || null,
+      location: p.location || null,
+      salary: p.salary || null,
+      description: p.description || null,
+    })
+    .eq('id', jobId)
+
+  if (error) return { error: error.message }
+
+  let matched = false
+  let score: number | undefined
+  if (p.description) {
+    const matchRes = await matchSingleJob(jobId)
+    if (!matchRes.error && matchRes.score !== undefined) {
+      matched = true
+      score = matchRes.score
+    }
+  }
+
+  revalidatePath('/')
+  revalidatePath('/applications')
+  revalidatePath('/dashboard')
+  return { matched, score }
+}
+
 /**
  * 공고별 이력서 최적화 분석.
  * 유저의 영어 이력서(onboarding_en)를 타깃 공고의 JD와 대조해
