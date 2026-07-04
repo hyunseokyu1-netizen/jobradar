@@ -248,6 +248,95 @@ export async function saveResumeStudio(input: StudioResume): Promise<{ error?: s
 }
 
 /**
+ * AI로 다시 작성 — 현재 스튜디오 내용을 먼저 저장한 뒤,
+ * 인사담당자 관점에서 표현을 보강·확장한 버전을 생성해 돌려준다.
+ * (원본에 없는 수치·회사·프로젝트를 지어내지 않는 사실 기반 확장)
+ */
+export async function enrichResumeStudio(
+  input: StudioResume
+): Promise<{ ko?: StudioResume; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const current = sanitizeStudio(input)
+
+  // 1) 현재 편집 내용 먼저 저장 (보강 결과가 마음에 안 들어도 유실 없음)
+  const saveRes = await saveResumeStudio(current)
+  if (saveRes.error) return { error: saveRes.error }
+
+  const expForPrompt = current.experience.map(e => ({
+    company: e.company, position: e.position, period: e.period, description: e.description,
+  }))
+
+  try {
+    const { anthropic } = await import('@/lib/claude')
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-5',
+      max_tokens: 4000,
+      messages: [{
+        role: 'user',
+        content: `당신은 시니어 채용 담당자 출신의 이력서 컨설턴트입니다. 아래 이력서(한국어)를 인사담당자가 좋게 평가할 내용으로 보강·확장하세요.
+
+## 현재 이력서
+- 이름: ${current.name || '미입력'}
+- 직함: ${current.title || '미입력'}
+- 경력 요약: ${current.summary || '미입력'}
+- 스킬: ${current.skills.join(', ') || '미입력'}
+- 경력: ${JSON.stringify(expForPrompt, null, 2)}
+
+## 보강 규칙 (반드시 준수)
+1. **사실 날조 금지**: 원본에 없는 구체적 수치(%, 건수, 금액), 회사명, 프로젝트명, 수상 경력을 지어내지 마세요.
+2. **표현 확장은 허용**: 직함·스킬·기존 서술에서 합리적으로 유추되는 통상적 업무 내용으로 각 경력을 풍성하게 서술하세요. (예: "Node.js" 스킬의 백엔드 개발자 → "Node.js 기반 REST API 설계·개발" 같은 일반적 업무 서술은 OK)
+3. **각 경력의 description**: 3~5개의 성과·업무 bullet로 확장하세요. 각 bullet은 한 줄, 행동 동사로 시작, 줄바꿈(\\n)으로 구분. 원본 bullet이 있으면 다듬어 유지하고 새 bullet을 추가하세요.
+4. **경력 요약(summary)**: 3~4문장의 전문적인 요약으로 작성하세요. 강점·기술 스택·일하는 방식을 담되 과장 없이.
+5. **직함(title)**: 비어있으면 경력에 맞는 직함을 제안하세요. 있으면 유지.
+6. **skills**: 기존 스킬을 모두 유지하고, 경력 서술에 이미 언급된 기술이 빠져 있으면 추가하세요. 언급되지 않은 기술을 추측으로 넣지 마세요.
+7. 경력 배열의 순서와 개수를 바꾸지 마세요. company·period는 그대로 두세요.
+8. 모두 한국어로 작성하세요 (기술 용어는 영문 유지).
+
+JSON으로만 응답하세요. 다른 텍스트 금지:
+{"title": "...", "summary": "...", "skills": ["..."], "experience": [{"company": "...", "position": "...", "period": "...", "description": "bullet1\\nbullet2\\nbullet3"}]}`,
+      }],
+    })
+
+    const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
+    const jsonMatch = raw.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return { error: 'AI 응답을 해석하지 못했어요. 다시 시도해주세요.' }
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      title?: string; summary?: string; skills?: string[]
+      experience?: { company?: string; position?: string; period?: string; description?: string }[]
+    }
+
+    // 원본 구조 유지 병합: 이름·연락처·hidden 플래그·학력·디자인은 그대로
+    const enriched: StudioResume = sanitizeStudio({
+      ...current,
+      title: parsed.title?.trim() || current.title,
+      summary: parsed.summary?.trim() || current.summary,
+      skills: Array.isArray(parsed.skills) && parsed.skills.length >= current.skills.length
+        ? parsed.skills.filter(s => typeof s === 'string' && s.trim())
+        : current.skills,
+      experience: current.experience.map((e, i) => {
+        const p = parsed.experience?.[i]
+        if (!p) return e
+        return {
+          ...e, // company·period·hidden 유지
+          position: p.position?.trim() || e.position,
+          description: p.description?.trim() || e.description,
+        }
+      }),
+    })
+
+    return { ko: enriched }
+  } catch (e) {
+    console.error('enrichResumeStudio error:', e)
+    return { error: 'AI 보강 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+  }
+}
+
+/**
  * 스튜디오 원본(한국어/혼용)을 저장하고 영어판(onboarding_en)으로 동기화.
  * 반환된 en으로 클라이언트 미리보기를 즉시 갱신한다.
  */

@@ -9,6 +9,7 @@ import {
   saveResumeStudio,
   syncResumeEnglish,
   analyzeResumeFile,
+  enrichResumeStudio,
   type StudioResume,
   type StudioDesign,
   type StudioExp,
@@ -49,10 +50,11 @@ export default function ResumeStudio({
   const [en, setEn] = useState<StudioResume | null>(initialEn)
   const [tab, setTab] = useState<'content' | 'design'>('content')
   const [lang, setLang] = useState<'ko' | 'en'>('ko')
-  const [busy, setBusy] = useState<'save' | 'sync' | null>(null)
+  const [busy, setBusy] = useState<'save' | 'sync' | 'enrich' | null>(null)
   const [saved, setSaved] = useState(false)
   const [enStale, setEnStale] = useState(false)
   const [error, setError] = useState('')
+  const [enrichMsg, setEnrichMsg] = useState('')
 
   // 이력서 파일 업로드 → AI 분석 → 기본 정보 자동 채우기
   const [analyzing, setAnalyzing] = useState(false)
@@ -120,6 +122,26 @@ export default function ResumeStudio({
       setLang('en')
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
+    }
+  }
+
+  // AI로 다시 작성 — 현재 내용을 저장한 뒤 인사담당자 관점으로 보강한 버전을 받아 에디터에 반영
+  async function handleEnrich() {
+    setBusy('enrich')
+    setError('')
+    setEnrichMsg('')
+    const res = await enrichResumeStudio(ko)
+    setBusy(null)
+    if (res.error) {
+      setError(res.error)
+      return
+    }
+    if (res.ko) {
+      setKo({ ...res.ko, design: ko.design ?? DEFAULT_DESIGN })
+      setLang('ko')
+      setEnStale(true)
+      setSaved(false)
+      setEnrichMsg('✨ AI가 내용을 보강했어요. 확인·수정 후 저장을 눌러주세요. (이전 내용은 이미 저장돼 있어요)')
     }
   }
 
@@ -579,8 +601,16 @@ export default function ResumeStudio({
               영문
             </button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {saved && <span className="text-xs text-green-600">✓ 저장됨</span>}
+            <button
+              type="button"
+              onClick={handleEnrich}
+              disabled={busy !== null}
+              className="rounded-[9px] border border-[#CEEBDC] bg-[#ECFDF3] px-4 py-2 text-[13px] font-semibold text-[#046C4E] hover:bg-[#D9F5E7] disabled:opacity-50"
+            >
+              {busy === 'enrich' ? 'AI 작성 중...' : '✨ AI로 다시 작성'}
+            </button>
             <button
               type="button"
               onClick={handleSave}
@@ -617,6 +647,11 @@ export default function ResumeStudio({
         })()}
 
         {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
+        {enrichMsg && (
+          <p className="mb-2 rounded-lg border border-[#CEEBDC] bg-[#ECFDF3] px-3 py-2 text-xs text-[#046C4E]">
+            {enrichMsg}
+          </p>
+        )}
         {lang === 'en' && enStale && en && (
           <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
             원본이 수정됐어요. &quot;영어로 동기화&quot;를 누르면 영문판이 갱신됩니다.
