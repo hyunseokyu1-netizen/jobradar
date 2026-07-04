@@ -32,8 +32,8 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // 루트(/)는 공개 소개 페이지 (로그인 여부와 무관하게 랜딩)
-  if (pathname === '/') {
+  // 루트(/)와 소개·요금제 페이지는 공개 (로그인 여부와 무관)
+  if (pathname === '/' || pathname === '/about' || pathname === '/pricing') {
     return supabaseResponse
   }
 

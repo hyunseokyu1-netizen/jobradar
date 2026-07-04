@@ -34,24 +34,30 @@ export default function LandingHeader({
         <div className="flex items-center gap-4 lg:gap-11">
           <Logo href={logoHref} sub={t.brand.sub} />
           <nav className="hidden gap-[30px] lg:flex">
-            <span className="cursor-pointer text-[15px] font-medium text-[#475467]">
-              {t.nav.about}
-            </span>
             <Link
-              href="/dashboard"
+              href="/about"
+              className="cursor-pointer text-[15px] font-medium text-[#475467] hover:text-[#046C4E]"
+            >
+              {t.nav.about}
+            </Link>
+            <Link
+              href="/discover"
               className="cursor-pointer text-[15px] font-medium text-[#475467] hover:text-[#046C4E]"
             >
               {t.nav.jobs}
             </Link>
             <Link
-              href="/workspace"
+              href="/profile"
               className="cursor-pointer text-[15px] font-medium text-[#475467] hover:text-[#046C4E]"
             >
               {t.nav.resume}
             </Link>
-            <span className="cursor-pointer text-[15px] font-medium text-[#475467]">
+            <Link
+              href="/pricing"
+              className="cursor-pointer text-[15px] font-medium text-[#475467] hover:text-[#046C4E]"
+            >
               {t.nav.pricing}
-            </span>
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-[6px]">
