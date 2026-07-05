@@ -1,5 +1,9 @@
 -- Hyunseok Yu 프로파일 삽입
 -- Supabase SQL Editor에서 실행 (service role 권한)
+--
+-- ⚠️ 보안: 비밀번호를 이 파일에 절대 하드코딩하지 말 것.
+-- 실행 시 아래 :seed_password 를 psql 변수(-v)나 SQL Editor에서 직접 치환하고,
+-- 실행 후에는 즉시 비밀번호를 변경할 것.
 
 -- 1. auth 유저 생성
 INSERT INTO auth.users (
@@ -16,7 +20,7 @@ INSERT INTO auth.users (
 ) VALUES (
   gen_random_uuid(),
   'hyunseok.yu1@gmail.com',
-  crypt('REDACTED_SEED_PASSWORD', gen_salt('bf')),
+  crypt(:'seed_password', gen_salt('bf')),
   NOW(),
   '{"provider":"email","providers":["email"]}',
   '{}',

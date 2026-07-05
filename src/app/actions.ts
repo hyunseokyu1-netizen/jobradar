@@ -152,6 +152,9 @@ ${content}`,
 }
 
 export async function translateCoverLetter(content: string): Promise<{ translation?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
   const { anthropic } = await import('@/lib/claude')
 
   const message = await anthropic.messages.create({
@@ -632,6 +635,21 @@ export async function applyTailoredTextToDocx(jobId: string): Promise<{ base64?:
 }
 
 export async function updateJobDescription(jobId: string, description: string): Promise<{ error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  // 내 지원 목록에 있는 공고만 수정 허용 (공유 jobs 필드 무단 변조 차단)
+  const { data: match } = await supabaseAdmin
+    .from('matches')
+    .select('job_id')
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+    .maybeSingle()
+  if (!match) return { error: '수정 권한이 없습니다.' }
+
   const { error } = await supabaseAdmin
     .from('jobs')
     .update({ description })
@@ -640,9 +658,20 @@ export async function updateJobDescription(jobId: string, description: string): 
   return {}
 }
 
+// 공유 jobs 풀은 여러 유저가 함께 쓰므로, "삭제"는 내 목록(matches)에서만 제거한다.
+// (공유 jobs 행이나 다른 유저의 matches는 건드리지 않는다.)
 export async function deleteJob(jobId: string): Promise<{ error?: string }> {
-  await supabaseAdmin.from('matches').delete().eq('job_id', jobId)
-  const { error } = await supabaseAdmin.from('jobs').delete().eq('id', jobId)
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const { error } = await supabaseAdmin
+    .from('matches')
+    .delete()
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
   if (error) return { error: error.message }
   revalidatePath('/')
   return {}

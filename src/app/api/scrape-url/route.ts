@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { scrapeSeekUrl } from '@/lib/scrapers/seek-url'
 import { scrapeIndeedUrl } from '@/lib/scrapers/indeed-url'
 import { scrapeGenericUrl } from '@/lib/scrapers/generic-url'
@@ -13,8 +14,23 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 90
 
 export async function POST(request: Request) {
+  const email = await getAuthUserEmail()
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 401 })
+
   const { jobId } = await request.json()
   if (!jobId) return NextResponse.json({ error: 'jobId required' }, { status: 400 })
+
+  // 내 지원 목록(matches)에 있는 공고만 스크래핑 허용 (임의 jobId로의 SSRF·비용 유발 차단)
+  const { data: myMatch } = await supabaseAdmin
+    .from('matches')
+    .select('job_id')
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+    .maybeSingle()
+  if (!myMatch) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { data: job } = await supabaseAdmin
     .from('jobs')
