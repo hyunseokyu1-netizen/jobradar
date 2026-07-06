@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS profiles (
   onboarding_completed   BOOLEAN NOT NULL DEFAULT false,
   onboarding_ko          JSONB   NOT NULL DEFAULT '{}'::jsonb,
   onboarding_en          JSONB   NOT NULL DEFAULT '{}'::jsonb,
+  -- 공개 이력서 공유 (/r/<slug>)
+  public_slug            TEXT,
+  public_resume_enabled  BOOLEAN NOT NULL DEFAULT false,
   -- 구독(Stripe)
   plan                   TEXT NOT NULL DEFAULT 'free',      -- 'free' | 'premium'
   stripe_customer_id     TEXT,
@@ -49,6 +52,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 CREATE INDEX IF NOT EXISTS idx_profiles_stripe_customer ON profiles (stripe_customer_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_public_slug ON profiles (public_slug) WHERE public_slug IS NOT NULL;
 
 -- 신규 가입 시 profiles 행 자동 생성
 CREATE OR REPLACE FUNCTION handle_new_user()

@@ -43,6 +43,11 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
+  // 공개 이력서 공유 링크(/r/<slug>) — 로그인 없이 열람 가능
+  if (pathname.startsWith('/r/')) {
+    return supabaseResponse
+  }
+
   // 나머지 페이지는 로그인 필요
   if (!user) {
     return NextResponse.redirect(new URL('/login', request.url))

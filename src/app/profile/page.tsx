@@ -1,5 +1,6 @@
 import ProfileForm from './ProfileForm'
 import ResumeStudio from './ResumeStudio'
+import ShareResumeCard from './ShareResumeCard'
 import type { StudioResume, StudioExp, StudioEdu, StudioDesign } from './actions'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { redirect } from 'next/navigation'
@@ -60,6 +61,11 @@ export default async function ProfilePage() {
         </p>
         <ProfileForm initialData={profile} />
       </section>
+
+      <ShareResumeCard initial={{
+        enabled: !!(profile as { public_resume_enabled?: boolean })?.public_resume_enabled,
+        slug: (profile as { public_slug?: string | null })?.public_slug ?? null,
+      }} />
     </AppShell>
   )
 }
