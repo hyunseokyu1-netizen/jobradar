@@ -105,7 +105,7 @@ export default function WorkspaceActions({
               JD 직접 입력
             </button>
             <button type="button" className={menuItem} onClick={() => { setMenuOpen(false); setModal('applied') }}>
-              지원 이력서 업로드
+              제출 서류
             </button>
             <button type="button" className={menuItem} onClick={() => { setMenuOpen(false); setModal('memo') }}>
               메모

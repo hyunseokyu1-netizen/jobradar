@@ -192,7 +192,7 @@ function buildDoc(
 ): ResumeDocumentData {
   // 스튜디오에서 "포함" 해제(hidden)한 항목·스킬은 문서에서 제외
   const exps = (resume.experience ?? []).filter((e) => !e.hidden)
-  const edu = (resume.education ?? []).filter((e) => !e.hidden)[0]
+  const edu = (resume.education ?? []).filter((e) => !e.hidden)
   const hiddenSkills = resume.hidden_skills ?? []
   return {
     name,
@@ -205,9 +205,10 @@ function buildDoc(
       bullets: expToBullets(e.description),
     })),
     skills: (resume.skills ?? []).filter((s) => !hiddenSkills.includes(s)),
-    education: edu
-      ? { org: [edu.school, edu.major || edu.degree].filter(Boolean).join(' — '), period: edu.period ?? '' }
-      : { org: '', period: '' },
+    education: edu.map((e) => ({
+      org: [e.school, e.major || e.degree].filter(Boolean).join(' — '),
+      period: e.period ?? '',
+    })),
   }
 }
 

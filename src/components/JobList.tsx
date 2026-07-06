@@ -438,7 +438,7 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
               onClick={() => setShowResume(true)}
               className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${resumeFilename ? 'border-indigo-200 text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'border-[#ECEEF0] hover:bg-[#F4F6F8]'}`}
             >
-              {resumeFilename ? '📄 이력서' : '이력서'}
+              {resumeFilename ? '📄 제출 서류' : '제출 서류'}
             </button>
           </div>
         </div>

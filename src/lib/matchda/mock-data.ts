@@ -155,7 +155,7 @@ export function getWorkspaceData(): ResumeWorkspaceData {
         },
       ],
       skills: ['Java', 'Spring', 'Kotlin', 'MySQL', 'Kafka', 'AWS'],
-      education: { org: '서울대학교 — 컴퓨터공학 학사', period: '2015 – 2019' },
+      education: [{ org: '서울대학교 — 컴퓨터공학 학사', period: '2015 – 2019' }],
     },
     translated: {
       name: 'Jimin Kim',
@@ -187,10 +187,10 @@ export function getWorkspaceData(): ResumeWorkspaceData {
         },
       ],
       skills: ['Java', 'Spring', 'Kotlin', 'MySQL', 'Kafka', 'AWS'],
-      education: {
+      education: [{
         org: 'B.S. in Computer Science, Seoul National University',
         period: '2015 – 2019',
-      },
+      }],
     },
     optimizationNote: {
       company: 'Spotify',

@@ -71,7 +71,7 @@ export interface ResumeDocumentData {
   summary?: string
   experiences: ResumeExperience[]
   skills: string[]
-  education: ResumeEducation
+  education: ResumeEducation[]
 }
 
 export interface ResumeWorkspaceData {

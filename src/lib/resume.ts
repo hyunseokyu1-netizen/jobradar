@@ -111,7 +111,7 @@ export function docToRender(doc: ResumeDocumentData, accent = '#046C4E'): Render
     labels: EN_LABELS,
     experiences: doc.experiences.map(e => ({ org: e.org, period: e.period, bullets: e.bullets.map(b => b.text) })),
     skills: doc.skills,
-    education: doc.education.org ? [{ text: doc.education.org, period: doc.education.period }] : [],
+    education: doc.education.filter(e => e.org).map(e => ({ text: e.org, period: e.period })),
     accent,
   }
 }
@@ -141,7 +141,7 @@ export function renderResumeHtml(r: RenderResume): string {
 // StudioResume → 렌더용 ResumeDocumentData (숨김 항목 제외). 클라이언트에서도 사용 가능.
 export function studioToDoc(r: StudioResume, contact: string): ResumeDocumentData {
   const exps = r.experience.filter(e => !e.hidden)
-  const edu = r.education.filter(e => !e.hidden)[0]
+  const edu = r.education.filter(e => !e.hidden)
   return {
     name: r.name,
     title: r.title || exps[0]?.position || '',
@@ -153,9 +153,10 @@ export function studioToDoc(r: StudioResume, contact: string): ResumeDocumentDat
       bullets: e.description.split('\n').map(l => l.replace(/^[-•\s]+/, '').trim()).filter(Boolean).map(text => ({ text })),
     })),
     skills: r.skills.filter(s => !r.hidden_skills.includes(s)),
-    education: edu
-      ? { org: [edu.school, edu.major || edu.degree].filter(Boolean).join(' — '), period: edu.period }
-      : { org: '', period: '' },
+    education: edu.map(e => ({
+      org: [e.school, e.major || e.degree].filter(Boolean).join(' — '),
+      period: e.period,
+    })),
   }
 }
 

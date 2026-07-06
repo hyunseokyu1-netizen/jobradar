@@ -106,10 +106,12 @@ export default function ResumeDocument({
       </div>
 
       <SectionLabel>{labels.education}</SectionLabel>
-      <div className="flex items-baseline justify-between">
-        <div className="text-[14px] font-semibold text-[#1F2A37]">{doc.education.org}</div>
-        <div className="text-[12px] text-[#98A2B3]">{doc.education.period}</div>
-      </div>
+      {doc.education.map((edu, ei) => (
+        <div key={`${edu.org}-${ei}`} className={`flex items-baseline justify-between${ei > 0 ? ' mt-[6px]' : ''}`}>
+          <div className="text-[14px] font-semibold text-[#1F2A37]">{edu.org}</div>
+          <div className="text-[12px] text-[#98A2B3]">{edu.period}</div>
+        </div>
+      ))}
       </div>
     </div>
   )

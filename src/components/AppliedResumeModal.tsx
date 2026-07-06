@@ -55,7 +55,7 @@ export default function AppliedResumeModal({
         {/* 헤더 */}
         <div className="flex items-start justify-between p-5 border-b border-[#F0F2F4]">
           <div>
-            <h2 className="font-semibold text-[#101828]">제출 이력서</h2>
+            <h2 className="font-semibold text-[#101828]">제출 서류</h2>
             <p className="text-xs text-[#98A2B3] mt-0.5">{jobTitle} · {company}</p>
           </div>
           <button onClick={onClose} className="text-[#98A2B3] hover:text-[#475467] transition-colors text-xl leading-none">✕</button>

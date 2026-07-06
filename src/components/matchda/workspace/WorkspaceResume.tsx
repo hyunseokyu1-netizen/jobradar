@@ -278,7 +278,7 @@ function EditableKoDoc({
   mutate: (mut: (d: StudioResume) => StudioResume) => void
 }) {
   const exps = ko.experience.filter(e => !e.hidden)
-  const edu = ko.education.filter(e => !e.hidden)[0]
+  const edu = ko.education.filter(e => !e.hidden)
   const skills = ko.skills.filter(s => !ko.hidden_skills.includes(s))
 
   const label = (text: string) => (
@@ -376,13 +376,15 @@ function EditableKoDoc({
           </>
         )}
 
-        {edu && (
+        {edu.length > 0 && (
           <>
             {label('학력')}
-            <div className="flex items-baseline justify-between gap-2 text-[13px] font-semibold text-[#1F2A37]">
-              <span>{[edu.school, edu.major, edu.degree].filter(Boolean).join(' · ')}</span>
-              <span className="shrink-0 text-[11.5px] font-normal text-[#98A2B3]">{edu.period}</span>
-            </div>
+            {edu.map((e, ei) => (
+              <div key={ei} className={`flex items-baseline justify-between gap-2 text-[13px] font-semibold text-[#1F2A37]${ei > 0 ? ' mt-1.5' : ''}`}>
+                <span>{[e.school, e.major, e.degree].filter(Boolean).join(' · ')}</span>
+                <span className="shrink-0 text-[11.5px] font-normal text-[#98A2B3]">{e.period}</span>
+              </div>
+            ))}
           </>
         )}
       </div>
