@@ -1,5 +1,6 @@
 import SearchBar from './SearchBar'
 import GlobalConnectGraphic from './GlobalConnectGraphic'
+import { Check } from '../ui/icons'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
 const TRUST_AVATARS = [
@@ -36,7 +37,12 @@ export default function SplitHero({ t, searchHref }: { t: Dictionary; searchHref
           />
         </div>
 
-        <div className="mt-6 flex items-center gap-3">
+        <div className="mt-3 flex items-center gap-1.5 text-[13px] font-medium text-[#046C4E]">
+          <Check size={14} strokeWidth={2.4} />
+          {t.hero.freeNote}
+        </div>
+
+        <div className="mt-3 flex items-center gap-3">
           <div className="flex">
             {TRUST_AVATARS.map((a, i) => (
               <span

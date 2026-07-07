@@ -191,6 +191,12 @@ export default function LoginForm() {
         >
           {loading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </button>
+
+        {mode === 'signup' && (
+          <p className="text-center text-xs text-[#046C4E]">
+            가입하면 맞춤 이력서 2개를 무료로 만들어볼 수 있어요 · 카드 등록 불필요
+          </p>
+        )}
       </form>
     </div>
   )
