@@ -2,6 +2,7 @@
 // 1) 프리필터: 프로필 키워드와 제목을 코드 레벨에서 대조 (토큰 매칭, 무료)
 // 2) 스코어링: 통과한 공고만 Claude Haiku로 배치 채점 (제목+메타만, JD 전문 없음)
 
+import { textOf } from '@/lib/claude'
 import type { DiscoveredPosting } from './ats'
 
 export interface ScoredPosting extends DiscoveredPosting {
@@ -93,7 +94,7 @@ JSON으로만 응답하세요. 다른 텍스트 금지:
       }],
     })
 
-    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const text = textOf(message)
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     const scoreMap = new Map<number, { s: number; r: string }>()
     if (jsonMatch) {

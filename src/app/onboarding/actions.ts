@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { anthropic } from '@/lib/claude'
+import { anthropic, textOf } from '@/lib/claude'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import type { OnboardingAnswers } from './questions'
 
@@ -92,7 +92,7 @@ export async function completeOnboarding(
       max_tokens: 2000,
       messages: [{ role: 'user', content: PROMPT(answers) }],
     })
-    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const text = textOf(message)
     result = extractJson(text)
   } catch (e) {
     console.error('Onboarding translation error:', e)

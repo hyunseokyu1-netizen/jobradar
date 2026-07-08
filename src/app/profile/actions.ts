@@ -1,5 +1,6 @@
 'use server'
 
+import { textOf } from '@/lib/claude'
 import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { parseResumeFile } from '@/lib/resume-parser'
@@ -71,7 +72,7 @@ ${profile.resume_text.slice(0, 4000)}`,
     }],
   })
 
-  const summary = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+  const summary = textOf(message)
   return { summary }
 }
 
@@ -128,7 +129,7 @@ export async function translateResumeSection(
       max_tokens: 2000,
       messages: [{ role: 'user', content: SECTION_PROMPT[section](koText) }],
     })
-    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const text = textOf(message)
     const m = text.match(/\{[\s\S]*\}/)
     if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
     parsed = JSON.parse(m[0])
@@ -293,17 +294,18 @@ export async function enrichResumeStudio(
 2. **표현 확장은 허용**: 직함·스킬·기존 서술에서 합리적으로 유추되는 통상적 업무 내용으로 각 경력을 풍성하게 서술하세요. (예: "Node.js" 스킬의 백엔드 개발자 → "Node.js 기반 REST API 설계·개발" 같은 일반적 업무 서술은 OK)
 3. **각 경력의 description**: 3~5개의 성과·업무 bullet로 확장하세요. 각 bullet은 한 줄, 행동 동사로 시작, 줄바꿈(\\n)으로 구분. 원본 bullet이 있으면 다듬어 유지하고 새 bullet을 추가하세요.
 4. **경력 요약(summary)**: 3~4문장의 전문적인 요약으로 작성하세요. 강점·기술 스택·일하는 방식을 담되 과장 없이.
-5. **직함(title)**: 비어있으면 경력에 맞는 직함을 제안하세요. 있으면 유지.
-6. **skills**: 기존 스킬을 모두 유지하고, 경력 서술에 이미 언급된 기술이 빠져 있으면 추가하세요. 언급되지 않은 기술을 추측으로 넣지 마세요.
-7. 경력 배열의 순서와 개수를 바꾸지 마세요. company·period는 그대로 두세요.
-8. 모두 한국어로 작성하세요 (기술 용어는 영문 유지).
+5. **경력이 없거나 1~2줄뿐인 신입/사회초년생**: 스킬·학력·기존 요약(개인 프로젝트 포함)을 재료로 summary를 자신감 있고 풍성하게(3~4문장) 써주세요. 기술에 대한 이해도, 스스로 만들어본 경험, 학습 속도와 성장 의지를 전문적인 어휘로 표현하되, 가짜 경력·수치·회사명은 만들지 마세요. experience가 빈 배열이면 그대로 빈 배열 []로 출력하세요.
+6. **직함(title)**: 비어있으면 경력 또는 스킬에 맞는 직함을 제안하세요(신입이면 "iOS 개발자 (주니어)" 같은 형태 가능). 있으면 유지.
+7. **skills**: 기존 스킬을 모두 유지하고, 경력 서술에 이미 언급된 기술이 빠져 있으면 추가하세요. 언급되지 않은 기술을 추측으로 넣지 마세요.
+8. 경력 배열의 순서와 개수를 바꾸지 마세요. company·period는 그대로 두세요.
+9. 모두 한국어로 작성하세요 (기술 용어는 영문 유지).
 
 JSON으로만 응답하세요. 다른 텍스트 금지:
 {"title": "...", "summary": "...", "skills": ["..."], "experience": [{"company": "...", "position": "...", "period": "...", "description": "bullet1\\nbullet2\\nbullet3"}]}`,
       }],
     })
 
-    const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
+    const raw = textOf(message)
     const jsonMatch = raw.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return { error: 'AI 응답을 해석하지 못했어요. 다시 시도해주세요.' }
     const parsed = JSON.parse(jsonMatch[0]) as {
@@ -380,7 +382,7 @@ export async function syncResumeEnglish(
 ${JSON.stringify({ name: ko.name, phone: ko.phone, title: ko.title, summary: ko.summary, skills: ko.skills, experience: ko.experience.map(({ hidden: _h, ...e }) => e), education: ko.education.map(({ hidden: _h, ...e }) => e) })}`,
       }],
     })
-    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const text = textOf(message)
     const m = text.match(/\{[\s\S]*\}/)
     if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
     raw = JSON.parse(m[0])
@@ -701,7 +703,7 @@ export async function structureResumeForWorkspace(): Promise<{ error?: string }>
 ${profile.resume_text.slice(0, 8000)}`,
       }],
     })
-    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const text = textOf(message)
     const m = text.match(/\{[\s\S]*\}/)
     if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
     parsed = JSON.parse(m[0])
@@ -839,7 +841,7 @@ export async function analyzeResumeFile(
 ${text.slice(0, 8000)}`,
       }],
     })
-    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+    const raw = textOf(message)
     const m = raw.match(/\{[\s\S]*\}/)
     if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
     parsed = JSON.parse(m[0])
@@ -957,14 +959,12 @@ ${text.slice(0, 5000)}`,
     })
 
     let extracted: ExtractedProfile = {}
-    if (message.content[0].type === 'text') {
-      try {
-        const raw = message.content[0].text.trim()
-        const jsonMatch = raw.match(/\{[\s\S]*\}/)
-        if (jsonMatch) extracted = JSON.parse(jsonMatch[0])
-      } catch {
-        // 파싱 실패 시 빈 객체로 진행
-      }
+    try {
+      const raw = textOf(message)
+      const jsonMatch = raw.match(/\{[\s\S]*\}/)
+      if (jsonMatch) extracted = JSON.parse(jsonMatch[0])
+    } catch {
+      // 파싱 실패 시 빈 객체로 진행
     }
 
     const patch: Record<string, unknown> = { resume_text: text, updated_at: new Date().toISOString() }

@@ -1,5 +1,6 @@
 'use server'
 
+import { textOf } from '@/lib/claude'
 import { SUPPORT_KNOWLEDGE } from '@/lib/support/knowledge'
 
 export interface SupportMessage {
@@ -38,7 +39,7 @@ export async function askSupportBot(
 ${SUPPORT_KNOWLEDGE}`,
       messages: msgs.map(m => ({ role: m.role, content: m.content })),
     })
-    const reply = message.content[0]?.type === 'text' ? message.content[0].text.trim() : ''
+    const reply = textOf(message)
     return { reply: reply || '죄송해요, 답변을 만들지 못했어요. 다시 한 번 물어봐 주세요.' }
   } catch (e) {
     console.error('Support bot error:', e)

@@ -1,4 +1,5 @@
 import Sidebar from './dashboard/Sidebar'
+import MobileNav from './MobileNav'
 import { Logo } from './ui/primitives'
 import { getMatchdaDict } from '@/lib/matchda/i18n'
 
@@ -25,9 +26,10 @@ export default function AppShell({
       <Sidebar t={t} userName={userName} userEmail={userEmail} activeKey={activeKey} />
 
       <main className="min-w-0 flex-1">
-        {/* 모바일: 사이드바가 숨겨지므로 로고 노출 */}
-        <header className="sticky top-0 z-20 flex h-[60px] items-center border-b border-[#ECEEF0] bg-white px-4 sm:px-6 lg:hidden">
+        {/* 모바일: 사이드바가 숨겨지므로 로고 + 햄버거 메뉴 노출 */}
+        <header className="sticky top-0 z-20 flex h-[60px] items-center justify-between border-b border-[#ECEEF0] bg-white px-4 sm:px-6 lg:hidden">
           <Logo href="/dashboard" />
+          <MobileNav activeKey={activeKey} />
         </header>
 
         <div className="mx-auto max-w-[1040px] px-4 py-8 sm:px-6 lg:px-9">{children}</div>

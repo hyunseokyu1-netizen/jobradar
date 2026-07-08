@@ -1,4 +1,4 @@
-import { anthropic } from '@/lib/claude'
+import { anthropic, textOf } from '@/lib/claude'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 
@@ -49,7 +49,7 @@ ${jd.slice(0, 3000)}
     messages: [{ role: 'user', content: prompt }],
   })
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : ''
+  const text = textOf(message)
 
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/)

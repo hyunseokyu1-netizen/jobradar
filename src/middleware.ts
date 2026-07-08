@@ -27,8 +27,8 @@ export async function middleware(request: NextRequest) {
 
   // 로그인 페이지는 인증 불필요
   if (pathname.startsWith('/login')) {
-    // 이미 로그인된 경우 대시보드로
-    if (user) return NextResponse.redirect(new URL('/dashboard', request.url))
+    // 이미 로그인된 경우 잡 탐색(첫 화면)으로
+    if (user) return NextResponse.redirect(new URL('/discover', request.url))
     return supabaseResponse
   }
 

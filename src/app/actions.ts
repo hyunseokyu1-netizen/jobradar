@@ -1,5 +1,6 @@
 'use server'
 
+import { textOf } from '@/lib/claude'
 import { revalidatePath } from 'next/cache'
 import { runMatching } from '@/lib/matching'
 import { supabaseAdmin } from '@/lib/supabase-admin'
@@ -69,7 +70,7 @@ ${(job.description ?? `${job.title} at ${job.company}`).slice(0, 2000)}
     }],
   })
 
-  const content = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+  const content = textOf(message)
 
   await supabaseAdmin.from('cover_letters').upsert({
     user_id: profile.id,
@@ -141,7 +142,7 @@ ${content}`,
     }],
   })
 
-  const reviewed = message.content[0].type === 'text' ? message.content[0].text.trim() : content
+  const reviewed = textOf(message) || content
 
   await supabaseAdmin.from('cover_letters').upsert(
     { user_id: profile.id, job_id: jobId, content: reviewed },
@@ -166,7 +167,7 @@ export async function translateCoverLetter(content: string): Promise<{ translati
     }],
   })
 
-  const translation = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+  const translation = textOf(message)
   return { translation }
 }
 
@@ -373,7 +374,7 @@ export async function translateTailoredResume(jobId: string, content: string): P
     }],
   })
 
-  const translation = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+  const translation = textOf(message)
   if (!translation) return { error: '번역에 실패했습니다. 다시 시도해주세요.' }
 
   // 현재 영문(content)과 함께 번역을 저장해 재방문 시 재번역 없이 표시
@@ -1044,7 +1045,7 @@ JSON으로만 응답하세요. 다른 텍스트 금지:
       }],
     })
 
-    const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
+    const raw = textOf(message)
     const jsonMatch = raw.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return { error: '분석 결과를 해석하지 못했어요. 다시 시도해주세요.' }
     const parsed = JSON.parse(jsonMatch[0]) as ParsedJobText
@@ -1189,7 +1190,7 @@ ${bullets.map((b) => `- ${b}`).join('\n')}`
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }],
     })
-    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const text = textOf(message)
     const m = text.match(/\{[\s\S]*\}/)
     if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
     parsed = JSON.parse(m[0])

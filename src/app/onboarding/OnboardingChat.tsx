@@ -130,7 +130,7 @@ export default function OnboardingChat({
     setMode('done')
     pushAi('프로필이 완성됐어요! 프로필 페이지로 이동합니다. 🎉')
     setTimeout(() => {
-      router.push('/profile')
+      router.push('/discover')
       router.refresh()
     }, 1200)
   }

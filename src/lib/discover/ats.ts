@@ -2,6 +2,7 @@
 // 주요 ATS(Greenhouse, Lever, Ashby, SmartRecruiters)는 공개 JSON API를 쓰고,
 // 자체 구축 사이트(Spotify, Apple 등)는 generic 어댑터(HTML + Claude 추출)로 폴백한다.
 
+import { textOf } from '@/lib/claude'
 import { fetchHtml } from '@/lib/scrapers/fetch-html'
 
 export type AtsType = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters' | 'apple' | 'generic'
@@ -233,7 +234,7 @@ ${stripped}`,
     }],
   })
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : ''
+  const text = textOf(message)
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) return []
 

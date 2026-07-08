@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { askSupportBot, type SupportMessage } from '@/app/support-actions'
 
 const GREETING = '안녕하세요! MatchDa 사용법 도우미예요. 무엇을 도와드릴까요? 예: "공고는 어디서 추가하나요?", "영어 이력서 만드는 법"'
@@ -17,6 +18,12 @@ export default function SupportChat() {
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
+
+  // 모바일에서는 플로팅 버튼이 입력창·하단 버튼과 겹치므로 고객센터(/support)에서만 노출.
+  // PC(sm 이상)에서는 모든 페이지에서 노출.
+  const mobileVisible = pathname?.startsWith('/support')
+  const visibility = mobileVisible ? 'flex' : 'hidden sm:flex'
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -41,7 +48,7 @@ export default function SupportChat() {
         type="button"
         aria-label="고객센터 챗봇 열기"
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-[#046C4E] text-white shadow-[0_6px_20px_rgba(4,108,78,0.35)] transition-transform hover:scale-105 active:scale-95"
+        className={`fixed bottom-5 right-5 z-[60] ${visibility} h-14 w-14 items-center justify-center rounded-full bg-[#046C4E] text-white shadow-[0_6px_20px_rgba(4,108,78,0.35)] transition-transform hover:scale-105 active:scale-95`}
       >
         {open ? (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
@@ -52,7 +59,7 @@ export default function SupportChat() {
 
       {/* 채팅 패널 */}
       {open && (
-        <div className="fixed bottom-24 right-5 z-[60] flex h-[520px] w-[calc(100vw-2.5rem)] max-w-[380px] flex-col overflow-hidden rounded-[16px] border border-[#ECEEF0] bg-white shadow-[0_12px_40px_rgba(16,24,40,0.18)]">
+        <div className={`fixed bottom-24 right-5 z-[60] ${visibility} h-[520px] w-[calc(100vw-2.5rem)] max-w-[380px] flex-col overflow-hidden rounded-[16px] border border-[#ECEEF0] bg-white shadow-[0_12px_40px_rgba(16,24,40,0.18)]`}>
           <div className="flex items-center gap-2.5 border-b border-[#F0F2F4] bg-[#046C4E] px-4 py-3 text-white">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-[15px]">💬</div>
             <div>

@@ -3,6 +3,7 @@
 // 리더 프록시는 자체 브라우저 팜에서 페이지를 렌더링해 마크다운으로 돌려주므로,
 // 직접 fetch·헤드리스 브라우저가 모두 막혔을 때 최후의 우회 수단으로 사용한다.
 
+import { textOf } from '@/lib/claude'
 import type { ScrapedJob } from './seek-url'
 
 export async function fetchReaderMarkdown(url: string): Promise<string> {
@@ -47,7 +48,7 @@ ${markdown.slice(0, 40_000)}`,
     }],
   })
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : ''
+  const text = textOf(message)
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('리더 폴백: AI 응답을 해석하지 못했습니다.')
 

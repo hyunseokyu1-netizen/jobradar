@@ -17,7 +17,7 @@ export default async function OnboardingPage({
 
   const profile = await getOrCreateProfile(email)
   // 이미 완료한 유저는 기본적으로 프로필로 보내되, 프로필에서 "다시 작성"으로 들어온 경우(redo)는 허용
-  if (profile?.onboarding_completed && !redo) redirect('/profile')
+  if (profile?.onboarding_completed && !redo) redirect('/discover')
 
   // 다시 작성: 저장된 한국어 프로필을 채팅 답변으로 역변환해 미리 채운다
   const initialAnswers =

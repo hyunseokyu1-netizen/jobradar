@@ -54,7 +54,7 @@ export default function LoginForm() {
       } else if (!data.session) {
         setError('이메일 인증이 필요합니다. 받은편지함을 확인하거나 Supabase에서 이메일 인증을 비활성화해주세요.')
       } else {
-        router.push('/dashboard')
+        router.push('/discover')
         router.refresh()
       }
     } else {
