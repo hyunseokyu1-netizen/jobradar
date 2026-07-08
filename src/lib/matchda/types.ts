@@ -76,6 +76,8 @@ export interface ResumeDocumentData {
 
 export interface ResumeWorkspaceData {
   docTitle: string
+  /** 로그인 유저 이메일 — 연락처 줄의 기준값 (실데이터에서만 제공) */
+  email?: string
   target: {
     company: string
     role: string

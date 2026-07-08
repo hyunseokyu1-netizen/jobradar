@@ -65,7 +65,7 @@ export default async function MatchdaWorkspacePage({
           initialEnDoc={data.translated}
           design={data.design}
           note={data.optimizationNote}
-          contact={data.translated.contact}
+          contact={data.email ?? ''}
           jobContext={{
             title: data.target.role,
             company: data.target.company,

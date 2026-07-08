@@ -158,6 +158,7 @@ export default function WorkspaceResume({
   }
 
   const fileBase = `resume_${(ko.name || 'resume').replace(/\s+/g, '_')}`
+  const fileBaseEn = `resume_${(enDoc.name || ko.name || 'resume').replace(/\s+/g, '_')}`
   const accentHex = design?.accent ?? '#046C4E'
   const koRender = () => studioToRender(ko, contact, 'ko', accentHex)
   const enRender = () => docToRender(enDoc, accentHex)
@@ -211,10 +212,10 @@ export default function WorkspaceResume({
               {busy === 'translate' ? labels.translating : labels.translated}
             </button>
             <div className="flex items-center gap-1.5">
-              <button type="button" onClick={() => downloadResumePdf(renderResumeHtml(enRender()), `${fileBase}_en`)} className={dlBtn}>
+              <button type="button" onClick={() => downloadResumePdf(renderResumeHtml(enRender()), `${fileBaseEn}_en`)} className={dlBtn}>
                 <FileText size={13} /> PDF
               </button>
-              <button type="button" onClick={() => downloadResumeDocx(enRender(), `${fileBase}_en`)} className={dlBtn}>DOCX</button>
+              <button type="button" onClick={() => downloadResumeDocx(enRender(), `${fileBaseEn}_en`)} className={dlBtn}>DOCX</button>
             </div>
           </div>
           <ResumeDocument doc={enDoc} labels={labels.sectionsEn} variant="translated" note={note} design={design} />
@@ -277,21 +278,26 @@ export default function WorkspaceResume({
 
 // 편집 가능한 텍스트 조각 (uncontrolled contentEditable, blur 시 커밋)
 // editKey가 바뀌면 remount되어 AI 수정 결과가 반영된다.
+// ph: 값이 비어있을 때 흐리게 표시되는 안내 문구 (클릭해서 입력 유도)
 function EditableText({
-  v, cls, onCommit, editKey,
+  v, cls, onCommit, editKey, ph,
 }: {
   v: string
   cls: string
   onCommit: (val: string) => void
   editKey: number
+  ph?: string
 }) {
   return (
     <span
       key={editKey}
       contentEditable
       suppressContentEditableWarning
+      data-ph={ph}
       onBlur={e => onCommit(e.currentTarget.textContent ?? '')}
-      className={`${cls} rounded outline-none focus:bg-[#ECFDF3] focus:ring-1 focus:ring-[#CEEBDC]`}
+      className={`${cls} rounded outline-none focus:bg-[#ECFDF3] focus:ring-1 focus:ring-[#CEEBDC] ${
+        ph ? 'empty:before:text-[#C5CBD3] empty:before:content-[attr(data-ph)]' : ''
+      }`}
     >{v}</span>
   )
 }
@@ -330,7 +336,16 @@ function EditableKoDoc({
           <div className="mt-[3px] text-[15px] font-semibold" style={{ color: accent }}>
             <EditableText editKey={editKey} v={ko.title} cls="" onCommit={val => commit(d => ({ ...d, title: val }), val, ko.title)} />
           </div>
-          <div className="mt-[6px] font-[family-name:var(--font-plex-mono)] text-[13px] text-[#98A2B3]">{contact}</div>
+          {/* 연락처 줄: 이메일(고정) · 전화번호(편집) · 링크(편집) — 저장 시 한/영 문서·다운로드에 반영 */}
+          <div className="mt-[6px] font-[family-name:var(--font-plex-mono)] text-[13px] text-[#98A2B3]">
+            {contact}
+            <span className="mx-1.5 text-[#D0D5DD]">·</span>
+            <EditableText editKey={editKey} v={ko.phone} ph="전화번호" cls=""
+              onCommit={val => commit(d => ({ ...d, phone: val }), val, ko.phone)} />
+            <span className="mx-1.5 text-[#D0D5DD]">·</span>
+            <EditableText editKey={editKey} v={ko.links} ph="포트폴리오·GitHub 링크" cls=""
+              onCommit={val => commit(d => ({ ...d, links: val }), val, ko.links)} />
+          </div>
         </div>
 
         {(ko.summary || true) && (

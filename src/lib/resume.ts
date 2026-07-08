@@ -24,6 +24,8 @@ export interface StudioDesign {
 export interface StudioResume {
   name: string
   phone: string
+  /** 포트폴리오·GitHub 등 추가 연락처 링크 (자유 텍스트, ' · ' 구분 표시) */
+  links: string
   title: string
   summary: string
   skills: string[]
@@ -31,6 +33,11 @@ export interface StudioResume {
   experience: StudioExp[]
   education: StudioEdu[]
   design?: StudioDesign
+}
+
+/** 이력서 상단 연락처 줄: 이메일 · 전화번호 · 링크 (빈 값 제외) */
+export function contactLine(email: string, phone?: string, links?: string): string {
+  return [email, phone, links].map(v => v?.trim()).filter(Boolean).join(' · ')
 }
 
 // JSONB 원본을 StudioResume로 정규화
@@ -41,6 +48,7 @@ export function toStudioResume(raw: unknown, fallbackName = '', fallbackPhone = 
   return {
     name: s(r.name) || fallbackName,
     phone: s(r.phone) || fallbackPhone,
+    links: s(r.links),
     title: s(r.title),
     summary: s(r.summary),
     skills: arr<string>(r.skills).filter(v => typeof v === 'string'),
@@ -76,6 +84,7 @@ const KO_LABELS = { summary: '경력 요약', experience: '경력', skills: '스
 const EN_LABELS = { summary: 'Summary', experience: 'Experience', skills: 'Skills', education: 'Education' }
 
 // StudioResume(한/영) → RenderResume (숨김 항목 제외)
+// contact 인자는 이메일 — 전화번호·링크는 이력서 데이터에서 합쳐 연락처 줄을 만든다.
 export function studioToRender(
   r: StudioResume,
   contact: string,
@@ -87,7 +96,7 @@ export function studioToRender(
   return {
     name: r.name,
     title: r.title || exps[0]?.position || '',
-    contact,
+    contact: contactLine(contact, r.phone, r.links),
     summary: r.summary || undefined,
     labels: lang === 'ko' ? KO_LABELS : EN_LABELS,
     experiences: exps.map(e => ({
@@ -145,7 +154,7 @@ export function studioToDoc(r: StudioResume, contact: string): ResumeDocumentDat
   return {
     name: r.name,
     title: r.title || exps[0]?.position || '',
-    contact,
+    contact: contactLine(contact, r.phone, r.links),
     summary: r.summary || undefined,
     experiences: exps.map(e => ({
       org: [e.company, e.position].filter(Boolean).join(' — '),
@@ -165,7 +174,7 @@ export function studioToText(r: StudioResume, contact: string): string {
   const lines: string[] = []
   lines.push(r.name)
   if (r.title) lines.push(r.title)
-  lines.push([contact, r.phone].filter(Boolean).join(' • '))
+  lines.push([contact, r.phone, r.links].filter(Boolean).join(' • '))
   if (r.summary) { lines.push('', 'SUMMARY', r.summary) }
 
   const exps = r.experience.filter(e => !e.hidden)

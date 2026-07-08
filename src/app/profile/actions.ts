@@ -193,6 +193,7 @@ function sanitizeStudio(input: StudioResume): StudioResume {
   return {
     name: s(input.name, 100),
     phone: s(input.phone, 50),
+    links: s(input.links, 200),
     title: s(input.title, 100),
     summary: s(input.summary, 3000),
     skills: arr<string>(input.skills, 60).map(v => s(v, 60)).filter(Boolean),
@@ -370,7 +371,8 @@ export async function syncResumeEnglish(
 규칙:
 - 이력서에 있는 사실만 사용하고 절대 지어내지 마세요.
 - skills 는 입력과 같은 개수·순서로 1:1 번역 (이미 영문인 항목은 그대로).
-- name/phone/period 는 번역하지 않고 원본 표기 유지.
+- name 은 영문 이력서 표기(로마자)로 변환하세요. 예: "유현석" → "Hyunseok Yu". 이미 로마자면 그대로.
+- phone/period 는 번역하지 않고 원본 표기 유지.
 - experience.description 은 줄바꿈(\\n) 구분을 유지하고 줄 수도 동일하게.
 - hidden, hidden_skills, design 필드는 출력하지 마세요.
 
@@ -391,6 +393,7 @@ ${JSON.stringify({ name: ko.name, phone: ko.phone, title: ko.title, summary: ko.
   const en: StudioResume = {
     name: raw.name || ko.name,
     phone: raw.phone || ko.phone,
+    links: ko.links, // URL은 번역 대상이 아니므로 원본 유지
     title: raw.title ?? '',
     summary: raw.summary ?? '',
     skills: Array.isArray(raw.skills) ? raw.skills.map(v => String(v)) : [],

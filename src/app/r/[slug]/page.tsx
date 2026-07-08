@@ -56,8 +56,9 @@ export default async function PublicResumePage({
 
   const resume = toStudioResume(profile.onboarding_en)
 
-  // 공개 이력서에는 연락처(이메일·전화)를 넣지 않는다 — 개인정보 최소화
-  const doc = studioToDoc(resume, '')
+  // 공개 이력서에는 이메일·전화번호를 넣지 않는다 — 개인정보 최소화
+  // (포트폴리오·GitHub 링크는 공개를 전제로 한 정보이므로 유지)
+  const doc = studioToDoc({ ...resume, phone: '' }, '')
 
   // 스튜디오 디자인(폰트·색상·템플릿) 반영 (없으면 기본값)
   const resumeDesign = resume.design ? normalizeResumeDesign(resume.design) : undefined

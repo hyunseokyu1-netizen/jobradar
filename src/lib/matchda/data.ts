@@ -5,7 +5,7 @@
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { normalizeResumeDesign } from './resume-design'
-import { toStudioResume } from '@/lib/resume'
+import { toStudioResume, contactLine } from '@/lib/resume'
 import type {
   ApplicationStatus,
   DashboardSummary,
@@ -167,6 +167,9 @@ interface OnboardingEducation {
   hidden?: boolean
 }
 interface OnboardingResume {
+  name?: string // 영문판(onboarding_en)은 로마자 표기
+  phone?: string
+  links?: string // 포트폴리오·GitHub 등 추가 연락처
   title?: string
   summary?: string
   skills?: string[]
@@ -187,7 +190,7 @@ function expToBullets(description?: string) {
 function buildDoc(
   resume: OnboardingResume,
   name: string,
-  contact: string,
+  email: string,
   fallbackTitle: string
 ): ResumeDocumentData {
   // 스튜디오에서 "포함" 해제(hidden)한 항목·스킬은 문서에서 제외
@@ -195,9 +198,10 @@ function buildDoc(
   const edu = (resume.education ?? []).filter((e) => !e.hidden)
   const hiddenSkills = resume.hidden_skills ?? []
   return {
-    name,
+    // 이력서 데이터에 언어별 이름(영문판은 로마자)이 있으면 우선 사용
+    name: resume.name?.trim() || name,
     title: resume.title || exps[0]?.position || fallbackTitle || '',
-    contact,
+    contact: contactLine(email, resume.phone, resume.links),
     summary: resume.summary || undefined,
     experiences: exps.map((e) => ({
       org: [e.company, e.position].filter(Boolean).join(' — '),
@@ -294,6 +298,7 @@ export async function getMatchdaWorkspace(
 
   return {
     docTitle: enTitle || koTitle || (job.title ?? ''),
+    email: profile.email ?? '',
     target: {
       company: job.company || '',
       role: job.title || '',

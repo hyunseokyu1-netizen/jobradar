@@ -14,6 +14,7 @@ function toStudio(raw: unknown, fallbackName = '', fallbackPhone = ''): StudioRe
   return {
     name: s(r.name) || fallbackName,
     phone: s(r.phone) || fallbackPhone,
+    links: s(r.links),
     title: s(r.title),
     summary: s(r.summary),
     skills: arr<string>(r.skills).filter(v => typeof v === 'string'),
