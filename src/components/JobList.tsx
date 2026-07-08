@@ -661,7 +661,7 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
       {filteredJobs.length === 0 ? (
         <p className="text-[#98A2B3] text-center py-20">해당 상태의 공고가 없습니다.</p>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext id="job-list" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={filteredJobs.map(j => j.id)} strategy={verticalListSortingStrategy}>
             <ul className="space-y-3">
               {filteredJobs.map(job => (

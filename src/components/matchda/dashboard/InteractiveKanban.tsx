@@ -70,6 +70,7 @@ export default function InteractiveKanban({ columns: initial }: { columns: Kanba
 
   return (
     <DndContext
+      id="kanban-board"
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={() => { dragHappened.current = true }}

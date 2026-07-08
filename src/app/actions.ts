@@ -299,6 +299,10 @@ export async function generateTailoredResume(jobId: string): Promise<{ content?:
   const pastContext = await retrievePastResumes(profile.id, jobId, `${job.title} ${job.company} ${jd}`)
   const ragSources = pastContext ? pastContext.split('### 참고 이력서').length - 1 : 0
 
+  // 실제 연락처 — 모델이 이메일·전화를 지어내지 않도록 명시적으로 제공한다
+  const en = (profile.onboarding_en ?? {}) as { links?: string }
+  const realContact = [email, profile.phone, en.links].map((v: unknown) => (typeof v === 'string' ? v.trim() : '')).filter(Boolean).join(' · ')
+
   const { anthropic } = await import('@/lib/claude')
 
   const message = await anthropic.messages.create({
@@ -314,14 +318,16 @@ export async function generateTailoredResume(jobId: string): Promise<{ content?:
 - 회사: ${job.company}
 - 위치: ${job.location ?? ''}
 
-## 채용공고 (JD)
-${jd}
+## 지원자 실제 연락처 (아래 표기를 그대로 사용, 변형·추가 금지)
+${realContact || '(연락처 없음 — 연락처 줄을 아예 출력하지 말 것)'}
 
 ## 원본 이력서 (사실의 유일한 출처)
 ${baseResume.slice(0, 7000)}
 ${pastContext ? `\n## 과거에 유사 공고에 작성한 맞춤 이력서 (표현·강조 방식만 참고, 새로운 사실 추가 금지)\n${pastContext}\n` : ''}
 ## 작성 요구사항
 - **사실은 오직 "원본 이력서"에서만** 가져올 것. 경력·스킬·수치·회사명을 절대 지어내거나 과장하지 말 것
+- **연락처(이메일·전화·링크)는 위 "실제 연락처"만 그대로 사용**할 것. 이메일 주소나 거주지·위치를 절대 지어내지 말 것 (원본에 없는 위치는 출력하지 말 것 — 공고의 근무지를 지원자 위치처럼 쓰지 말 것)
+- **직함은 원본 이력서의 직함을 유지**할 것. 공고 직급(Senior 등)에 맞춰 임의로 올리지 말 것
 - "과거 맞춤 이력서"는 강조점·표현·bullet 스타일을 참고하는 용도이며, 거기서 새로운 사실을 끌어오지 말 것
 - JD의 핵심 요구사항과 키워드에 맞춰 강조점과 항목 순서를 재구성할 것
 - 구성: 이름·연락처 → PROFESSIONAL SUMMARY (3~4줄, 이 포지션 맞춤) → KEY SKILLS (JD 관련 스킬 우선) → WORK EXPERIENCE (JD와 관련된 성과 중심 bullet, 액션 동사로 시작) → EDUCATION 및 기타
