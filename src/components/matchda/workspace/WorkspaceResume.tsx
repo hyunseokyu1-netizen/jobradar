@@ -3,9 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import ResumeDocument from './ResumeDocument'
-import GenerateOptimizationButton from './GenerateOptimizationButton'
 import { Sparkle, FileText } from '../ui/icons'
-import { saveResumeStudio, syncResumeEnglish, chatEditResume } from '@/app/profile/actions'
+import { saveResumeStudio, syncResumeEnglish, chatEditResume, tailorResumeForJob } from '@/app/profile/actions'
 import {
   studioToDoc, studioToRender, docToRender, renderResumeHtml, type StudioResume,
 } from '@/lib/resume'
@@ -17,30 +16,28 @@ type SectionLabels = { summary?: string; experience: string; skills: string; edu
 
 /**
  * 워크스페이스 이력서 패널 — 좌: 한국어 원본(직접 편집 + AI 채팅 수정), 우: 영문(공고 맞춤).
- * 상단에 PDF/DOCX 다운로드, 하단에 AI 어시스턴트 채팅.
+ * 좌측 "이 공고에 맞춰 AI 분석"으로 JD 맞춤 한국어본을 생성 → 검토·수정 →
+ * 우측 "AI 번역·맞춤화(영어)"로 영어 동기화. 상단에 PDF/DOCX 다운로드, 하단에 AI 어시스턴트 채팅.
  */
 export default function WorkspaceResume({
-  jobId,
   initialKo,
   initialEnDoc,
   design,
   note,
-  optimizable,
   contact,
   jobContext,
   labels,
 }: {
-  jobId: string
   initialKo: StudioResume
   initialEnDoc: ResumeDocumentData
   design?: ResumeDesign
   note?: ResumeWorkspaceData['optimizationNote']
-  optimizable: boolean
   contact: string
   jobContext: { title: string; company: string; description: string | null }
   labels: {
     original: string
     translated: string
+    translating: string
     sections: SectionLabels
     sectionsEn: SectionLabels
     optimizeButton: string
@@ -51,7 +48,7 @@ export default function WorkspaceResume({
   const [ko, setKo] = useState<StudioResume>(initialKo)
   const [enDoc, setEnDoc] = useState<ResumeDocumentData>(initialEnDoc)
   const [editKey, setEditKey] = useState(0) // AI 수정 시 contentEditable 강제 remount
-  const [busy, setBusy] = useState<'save' | 'chat' | null>(null)
+  const [busy, setBusy] = useState<'save' | 'chat' | 'tailor' | 'translate' | null>(null)
   const [savedAt, setSavedAt] = useState(false)
   const [dirty, setDirty] = useState(false)
 
@@ -127,6 +124,39 @@ export default function WorkspaceResume({
     router.refresh()
   }
 
+  // "이 공고에 맞춰 AI 분석" — 한국어 원본을 JD에 맞춰 재구성 (번역·저장은 별도 단계)
+  async function handleTailorToJob() {
+    setBusy('tailor')
+    setError('')
+    const res = await tailorResumeForJob(koRef.current, {
+      title: jobContext.title,
+      company: jobContext.company,
+      description: jobContext.description,
+    })
+    setBusy(null)
+    if (res.error) { setError(res.error); return }
+    if (res.ko) {
+      setKo(res.ko)
+      setEditKey(k => k + 1)
+      setDirty(true)
+      setSavedAt(false)
+    }
+  }
+
+  // "AI 번역 · 맞춤화 (영어)" — 현재 한국어를 영어로 재동기화하고 저장까지 함께 처리
+  async function handleTranslate() {
+    setBusy('translate')
+    setError('')
+    const sync = await syncResumeEnglish(koRef.current)
+    setBusy(null)
+    if (sync.error) { setError(sync.error); return }
+    if (sync.en) setEnDoc(studioToDoc(sync.en, contact))
+    setDirty(false)
+    setSavedAt(true)
+    setTimeout(() => setSavedAt(false), 2500)
+    router.refresh()
+  }
+
   const fileBase = `resume_${(ko.name || 'resume').replace(/\s+/g, '_')}`
   const accentHex = design?.accent ?? '#046C4E'
   const koRender = () => studioToRender(ko, contact, 'ko', accentHex)
@@ -151,6 +181,11 @@ export default function WorkspaceResume({
             <div className="flex items-center gap-1.5">
               {savedAt && <span className="text-[11px] text-green-600">✓ 저장됨</span>}
               {dirty && !savedAt && <span className="text-[11px] text-amber-600">저장 안 됨</span>}
+              <button type="button" onClick={handleTailorToJob} disabled={busy !== null}
+                className="flex items-center gap-[6px] rounded-[9px] border border-[#CEEBDC] bg-[#ECFDF3] px-3 py-[7px] text-[13px] font-semibold text-[#046C4E] hover:bg-[#DCF5E8] disabled:opacity-60">
+                <Sparkle size={14} strokeWidth={1.8} />
+                {busy === 'tailor' ? labels.optimizing : labels.optimizeButton}
+              </button>
               <button type="button" onClick={handleSave} disabled={busy !== null}
                 className="rounded-[8px] bg-[#046C4E] px-3 py-[6px] text-[12px] font-semibold text-white hover:bg-[#035A40] disabled:opacity-50">
                 {busy === 'save' ? '저장 중...' : '저장'}
@@ -170,18 +205,16 @@ export default function WorkspaceResume({
         {/* 우: 영문 (공고 맞춤) */}
         <div>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 rounded-lg border border-[#CEEBDC] bg-[#ECFDF3] px-3 py-[6px]">
-              <Sparkle size={14} strokeWidth={1.8} className="text-[#046C4E]" />
-              <span className="text-[13px] font-semibold text-[#046C4E]">{labels.translated}</span>
-            </div>
+            <button type="button" onClick={handleTranslate} disabled={busy !== null}
+              className="flex items-center gap-2 rounded-lg bg-[#046C4E] px-3 py-[6px] text-[13px] font-semibold text-white hover:bg-[#035A40] disabled:opacity-50">
+              <Sparkle size={14} strokeWidth={1.8} />
+              {busy === 'translate' ? labels.translating : labels.translated}
+            </button>
             <div className="flex items-center gap-1.5">
               <button type="button" onClick={() => downloadResumePdf(renderResumeHtml(enRender()), `${fileBase}_en`)} className={dlBtn}>
                 <FileText size={13} /> PDF
               </button>
               <button type="button" onClick={() => downloadResumeDocx(enRender(), `${fileBase}_en`)} className={dlBtn}>DOCX</button>
-              {optimizable && (
-                <GenerateOptimizationButton jobId={jobId} label={labels.optimizeButton} loadingLabel={labels.optimizing} />
-              )}
             </div>
           </div>
           <ResumeDocument doc={enDoc} labels={labels.sectionsEn} variant="translated" note={note} design={design} />

@@ -547,6 +547,102 @@ ${instruction}${jobBlock}`,
 }
 
 /**
+ * 워크스페이스 "이 공고에 맞춰 AI 분석" — 현재 한국어 이력서를 타깃 공고(JD)의
+ * 핵심 요구사항·키워드에 맞춰 강조점과 표현을 재구성한다.
+ * 회사·직함·기간은 원본 그대로 유지하고 성과 서술(description)과 요약·스킬 순서만 조정한다.
+ * 저장은 하지 않는다 — 사용자가 검토·수정 후 "저장" 또는 "AI 번역·맞춤화"로 확정한다.
+ */
+export async function tailorResumeForJob(
+  current: StudioResume,
+  jobContext: { title: string; company: string; description: string | null }
+): Promise<{ ko?: StudioResume; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const ko = sanitizeStudio(current)
+  const visibleExp = ko.experience.filter(e => !e.hidden)
+  if (!visibleExp.length && !ko.summary && !ko.skills.length) {
+    return { error: '먼저 프로필 페이지에서 이력서를 작성해주세요.' }
+  }
+
+  const jd = (jobContext.description ?? `${jobContext.title} at ${jobContext.company}`).slice(0, 3000)
+
+  interface RawKo {
+    title?: string; summary?: string
+    skills?: string[]
+    experience?: { description?: string }[]
+  }
+  let raw: RawKo
+  try {
+    const { anthropic } = await import('@/lib/claude')
+    const message = await anthropic.messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 8000,
+      thinking: { type: 'adaptive' },
+      messages: [{
+        role: 'user',
+        content: `당신은 해외 취업 이력서 컨설턴트입니다. 아래 구직자의 [현재 이력서(한국어)]를 [채용공고] 요구사항에 맞춰 강조점과 표현을 최적화해 다시 작성하세요. JSON으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
+
+형식:
+{
+  "title": "직함",
+  "summary": "경력 요약 (공고와 관련된 강점을 앞세워 3~4문장)",
+  "skills": ["스킬..."],
+  "experience": [{"description": "성과를 줄바꿈(\\n)으로 구분"}]
+}
+
+규칙:
+- 이력서에 있는 사실만 사용하세요. 경력·수치·회사명을 절대 지어내거나 과장하지 마세요.
+- 채용공고의 핵심 요구사항·키워드에 맞춰 강조점과 서술 순서를 재구성하세요.
+- experience 는 원본과 같은 개수·순서로, 각 항목의 description(성과 bullet)만 다시 쓰세요.
+- 모든 텍스트는 한국어로 작성하세요(고유명사·기술 용어 제외).
+
+[채용공고]
+${jobContext.title} @ ${jobContext.company}
+${jd}
+
+[현재 이력서(한국어)]
+${JSON.stringify({
+          title: ko.title,
+          summary: ko.summary,
+          skills: ko.skills,
+          experience: visibleExp.map(e => ({ company: e.company, position: e.position, period: e.period, description: e.description })),
+        })}`,
+      }],
+    })
+    const textBlock = message.content.find(b => b.type === 'text')
+    const text = textBlock?.type === 'text' ? textBlock.text : ''
+    const m = text.match(/\{[\s\S]*\}/)
+    if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
+    raw = JSON.parse(m[0])
+  } catch (e) {
+    console.error('Resume job-tailor error:', e)
+    return { error: '분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
+  }
+
+  // company·position·period는 원본 그대로, description만 AI 결과로 교체 (사실 왜곡 방지)
+  const hiddenExp = ko.experience.filter(e => e.hidden)
+  const nextKo: StudioResume = sanitizeStudio({
+    ...ko,
+    title: raw.title?.trim() || ko.title,
+    summary: raw.summary?.trim() || ko.summary,
+    skills: Array.isArray(raw.skills) && raw.skills.length ? raw.skills.map(String) : ko.skills,
+    experience: [
+      ...visibleExp.map((e, i) => ({
+        ...e,
+        description: raw.experience?.[i]?.description?.trim() || e.description,
+      })),
+      ...hiddenExp,
+    ],
+  })
+
+  return { ko: nextKo }
+}
+
+/**
  * 업로드된 이력서 원문(resume_text)을 구조화 이력서(onboarding_ko/en)로 변환한다.
  * 온보딩 채팅을 건너뛴 유저도 워크스페이스(원본↔영문 비교·AI 최적화)를 쓸 수 있게 하는 연결 고리.
  */

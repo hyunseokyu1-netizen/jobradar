@@ -61,12 +61,10 @@ export default async function MatchdaWorkspacePage({
       {real && jobId ? (
         /* 실데이터: 편집 가능한 한국어 원본 + 영문 + AI 어시스턴트 채팅 */
         <WorkspaceResume
-          jobId={jobId}
           initialKo={data.koStudio ?? toStudioResume(null)}
           initialEnDoc={data.translated}
           design={data.design}
           note={data.optimizationNote}
-          optimizable={!!data.optimizable}
           contact={data.translated.contact}
           jobContext={{
             title: data.target.role,
@@ -76,6 +74,7 @@ export default async function MatchdaWorkspacePage({
           labels={{
             original: t.workspace.originalLabel,
             translated: t.workspace.translatedLabel,
+            translating: t.workspace.translating,
             sections: t.workspace.sections,
             sectionsEn: t.workspace.sectionsEn,
             optimizeButton: t.workspace.optimizeButton,
