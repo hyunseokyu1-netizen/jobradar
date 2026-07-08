@@ -13,9 +13,9 @@ export const FREE_LIMITS = {
 export const PREMIUM_PRICE_LABEL = '$7.99 / 월'
 
 // 결제(구독)가 설정된 환경에서만 무료 한도를 적용한다.
-// STRIPE_PRICE_ID 가 없으면 업그레이드 경로가 없으므로 한도를 강제하지 않는다.
+// NEXT_PUBLIC_PADDLE_PRICE_ID 가 없으면 업그레이드 경로가 없으므로 한도를 강제하지 않는다.
 export function billingEnabled(): boolean {
-  return !!process.env.STRIPE_PRICE_ID
+  return !!process.env.NEXT_PUBLIC_PADDLE_PRICE_ID
 }
 
 /** profile row에서 현재 플랜을 판정 (구독 활성 상태면 premium) */

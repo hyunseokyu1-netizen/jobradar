@@ -97,12 +97,10 @@ function PricingBody({
   isPremium,
   authed,
   success,
-  canceled,
 }: {
   isPremium: boolean
   authed: boolean
   success?: string
-  canceled?: string
 }) {
   return (
     <div className="mx-auto max-w-3xl">
@@ -118,16 +116,11 @@ function PricingBody({
           ✓ 결제가 완료됐어요! 프리미엄 기능이 곧 활성화됩니다.
         </div>
       )}
-      {canceled && (
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          결제가 취소됐어요. 언제든 다시 시작할 수 있습니다.
-        </div>
-      )}
 
       <PlanCards isPremium={isPremium} authed={authed} />
 
       <p className="mt-6 text-center text-xs text-[#98A2B3]">
-        결제는 Stripe로 안전하게 처리됩니다. 구독은 고객 포털에서 언제든 해지할 수 있어요.
+        결제는 Paddle로 안전하게 처리됩니다. 구독은 고객 포털에서 언제든 해지할 수 있어요.
       </p>
     </div>
   )
@@ -136,10 +129,10 @@ function PricingBody({
 export default async function PricingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ success?: string; canceled?: string }>
+  searchParams: Promise<{ success?: string }>
 }) {
   const email = await getAuthUserEmail()
-  const { success, canceled } = await searchParams
+  const { success } = await searchParams
 
   // 비로그인 — 공개 요금제 (랜딩 크롬)
   if (!email) {
@@ -160,7 +153,7 @@ export default async function PricingPage({
 
   return (
     <AppShell activeKey="profile" userName={(profile?.name as string) ?? undefined} userEmail={email}>
-      <PricingBody isPremium={isPremium} authed success={success} canceled={canceled} />
+      <PricingBody isPremium={isPremium} authed success={success} />
     </AppShell>
   )
 }

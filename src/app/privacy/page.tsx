@@ -12,7 +12,7 @@ export default function PrivacyPage() {
         <p>· <b className="text-[#1F2A37]">계정 정보</b>: 이메일 주소, 비밀번호(암호화 저장) 또는 소셜 로그인 식별자</p>
         <p>· <b className="text-[#1F2A37]">프로필 정보</b>: 이름, 전화번호, 희망 직무·지역 등 회원이 입력한 정보</p>
         <p>· <b className="text-[#1F2A37]">이력서 정보</b>: 회원이 업로드하거나 입력한 이력서 내용(경력, 학력, 기술 등)</p>
-        <p>· <b className="text-[#1F2A37]">결제 정보</b>: 결제는 Stripe가 처리하며, 회사는 카드번호를 저장하지 않습니다. 구독 상태와 Stripe 고객 식별자만 보관합니다.</p>
+        <p>· <b className="text-[#1F2A37]">결제 정보</b>: 결제는 Paddle이 처리하며, 회사는 카드번호를 저장하지 않습니다. 구독 상태와 Paddle 고객 식별자만 보관합니다.</p>
         <p>· <b className="text-[#1F2A37]">자동 수집 정보</b>: 접속 기록, 서비스 이용 기록</p>
       </PolicySection>
 
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
         <p>회사는 서비스 제공을 위해 다음 업체에 개인정보 처리를 위탁합니다.</p>
         <p>· <b className="text-[#1F2A37]">Supabase</b> — 데이터베이스 및 인증 (계정·프로필·이력서 데이터 저장)</p>
         <p>· <b className="text-[#1F2A37]">Anthropic</b> — AI 처리 (이력서 번역·분석·매칭 시 이력서와 공고 내용이 Claude API로 전송됨)</p>
-        <p>· <b className="text-[#1F2A37]">Stripe</b> — 결제 처리</p>
+        <p>· <b className="text-[#1F2A37]">Paddle</b> — 결제 처리</p>
         <p>· <b className="text-[#1F2A37]">Vercel</b> — 서비스 호스팅</p>
         <p>· <b className="text-[#1F2A37]">Resend</b> — 이메일 발송</p>
         <p>각 수탁사는 자체 개인정보 보호 정책에 따라 정보를 처리하며, 회사는 위탁 목적 범위 내에서만 정보를 제공합니다.</p>
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
       <PolicySection title="6. 개인정보의 안전성 확보 조치">
         <p>· 비밀번호 암호화 저장, 통신 구간 암호화(HTTPS)</p>
         <p>· 데이터베이스 접근 제어(행 수준 보안) 및 최소 권한 원칙</p>
-        <p>· 결제 정보 미보관 (Stripe PCI-DSS 준수 환경에서 처리)</p>
+        <p>· 결제 정보 미보관 (Paddle PCI-DSS 준수 환경에서 처리)</p>
       </PolicySection>
 
       <PolicySection title="7. 문의처">

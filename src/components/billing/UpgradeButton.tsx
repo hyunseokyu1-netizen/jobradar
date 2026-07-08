@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { createCheckoutSession, createPortalSession } from '@/app/billing-actions'
+import { initializePaddle } from '@paddle/paddle-js'
+import { getBillingContext, createPortalSession } from '@/app/billing-actions'
 
 export default function UpgradeButton({
   mode = 'upgrade',
@@ -15,10 +16,46 @@ export default function UpgradeButton({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  async function handleUpgrade() {
+    const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
+    const priceId = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID
+    if (!token || !priceId) {
+      setError('결제 설정이 아직 준비되지 않았습니다.')
+      return
+    }
+
+    const ctx = await getBillingContext()
+    if (ctx.error || !ctx.email || !ctx.profileId) {
+      setError(ctx.error ?? '오류가 발생했어요.')
+      return
+    }
+
+    const paddle = await initializePaddle({
+      token,
+      environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
+    })
+    if (!paddle) {
+      setError('결제 모듈을 불러오지 못했어요. 잠시 후 다시 시도해주세요.')
+      return
+    }
+
+    paddle.Checkout.open({
+      items: [{ priceId, quantity: 1 }],
+      customer: { email: ctx.email },
+      customData: { profile_id: ctx.profileId },
+      settings: { successUrl: `${window.location.origin}/pricing?success=1` },
+    })
+  }
+
   async function handleClick() {
     setLoading(true)
     setError('')
-    const res = mode === 'manage' ? await createPortalSession() : await createCheckoutSession()
+    if (mode === 'upgrade') {
+      await handleUpgrade()
+      setLoading(false)
+      return
+    }
+    const res = await createPortalSession()
     if (res.error || !res.url) {
       setLoading(false)
       setError(res.error ?? '오류가 발생했어요.')

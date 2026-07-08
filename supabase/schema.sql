@@ -41,17 +41,20 @@ CREATE TABLE IF NOT EXISTS profiles (
   -- 공개 이력서 공유 (/r/<slug>)
   public_slug            TEXT,
   public_resume_enabled  BOOLEAN NOT NULL DEFAULT false,
-  -- 구독(Stripe)
-  plan                   TEXT NOT NULL DEFAULT 'free',      -- 'free' | 'premium'
-  stripe_customer_id     TEXT,
-  stripe_subscription_id TEXT,
-  subscription_status    TEXT,
-  current_period_end     TIMESTAMPTZ,
-  created_at             TIMESTAMPTZ DEFAULT NOW(),
-  updated_at             TIMESTAMPTZ DEFAULT NOW()
+  -- 구독(Paddle) — stripe_* 컬럼은 레거시로 보존(더 이상 안 씀, Migration 017 참고)
+  plan                    TEXT NOT NULL DEFAULT 'free',      -- 'free' | 'premium'
+  stripe_customer_id      TEXT,
+  stripe_subscription_id  TEXT,
+  paddle_customer_id      TEXT,
+  paddle_subscription_id  TEXT,
+  subscription_status     TEXT,
+  current_period_end      TIMESTAMPTZ,
+  created_at              TIMESTAMPTZ DEFAULT NOW(),
+  updated_at              TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_profiles_stripe_customer ON profiles (stripe_customer_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_paddle_customer ON profiles (paddle_customer_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_public_slug ON profiles (public_slug) WHERE public_slug IS NOT NULL;
 
 -- 신규 가입 시 profiles 행 자동 생성
