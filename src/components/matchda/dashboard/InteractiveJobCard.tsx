@@ -12,7 +12,7 @@ const PARSE_FAILED_TITLES = new Set(['제목 파싱 불가', 'Untitled', ''])
 
 /**
  * 인터랙티브 칸반 카드(로그인 실데이터).
- * 카드 본문 클릭 → 워크스페이스, 우상단 상태 드롭다운 → updateMatchStatus.
+ * 카드 본문 클릭 → 워크스페이스, 제목 아래 상태 드롭다운 → updateMatchStatus.
  */
 export default function InteractiveJobCard({
   job,
@@ -39,15 +39,21 @@ export default function InteractiveJobCard({
           : 'border-[#E7EBEE] shadow-[0_1px_2px_rgba(16,24,40,0.04)]'
       }`}
     >
-      <div className="mb-[11px] flex items-start gap-[10px]">
+      <div className="mb-[10px] flex items-start gap-[10px]">
         <MonogramChip brand={job.brand} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-semibold text-[#1F2A37]">{job.role}</div>
+          {/* 회사명은 잘리지 않고 끝까지 표시(줄바꿈 허용) — 상태 배지를 아래로 내려 폭을 확보 */}
           <div className="text-[12px] text-[#98A2B3]">{job.company}</div>
           {PARSE_FAILED_TITLES.has(job.role?.trim() ?? '') && <FixJobButton jobId={job.id} />}
         </div>
-        {job.status && <StatusSelect jobId={job.id} initialStatus={job.status} />}
       </div>
+
+      {job.status && (
+        <div className="mb-[10px] flex justify-end">
+          <StatusSelect jobId={job.id} initialStatus={job.status} />
+        </div>
+      )}
 
       <div className="mb-[10px] flex items-center gap-[5px] text-[12px] text-[#667085]">
         <MapPin size={13} className="text-[#98A2B3]" />
