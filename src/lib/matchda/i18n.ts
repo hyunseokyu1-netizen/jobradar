@@ -65,6 +65,7 @@ const ko = {
     copyright: '© 2026 MatchDa · 매치다',
     terms: '서비스 약관',
     privacy: '개인정보 처리방침',
+    refund: '환불 정책',
     support: '고객센터',
   },
   dashboard: {
@@ -197,6 +198,7 @@ const en: typeof ko = {
     copyright: '© 2026 MatchDa',
     terms: 'Terms of Service',
     privacy: 'Privacy Policy',
+    refund: 'Refund Policy',
     support: 'Support',
   },
   dashboard: {

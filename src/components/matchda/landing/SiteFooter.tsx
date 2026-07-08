@@ -13,6 +13,7 @@ export default function SiteFooter({ t }: { t: Dictionary }) {
       <div className="flex gap-6 text-[14px] text-[#98A2B3]">
         <Link href="/terms" className="hover:text-[#475467]">{t.footer.terms}</Link>
         <Link href="/privacy" className="hover:text-[#475467]">{t.footer.privacy}</Link>
+        <Link href="/refund" className="hover:text-[#475467]">{t.footer.refund}</Link>
         <Link href="/support" className="hover:text-[#475467]">{t.footer.support}</Link>
       </div>
     </footer>
