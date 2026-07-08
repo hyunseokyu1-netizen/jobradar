@@ -35,6 +35,7 @@ export default function AppChrome({
     pathname?.startsWith('/settings') ||
     pathname?.startsWith('/terms') ||
     pathname?.startsWith('/privacy') ||
+    pathname?.startsWith('/refund') ||
     pathname?.startsWith('/support') ||
     pathname?.startsWith('/login') ||
     pathname?.startsWith('/forgot-password') ||
