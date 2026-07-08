@@ -56,7 +56,7 @@ export default async function MatchdaWorkspacePage({
           ) : undefined
         }
       />
-      <OptimizationBanner t={t} data={data} />
+      <OptimizationBanner t={t} data={data} jobId={real && jobId ? jobId : undefined} />
 
       {real && jobId ? (
         /* 실데이터: 편집 가능한 한국어 원본 + 영문 + AI 어시스턴트 채팅 */
