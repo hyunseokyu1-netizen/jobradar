@@ -61,6 +61,7 @@ export default async function MatchdaWorkspacePage({
       {real && jobId ? (
         /* 실데이터: 편집 가능한 한국어 원본 + 영문 + AI 어시스턴트 채팅 */
         <WorkspaceResume
+          jobId={jobId}
           initialKo={data.koStudio ?? toStudioResume(null)}
           initialEnDoc={data.translated}
           design={data.design}

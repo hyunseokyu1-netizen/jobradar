@@ -200,3 +200,32 @@ export function studioToText(r: StudioResume, contact: string): string {
   }
   return lines.join('\n')
 }
+
+// onboarding_ko/en(구조화 이력서 JSONB)에서 사실 기반 평문 텍스트 조립 (resume_text 보완).
+// 원본 이력서를 AI 프롬프트에 근거 자료로 넣을 때 공용으로 쓴다.
+export function structuredResumeText(onboarding: unknown): string {
+  const r = (onboarding && typeof onboarding === 'object' ? onboarding : {}) as Record<string, unknown>
+  const s = (v: unknown) => (typeof v === 'string' ? v : '')
+  const arr = (v: unknown) => (Array.isArray(v) ? v : [])
+  const lines: string[] = []
+  if (s(r.name)) lines.push(s(r.name))
+  if (s(r.title)) lines.push(s(r.title))
+  if (s(r.summary)) lines.push('', 'SUMMARY', s(r.summary))
+  const exps = arr(r.experience) as Record<string, unknown>[]
+  if (exps.length) {
+    lines.push('', 'EXPERIENCE')
+    for (const e of exps) {
+      if (e?.hidden) continue
+      lines.push(`${s(e.company)} — ${s(e.position)} (${s(e.period)})`)
+      if (s(e.description)) lines.push(s(e.description))
+    }
+  }
+  const skills = (arr(r.skills) as string[]).filter(x => typeof x === 'string')
+  if (skills.length) lines.push('', 'SKILLS', skills.join(', '))
+  const edu = arr(r.education) as Record<string, unknown>[]
+  if (edu.length) {
+    lines.push('', 'EDUCATION')
+    for (const e of edu) lines.push(`${s(e.school)} — ${s(e.major)} ${s(e.degree)} (${s(e.period)})`)
+  }
+  return lines.join('\n').trim()
+}

@@ -558,6 +558,7 @@ ${instruction}${jobBlock}`,
  * 저장은 하지 않는다 — 사용자가 검토·수정 후 "저장" 또는 "AI 번역·맞춤화"로 확정한다.
  */
 export async function tailorResumeForJob(
+  jobId: string,
   current: StudioResume,
   jobContext: { title: string; company: string; description: string | null }
 ): Promise<{ ko?: StudioResume; error?: string }> {
@@ -574,6 +575,16 @@ export async function tailorResumeForJob(
   }
 
   const jd = (jobContext.description ?? `${jobContext.title} at ${jobContext.company}`).slice(0, 3000)
+
+  // 원본 이력서 파일 텍스트(구조화 필드에 없는 세부사항이 있을 수 있음) — "맞춤 이력서" 생성과
+  // 동일하게 근거자료로 함께 제공한다.
+  const extraSource = profile.resume_text
+    ? `\n\n[원본 이력서 파일 (추가 근거자료 — 위 구조화 이력서에 없는 세부사항이 있으면 참고, 새 사실은 여기서만 가져올 것)]\n${profile.resume_text.slice(0, 4000)}`
+    : ''
+
+  // RAG: "맞춤 이력서" 생성과 동일하게 과거 맞춤 이력서 코퍼스에서 표현·강조 참고
+  const { retrievePastResumes } = await import('@/lib/resume-rag')
+  const pastContext = await retrievePastResumes(profile.id, jobId, `${jobContext.title} ${jobContext.company} ${jd}`)
 
   interface RawKo {
     title?: string; summary?: string
@@ -594,15 +605,17 @@ export async function tailorResumeForJob(
 형식:
 {
   "title": "직함",
-  "summary": "경력 요약 (공고와 관련된 강점을 앞세워 3~4문장)",
-  "skills": ["스킬..."],
-  "experience": [{"description": "성과를 줄바꿈(\\n)으로 구분"}]
+  "summary": "경력 요약 (공고와 관련된 강점을 앞세워 3~4문장, 설득력 있고 전문적인 어투로)",
+  "skills": ["스킬... (공고 관련 스킬 우선 배치)"],
+  "experience": [{"description": "성과를 줄바꿈(\\n)으로 구분, 각 줄은 행동/성과 동사로 시작"}]
 }
 
 규칙:
 - 이력서에 있는 사실만 사용하세요. 경력·수치·회사명을 절대 지어내거나 과장하지 마세요.
 - 채용공고의 핵심 요구사항·키워드에 맞춰 강조점과 서술 순서를 재구성하세요.
-- experience 는 원본과 같은 개수·순서로, 각 항목의 description(성과 bullet)만 다시 쓰세요.
+- summary는 공고와 가장 관련 높은 강점을 첫 문장에 배치해 설득력 있게 쓰세요(막연한 자기소개 나열 금지).
+- experience 는 원본과 같은 개수·순서로, 각 항목의 description(성과 bullet)만 다시 쓰세요. 밋밋한 업무 나열이 아니라 성과·기여 중심으로 쓰세요.
+- "과거 맞춤 이력서"가 주어지면 표현·강조 스타일만 참고하고, 거기서 새로운 사실을 끌어오지 마세요.
 - 모든 텍스트는 한국어로 작성하세요(고유명사·기술 용어 제외).
 
 [채용공고]
@@ -615,7 +628,7 @@ ${JSON.stringify({
           summary: ko.summary,
           skills: ko.skills,
           experience: visibleExp.map(e => ({ company: e.company, position: e.position, period: e.period, description: e.description })),
-        })}`,
+        })}${extraSource}${pastContext ? `\n\n[과거에 유사 공고에 작성한 맞춤 이력서 — 표현·강조 방식만 참고, 새로운 사실 추가 금지]\n${pastContext}` : ''}`,
       }],
     })
     const textBlock = message.content.find(b => b.type === 'text')

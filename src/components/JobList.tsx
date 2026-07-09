@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
@@ -12,10 +11,8 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import StatusButton, { STATUS_OPTIONS } from './StatusButton'
-import CoverLetterModal from './CoverLetterModal'
 import JdInputModal from './JdInputModal'
 import AppliedResumeModal from './AppliedResumeModal'
-import TailoredResumeModal from './TailoredResumeModal'
 import { deleteJob, matchSingleJob, updateJobMemo, updateAppliedAt, updateJobTitle, updateJobCompany, updateJobLocation, reorderJobs } from '@/app/actions'
 import { PLATFORM_STYLE, type Platform } from '@/lib/detect-platform'
 
@@ -86,13 +83,11 @@ function ScoreBadge({ score, jobId, onMatched }: { score: number | null; jobId: 
 function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem; draggable: boolean; onDelete: (id: string) => void; onUpdate: (id: string, patch: Partial<JobItem>) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: job.id, disabled: !draggable })
   const [deleting, setDeleting] = useState(false)
-  const [showCoverLetter, setShowCoverLetter] = useState(false)
   const [showJdInput, setShowJdInput] = useState(false)
   const [showMemo, setShowMemo] = useState(false)
   const [memo, setMemo] = useState(job.memo ?? '')
   const [savingMemo, setSavingMemo] = useState(false)
   const [showResume, setShowResume] = useState(false)
-  const [showTailoredResume, setShowTailoredResume] = useState(false)
   const [resumeFilename, setResumeFilename] = useState(job.applied_resume_filename ?? '')
   const [resumeText, setResumeText] = useState(job.applied_resume_text ?? '')
   const [appliedAt, setAppliedAt] = useState(job.applied_at ?? '')
@@ -422,18 +417,7 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
             >
               {memo ? '📝 메모' : '메모'}
             </button>
-            <button
-              onClick={() => setShowCoverLetter(true)}
-              className="text-xs border border-[#ECEEF0] rounded-lg px-3 py-1.5 hover:bg-[#F4F6F8] transition-colors"
-            >
-              커버레터
-            </button>
-            <button
-              onClick={() => setShowTailoredResume(true)}
-              className="text-xs border border-emerald-200 text-emerald-600 rounded-lg px-3 py-1.5 hover:bg-emerald-50 transition-colors"
-            >
-              ✦ 맞춤 이력서
-            </button>
+            {/* 커버레터·맞춤 이력서는 워크스페이스로 일원화(WorkspaceActions) — 여기선 제거 */}
             <button
               onClick={() => setShowResume(true)}
               className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${resumeFilename ? 'border-indigo-200 text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'border-[#ECEEF0] hover:bg-[#F4F6F8]'}`}
@@ -509,24 +493,6 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
             onUpdate(job.id, { match_score: score, description: 'updated' })
             setShowJdInput(false)
           }}
-        />
-      )}
-
-      {showCoverLetter && (
-        <CoverLetterModal
-          jobId={job.id}
-          jobTitle={job.title}
-          company={job.company}
-          onClose={() => setShowCoverLetter(false)}
-        />
-      )}
-
-      {showTailoredResume && (
-        <TailoredResumeModal
-          jobId={job.id}
-          jobTitle={job.title}
-          company={job.company}
-          onClose={() => setShowTailoredResume(false)}
         />
       )}
 

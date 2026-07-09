@@ -8,6 +8,8 @@ import { detectPlatform } from '@/lib/detect-platform'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { parseResumeFile } from '@/lib/resume-parser'
 import { planOf, billingEnabled, FREE_LIMITS } from '@/lib/plan'
+import { retrievePastResumes, ragSourceCount } from '@/lib/resume-rag'
+import { structuredResumeText } from '@/lib/resume'
 
 export async function triggerMatching() {
   try {
@@ -171,87 +173,6 @@ export async function translateCoverLetter(content: string): Promise<{ translati
   return { translation }
 }
 
-// ── RAG 검색 헬퍼 ────────────────────────────────────────────
-// JD에서 핵심 키워드 추출 (불용어 제거, 소문자)
-const RAG_STOPWORDS = new Set([
-  'the', 'and', 'for', 'with', 'you', 'our', 'are', 'will', 'that', 'this', 'have', 'has',
-  'from', 'your', 'who', 'all', 'any', 'can', 'not', 'but', 'they', 'their', 'been', 'were',
-  'about', 'into', 'more', 'other', 'such', 'than', 'then', 'them', 'these', 'those', 'work',
-  'role', 'team', 'job', 'per', 'via', 'etc', 'a', 'an', 'to', 'of', 'in', 'on', 'as', 'at', 'is', 'be', 'or', 'we',
-])
-function ragKeywords(text: string): Set<string> {
-  const words = text.toLowerCase().match(/[a-z][a-z+#.-]{2,}/g) ?? []
-  return new Set(words.filter(w => !RAG_STOPWORDS.has(w)))
-}
-function ragScore(text: string, kws: Set<string>): number {
-  const words = text.toLowerCase().match(/[a-z][a-z+#.-]{2,}/g) ?? []
-  let s = 0
-  for (const w of words) if (kws.has(w)) s++
-  return s
-}
-
-/**
- * RAG 검색: 사용자의 과거 맞춤 이력서 코퍼스에서 이번 JD에 가장 관련된 항목을 골라
- * 표현·강조 참고용 컨텍스트로 반환한다. (현재 공고는 제외, 상위 3건)
- */
-async function retrievePastResumes(profileId: string, jobId: string, jd: string): Promise<string> {
-  const { data: past } = await supabaseAdmin
-    .from('tailored_resumes')
-    .select('job_id, content')
-    .eq('user_id', profileId)
-    .neq('job_id', jobId)
-    .not('content', 'is', null)
-    .limit(30)
-  if (!past?.length) return ''
-
-  // 관련 공고 제목 매핑
-  const jobIds = past.map(p => p.job_id)
-  const { data: jobRows } = await supabaseAdmin
-    .from('jobs')
-    .select('id, title, company')
-    .in('id', jobIds)
-  const titleMap = new Map((jobRows ?? []).map(j => [j.id, `${j.title}${j.company ? ` @ ${j.company}` : ''}`]))
-
-  const kws = ragKeywords(jd)
-  const ranked = past
-    .map(p => ({ ...p, score: ragScore(p.content ?? '', kws) }))
-    .sort((a, b) => b.score - a.score)
-    .filter(p => p.score > 0)
-    .slice(0, 3)
-  if (!ranked.length) return ''
-
-  return ranked
-    .map((p, i) => `### 참고 이력서 ${i + 1} — 유사 공고 "${titleMap.get(p.job_id) ?? '이전 공고'}"에 작성했던 버전\n${(p.content ?? '').slice(0, 2500)}`)
-    .join('\n\n')
-}
-
-// onboarding_en(구조화 영문 이력서)에서 사실 기반 텍스트 조립 (resume_text 보완)
-function structuredResumeText(onboardingEn: unknown): string {
-  const r = (onboardingEn && typeof onboardingEn === 'object' ? onboardingEn : {}) as Record<string, unknown>
-  const s = (v: unknown) => (typeof v === 'string' ? v : '')
-  const arr = (v: unknown) => (Array.isArray(v) ? v : [])
-  const lines: string[] = []
-  if (s(r.name)) lines.push(s(r.name))
-  if (s(r.title)) lines.push(s(r.title))
-  if (s(r.summary)) lines.push('', 'SUMMARY', s(r.summary))
-  const exps = arr(r.experience) as Record<string, unknown>[]
-  if (exps.length) {
-    lines.push('', 'EXPERIENCE')
-    for (const e of exps) {
-      if (e?.hidden) continue
-      lines.push(`${s(e.company)} — ${s(e.position)} (${s(e.period)})`)
-      if (s(e.description)) lines.push(s(e.description))
-    }
-  }
-  const skills = (arr(r.skills) as string[]).filter(x => typeof x === 'string')
-  if (skills.length) lines.push('', 'SKILLS', skills.join(', '))
-  const edu = arr(r.education) as Record<string, unknown>[]
-  if (edu.length) {
-    lines.push('', 'EDUCATION')
-    for (const e of edu) lines.push(`${s(e.school)} — ${s(e.major)} ${s(e.degree)} (${s(e.period)})`)
-  }
-  return lines.join('\n').trim()
-}
 
 export async function generateTailoredResume(jobId: string): Promise<{ content?: string; ragSources?: number; error?: string }> {
   const email = await getAuthUserEmail()
@@ -298,7 +219,7 @@ export async function generateTailoredResume(jobId: string): Promise<{ content?:
 
   // RAG: 과거 맞춤 이력서 코퍼스에서 이 JD에 관련된 표현·강조 검색
   const pastContext = await retrievePastResumes(profile.id, jobId, `${job.title} ${job.company} ${jd}`)
-  const ragSources = pastContext ? pastContext.split('### 참고 이력서').length - 1 : 0
+  const ragSources = ragSourceCount(pastContext)
 
   // 실제 연락처 — 모델이 이메일·전화를 지어내지 않도록 명시적으로 제공한다
   const en = (profile.onboarding_en ?? {}) as { links?: string }

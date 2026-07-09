@@ -20,6 +20,7 @@ type SectionLabels = { summary?: string; experience: string; skills: string; edu
  * 우측 "AI 번역·맞춤화(영어)"로 영어 동기화. 상단에 PDF/DOCX 다운로드, 하단에 AI 어시스턴트 채팅.
  */
 export default function WorkspaceResume({
+  jobId,
   initialKo,
   initialEnDoc,
   design,
@@ -28,6 +29,7 @@ export default function WorkspaceResume({
   jobContext,
   labels,
 }: {
+  jobId: string
   initialKo: StudioResume
   initialEnDoc: ResumeDocumentData
   design?: ResumeDesign
@@ -128,7 +130,7 @@ export default function WorkspaceResume({
   async function handleTailorToJob() {
     setBusy('tailor')
     setError('')
-    const res = await tailorResumeForJob(koRef.current, {
+    const res = await tailorResumeForJob(jobId, koRef.current, {
       title: jobContext.title,
       company: jobContext.company,
       description: jobContext.description,
