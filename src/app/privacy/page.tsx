@@ -2,7 +2,10 @@ import StaticPageShell, { PolicySection } from '@/components/matchda/landing/Sta
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: '개인정보 처리방침 — MatchDa' }
+export const metadata = {
+  title: '개인정보 처리방침',
+  description: 'MatchDa가 수집하는 개인정보 항목, 이용 목적, 보유 기간, 이용자의 권리를 안내합니다.',
+}
 
 export default function PrivacyPage() {
   return (

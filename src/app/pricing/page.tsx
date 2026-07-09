@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { getMatchdaDict } from '@/lib/matchda/i18n'
 import { planOf, FREE_LIMITS, PREMIUM_PRICE_LABEL } from '@/lib/plan'
@@ -8,6 +9,12 @@ import LandingHeader from '@/components/matchda/landing/LandingHeader'
 import SiteFooter from '@/components/matchda/landing/SiteFooter'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: '요금제',
+  description:
+    `무료로 시작해 맞춤 이력서 ${FREE_LIMITS.tailoredResumes}개까지 체험하고, 프리미엄으로 업그레이드하면 채용페이지 등록·맞춤 이력서·커버레터를 무제한으로 이용할 수 있습니다.`,
+}
 
 const CHECK = '✓'
 
