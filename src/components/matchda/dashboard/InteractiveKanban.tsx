@@ -34,6 +34,14 @@ export interface KanbanColumnView {
 export default function InteractiveKanban({ columns: initial }: { columns: KanbanColumnView[] }) {
   const router = useRouter()
   const [columns, setColumns] = useState(initial)
+  // 서버가 새 props(initial)를 내려줄 때마다(router.refresh 등) 로컬 state를 동기화한다.
+  // useState(initial)은 마운트 시 한 번만 반영되므로, 그 이후의 서버 리프레시(예: 공고
+  // 직접 추가·삭제)가 이 컴포넌트에 반영되려면 렌더 중 동기화가 필요하다.
+  const [prevInitial, setPrevInitial] = useState(initial)
+  if (initial !== prevInitial) {
+    setPrevInitial(initial)
+    setColumns(initial)
+  }
   // 드래그 직후 발생하는 click이 카드 클릭(워크스페이스 이동)으로 새지 않게 차단
   const dragHappened = useRef(false)
 
