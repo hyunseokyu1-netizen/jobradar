@@ -1,0 +1,5 @@
+- [jobs 테이블은 전역 공유 카탈로그](jobs-table-no-user-id.md) — supabaseAdmin으로 `jobs` 테이블을 `.eq('id', jobId)`만으로 조회/수정해도 위반 아님
+- [스킬 자동완성 도입 (SkillChipInput/skills.ts)](skill-autocomplete-feature.md) — 온보딩·프로필 스킬 입력 UX 변경 배경
+- [리더 프록시(r.jina.ai) 스크래핑 폴백](reader-proxy-scraping-fallback.md) — Seek/Indeed 등 봇 차단 우회용 최후 수단
+- [MatchDa 디자인 토큰 마이그레이션](matchda-design-tokens.md) — zinc-* 유틸리티 → 브랜드 hex 컬러 치환 작업 진행 중
+- [기존 ESLint 이슈는 선반영 상태](preexisting-lint-issues.md) — OnboardingChat set-state-in-effect, ats.ts any 등은 새 위반 아님, 신규 코드가 답습만 함
