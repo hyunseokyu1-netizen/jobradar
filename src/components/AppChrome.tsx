@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import OnboardingBanner from '@/components/OnboardingBanner'
 
@@ -50,8 +51,9 @@ export default function AppChrome({
     <>
       <header className="border-b border-zinc-200 bg-white">
         <nav className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="font-bold text-lg tracking-tight">
-            🎯 MatchDa
+          <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
+            <Image src="/matchda-mark.png" alt="" width={24} height={24} className="rounded-md" />
+            MatchDa
           </Link>
           {userEmail ? (
             <div className="flex items-center gap-4 text-sm font-medium text-zinc-600">
