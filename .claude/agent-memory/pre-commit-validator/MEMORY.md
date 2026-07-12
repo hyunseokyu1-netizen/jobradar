@@ -3,3 +3,4 @@
 - [리더 프록시(r.jina.ai) 스크래핑 폴백](reader-proxy-scraping-fallback.md) — Seek/Indeed 등 봇 차단 우회용 최후 수단
 - [MatchDa 디자인 토큰 마이그레이션](matchda-design-tokens.md) — zinc-* 유틸리티 → 브랜드 hex 컬러 치환 작업 진행 중
 - [기존 ESLint 이슈는 선반영 상태](preexisting-lint-issues.md) — OnboardingChat set-state-in-effect, ats.ts any 등은 새 위반 아님, 신규 코드가 답습만 함
+- [로그인 후 온보딩 리다이렉트 패턴](post-login-onboarding-redirect.md) — postLoginPath()/auth callback/LoginForm이 onboarding_completed로 분기, analyzeResumeFile 재사용
