@@ -71,6 +71,12 @@ export default function PresetCompanies() {
           )
         })}
       </div>
+      {busy && (
+        <p className="mt-2 text-xs text-[#667085]">
+          <span className="animate-pulse">⟳</span> 페이지 접속 → 공고 추출 → AI 채점 순서로 진행됩니다.
+          페이지에 따라 2~3분 걸릴 수 있어요. 이 화면을 유지해주세요.
+        </p>
+      )}
     </section>
   )
 }

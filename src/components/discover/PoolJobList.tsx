@@ -28,7 +28,7 @@ function timeAgo(dateStr: string): string {
 }
 
 /**
- * 잡 탐색 — 공유 공고 풀(아직 지원현황에 없는 jobs). '관리 보내기'로 지원현황에 추가.
+ * 잡 탐색 — 공유 공고 풀(아직 지원현황에 없는 jobs). '지원 현황에 추가'로 지원현황에 추가.
  */
 export default function PoolJobList({
   jobs,
@@ -141,7 +141,7 @@ export default function PoolJobList({
                       : 'bg-[#046C4E] text-white hover:bg-[#035A40] disabled:opacity-50'
                   }`}
                 >
-                  {sent ? '✓ 보냄' : addingId === job.id ? '보내는 중…' : '관리 보내기'}
+                  {sent ? '✓ 추가됨' : addingId === job.id ? '추가하는 중…' : '+ 지원 현황에 추가'}
                 </button>
               </div>
             </div>

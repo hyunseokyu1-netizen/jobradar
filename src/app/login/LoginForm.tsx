@@ -66,7 +66,12 @@ export default function LoginForm() {
         return
       }
 
-      const { data, error } = await supabase.auth.signUp({ email, password })
+      // 인증 링크 → /auth/callback: 세션 교환으로 자동 로그인 후 온보딩으로 이동 (재로그인 왕복 제거)
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      })
       if (error) {
         setError(
           error.message.includes('already registered')
@@ -77,7 +82,7 @@ export default function LoginForm() {
         // 2차 방어: 기가입 이메일이면 Supabase가 identities를 비워 보낸다
         setError('이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해주세요.')
       } else {
-        setMessage('확인 메일을 보냈어요. 메일함(스팸함 포함)에서 인증을 완료해주세요.')
+        setMessage('확인 메일을 보냈어요. 메일함(스팸함 포함)에서 링크를 누르면 자동으로 로그인됩니다.')
       }
     }
 

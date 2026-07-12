@@ -363,7 +363,7 @@ export default function DiscoveredJobList({
                       disabled={!!addingId}
                       className="text-xs bg-[#046C4E] text-white px-3 py-1.5 rounded-lg hover:bg-[#035A40] disabled:opacity-40 transition-colors whitespace-nowrap"
                     >
-                      {addingId === job.id ? addingStep : '+ 지원 관리에 추가'}
+                      {addingId === job.id ? addingStep : '+ 지원 현황에 추가'}
                     </button>
                     <button
                       onClick={() => handleDismiss(job.id)}

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import AddSourceForm from '@/components/discover/AddSourceForm'
+import GettingStartedGuide from '@/components/discover/GettingStartedGuide'
 import PresetCompanies from '@/components/discover/PresetCompanies'
 import SourceList, { type SourceItem } from '@/components/discover/SourceList'
 import DiscoveredJobList, { type DiscoveredJobItem } from '@/components/discover/DiscoveredJobList'
@@ -51,7 +52,7 @@ export default async function DiscoverPage({
     source_name: sourceNameMap.get(j.source_id) ?? '?',
   }))
 
-  // 공유 공고 풀 — 아직 지원현황(matches)에 없는 jobs. '관리 보내기'로 지원현황에 추가
+  // 공유 공고 풀 — 아직 지원현황(matches)에 없는 jobs. '지원 현황에 추가'로 지원현황에 추가
   const { data: myMatches } = await supabaseAdmin
     .from('matches')
     .select('job_id')
@@ -73,13 +74,20 @@ export default async function DiscoverPage({
         </p>
       </div>
 
+      {(sources ?? []).length === 0 && (
+        <GettingStartedGuide profileDone={!!profile.onboarding_completed} />
+      )}
+
       <AddSourceForm />
       <PresetCompanies />
       <SourceList sources={(sources ?? []) as SourceItem[]} />
 
       {jobs.length > 0 && (
         <section className="mb-8">
-          <h2 className="mb-3 text-base font-semibold text-[#1F2A37]">내 채용페이지 수집 공고</h2>
+          <h2 className="mb-1 text-base font-semibold text-[#1F2A37]">내 채용페이지 수집 공고</h2>
+          <p className="mb-3 text-xs text-[#98A2B3]">
+            내가 등록한 채용페이지에서 수집한 공고입니다. 내 이력서 기준 매칭 점수순으로 보여드려요.
+          </p>
           <DiscoveredJobList jobs={jobs} initialSearch={initialSearch} />
         </section>
       )}
@@ -87,7 +95,7 @@ export default async function DiscoverPage({
       <section>
         <h2 className="mb-1 text-base font-semibold text-[#1F2A37]">전체 수집 공고</h2>
         <p className="mb-3 text-xs text-[#98A2B3]">
-          수집된 공고를 둘러보고 &quot;관리 보내기&quot;로 지원 현황에 추가하세요.
+          매치다에 모인 모든 공고입니다. 마음에 드는 공고를 &quot;지원 현황에 추가&quot;하면 맞춤 이력서·커버레터를 만들 수 있어요.
         </p>
         <PoolJobList jobs={poolJobs} initialSearch={initialSearch} />
       </section>

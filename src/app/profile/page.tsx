@@ -47,7 +47,7 @@ export default async function ProfilePage() {
   return (
     <AppShell activeKey="profile" userName={(profile?.name as string) ?? undefined} userEmail={email}>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">이력서 스튜디오</h1>
+        <h1 className="text-2xl font-bold">내 이력서</h1>
         <p className="mt-0.5 text-sm text-[#98A2B3]">
           한국어로 편집하면 실시간으로 미리보고, 영어로 동기화해 매칭·커버레터에 사용합니다.
         </p>
