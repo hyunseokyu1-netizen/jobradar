@@ -218,7 +218,8 @@ export default function OnboardingChat({
   const progress = Math.min(stepIndex + 1, STEPS.length)
 
   return (
-    <div className="bg-white rounded-2xl border border-[#ECEEF0] shadow-[0_1px_2px_rgba(16,24,40,0.04)] flex flex-col h-[70vh]">
+    // dvh: 모바일 키보드가 올라와도 입력창이 가려지지 않도록 동적 뷰포트 기준
+    <div className="bg-white rounded-2xl border border-[#ECEEF0] shadow-[0_1px_2px_rgba(16,24,40,0.04)] flex flex-col h-[70dvh]">
       {/* 진행 바 */}
       <div className="px-5 pt-4">
         <div className="flex items-center justify-between text-xs text-[#98A2B3] mb-1.5">

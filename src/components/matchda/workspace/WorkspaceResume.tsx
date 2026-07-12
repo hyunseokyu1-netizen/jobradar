@@ -53,6 +53,9 @@ export default function WorkspaceResume({
   const [busy, setBusy] = useState<'save' | 'chat' | 'tailor' | 'translate' | null>(null)
   const [savedAt, setSavedAt] = useState(false)
   const [dirty, setDirty] = useState(false)
+  // 모바일(lg 미만): 원본/영문 탭 전환 + AI 채팅 하단 시트. lg 이상에서는 상태 무관하게 둘 다 표시.
+  const [mobilePane, setMobilePane] = useState<'ko' | 'en'>('ko')
+  const [chatOpen, setChatOpen] = useState(false)
 
   // 핸들러가 최신 ko를 읽도록 ref 동기화 (blur 커밋 직후 클릭 시 stale 방지)
   const koRef = useRef(ko)
@@ -170,11 +173,28 @@ export default function WorkspaceResume({
 
   const dlBtn = 'flex items-center gap-1 rounded-[8px] border border-[#E2E6EA] bg-white px-2.5 py-[6px] text-[12px] font-semibold text-[#475467] hover:bg-[#F4F6F8]'
 
+  const tabBtn = (active: boolean) =>
+    `flex-1 rounded-[8px] py-2 text-[13px] font-semibold transition-colors ${
+      active ? 'bg-white text-[#046C4E] shadow-[0_1px_2px_rgba(16,24,40,0.08)]' : 'text-[#667085]'
+    }`
+
   return (
     <>
-      <div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-[22px] px-4 pb-6 pt-6 sm:px-7 lg:grid-cols-2">
+      {/* 모바일 탭: 원본/영문 전환 (lg 이상은 2단 병렬이므로 숨김) */}
+      <div className="mx-auto max-w-[1320px] px-4 pt-4 sm:px-7 lg:hidden">
+        <div className="flex gap-1 rounded-[10px] bg-[#E7EBEE] p-1">
+          <button type="button" onClick={() => setMobilePane('ko')} className={tabBtn(mobilePane === 'ko')}>
+            한국어 원본
+          </button>
+          <button type="button" onClick={() => setMobilePane('en')} className={tabBtn(mobilePane === 'en')}>
+            영문 이력서
+          </button>
+        </div>
+      </div>
+
+      <div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-[22px] px-4 pb-32 pt-4 sm:px-7 lg:grid-cols-2 lg:pb-6 lg:pt-6">
         {/* 좌: 한국어 원본 (편집 가능) */}
-        <div>
+        <div className={mobilePane === 'ko' ? '' : 'hidden lg:block'}>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 rounded-lg border border-[#E2E6EA] bg-white px-3 py-[6px]">
               <span className="h-[7px] w-[7px] rounded-full bg-[#98A2B3]" />
@@ -206,7 +226,7 @@ export default function WorkspaceResume({
         </div>
 
         {/* 우: 영문 (공고 맞춤) */}
-        <div>
+        <div className={mobilePane === 'en' ? '' : 'hidden lg:block'}>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <button type="button" onClick={handleTranslate} disabled={busy !== null}
               className="flex items-center gap-2 rounded-lg bg-[#046C4E] px-3 py-[6px] text-[13px] font-semibold text-white hover:bg-[#035A40] disabled:opacity-50">
@@ -224,20 +244,32 @@ export default function WorkspaceResume({
         </div>
       </div>
 
-      {/* AI 어시스턴트 채팅 */}
-      <div className="mx-auto max-w-[1320px] px-4 pb-20 sm:px-7">
-        <div className="rounded-[16px] border border-[#E7EBEE] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-          <div className="flex items-center gap-2 border-b border-[#F0F2F4] px-5 py-3">
+      {/* AI 어시스턴트 채팅 — 모바일: 하단 고정 시트(헤더 탭으로 열고 닫기), lg 이상: 본문 하단 카드 */}
+      <div className="fixed inset-x-0 bottom-0 z-30 lg:static lg:z-auto lg:mx-auto lg:max-w-[1320px] lg:px-7 lg:pb-20">
+        <div className="rounded-t-[16px] border border-[#E7EBEE] bg-white shadow-[0_-6px_24px_rgba(16,24,40,0.10)] lg:rounded-[16px] lg:shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+          <button
+            type="button"
+            onClick={() => setChatOpen(o => !o)}
+            aria-expanded={chatOpen}
+            className="flex w-full items-center gap-2 border-b border-[#F0F2F4] px-5 py-3 text-left lg:pointer-events-none"
+          >
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ECFDF3]">
               <Sparkle size={15} strokeWidth={1.8} className="text-[#046C4E]" />
             </span>
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="text-[14px] font-bold text-[#101828]">이력서 AI 어시스턴트</div>
-              <div className="text-[11px] text-[#98A2B3]">대화로 이력서를 수정하면 좌·우 패널이 함께 갱신됩니다</div>
+              <div className="truncate text-[11px] text-[#98A2B3]">
+                <span className="lg:hidden">대화로 수정하면 위 이력서가 함께 갱신됩니다</span>
+                <span className="hidden lg:inline">대화로 이력서를 수정하면 좌·우 패널이 함께 갱신됩니다</span>
+              </div>
             </div>
-          </div>
+            <span className={`text-[#98A2B3] transition-transform lg:hidden ${chatOpen ? 'rotate-180' : ''}`}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m18 15-6-6-6 6" /></svg>
+            </span>
+          </button>
 
-          <div ref={chatRef} className="max-h-[280px] space-y-3 overflow-y-auto px-5 py-4">
+          <div className={chatOpen ? 'block' : 'hidden lg:block'}>
+          <div ref={chatRef} className="max-h-[36dvh] space-y-3 overflow-y-auto px-5 py-4 lg:max-h-[280px]">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed ${
@@ -271,6 +303,7 @@ export default function WorkspaceResume({
                 보내기
               </button>
             </div>
+          </div>
           </div>
         </div>
       </div>
