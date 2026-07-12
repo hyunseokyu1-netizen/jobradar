@@ -43,8 +43,6 @@ export default function LoginForm() {
 
     if (mode === 'login') {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-      const log = { error: error?.message ?? null, hasSession: !!data.session, userEmail: data.user?.email ?? null, confirmedAt: data.user?.email_confirmed_at ?? null }
-      localStorage.setItem('__login_debug__', JSON.stringify(log))
       if (error) {
         const messageMap: Record<string, string> = {
           'Invalid login credentials': '이메일 또는 비밀번호가 올바르지 않습니다.',
@@ -52,9 +50,11 @@ export default function LoginForm() {
         }
         setError(messageMap[error.message] ?? error.message)
       } else if (!data.session) {
-        setError('이메일 인증이 필요합니다. 받은편지함을 확인하거나 Supabase에서 이메일 인증을 비활성화해주세요.')
+        setError('이메일 인증이 필요합니다. 받은편지함(스팸함 포함)에서 인증 메일을 확인해주세요.')
       } else {
-        router.push('/discover')
+        // 온보딩 미완료 유저는 이력서 작성부터 (완료 유저는 잡 탐색으로)
+        const { postLoginPath } = await import('@/app/auth-actions')
+        router.push(await postLoginPath())
         router.refresh()
       }
     } else {

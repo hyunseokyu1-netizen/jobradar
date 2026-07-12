@@ -16,6 +16,18 @@ export async function getAuthUser() {
 }
 
 /**
+ * 로그인 직후 목적지 결정.
+ * 온보딩(이력서 프로필) 미완료 유저는 매칭이 무의미하므로 온보딩으로 보낸다.
+ */
+export async function postLoginPath(): Promise<string> {
+  const { getAuthUserEmail, getOrCreateProfile } = await import('@/lib/auth-helpers')
+  const email = await getAuthUserEmail()
+  if (!email) return '/login'
+  const profile = await getOrCreateProfile(email)
+  return profile?.onboarding_completed ? '/discover' : '/onboarding'
+}
+
+/**
  * 회원가입 전 이메일 중복 검사.
  * 주의: GoTrue admin API의 email 쿼리 필터는 무시되므로(전체 반환),
  * 반드시 페이지네이션 순회 후 로컬에서 정확히 매칭한다.

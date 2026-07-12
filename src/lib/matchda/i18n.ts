@@ -22,12 +22,9 @@ const ko = {
     titleLine2: '여기서 시작됩니다.',
     subhead:
       '한국어 이력서를 전문가 수준의 영어로 번역하고, 전 세계 채용 공고에 맞춰 자동으로 최적화하세요.',
-    searchCountry: '전체 국가',
+    searchCountry: '호주 · 뉴질랜드',
     searchPlaceholder: '직무, 회사 또는 기술 검색',
     searchButton: '검색',
-    trustPrefix: '이미 ',
-    trustCount: '12,000명',
-    trustSuffix: '의 한국 전문가가 함께합니다',
     freeNote: '맞춤 이력서 2개 무료 체험 · 카드 등록 없이 시작',
     floatRealtime: '실시간',
     floatNewMatches: '새 매칭 3건',
@@ -35,10 +32,10 @@ const ko = {
     floatTranslatedSub: '영어 · 방금 전',
   },
   heroB: {
-    subheadLine1: '국가, 직무 또는 기술로 전 세계 채용 공고를 검색하세요.',
+    subheadLine1: '관심 회사의 채용 공고를 자동 수집하고 직무·기술로 검색하세요.',
     subheadLine2: 'AI가 당신의 이력서를 번역하고 맞춤 최적화합니다.',
     popularLabel: '인기 검색',
-    popularChips: ['베를린 · 백엔드', '원격 근무', '싱가포르 PM', '데이터 분석'],
+    popularChips: ['시드니 · 백엔드', '멜번 · 풀스택', '오클랜드 · 데이터', '원격 근무'],
   },
   features: [
     {
@@ -56,10 +53,10 @@ const ko = {
   ],
   featureMore: '자세히 보기',
   stats: [
-    { value: '45개국+', label: '해외 채용 공고' },
-    { value: '12,000+', label: '활동 중인 사용자' },
-    { value: '81%', label: '평균 직무 매칭률' },
-    { value: '3분', label: '평균 이력서 번역 시간' },
+    { value: 'AI 번역', label: '한국어 이력서 → 전문가 수준 영어' },
+    { value: '4종 ATS', label: 'Greenhouse · Lever 등 채용페이지 자동 인식' },
+    { value: '공고별', label: '맞춤 이력서 · 커버레터 자동 생성' },
+    { value: '₩0', label: '무료로 시작 · 카드 등록 불필요' },
   ],
   footer: {
     copyright: '© 2026 MatchDa · 매치다',
@@ -155,12 +152,9 @@ const en: typeof ko = {
     titleLine2: 'starts right here.',
     subhead:
       'Translate your Korean resume into professional English and automatically tailor it to job postings around the world.',
-    searchCountry: 'All countries',
+    searchCountry: 'Australia · NZ',
     searchPlaceholder: 'Search role, company or skill',
     searchButton: 'Search',
-    trustPrefix: 'Already ',
-    trustCount: '12,000',
-    trustSuffix: ' Korean professionals on board',
     freeNote: '2 tailored resumes free · no card required',
     floatRealtime: 'Live',
     floatNewMatches: '3 new matches',
@@ -168,10 +162,10 @@ const en: typeof ko = {
     floatTranslatedSub: 'English · just now',
   },
   heroB: {
-    subheadLine1: 'Search jobs worldwide by country, role or skill.',
+    subheadLine1: 'Auto-collect postings from companies you follow and search by role or skill.',
     subheadLine2: 'AI translates and tailors your resume to each role.',
     popularLabel: 'Popular',
-    popularChips: ['Berlin · Backend', 'Remote', 'Singapore PM', 'Data Analysis'],
+    popularChips: ['Sydney · Backend', 'Melbourne · Full-stack', 'Auckland · Data', 'Remote'],
   },
   features: [
     {
@@ -189,10 +183,10 @@ const en: typeof ko = {
   ],
   featureMore: 'Learn more',
   stats: [
-    { value: '45+', label: 'Countries with jobs' },
-    { value: '12,000+', label: 'Active users' },
-    { value: '81%', label: 'Average match rate' },
-    { value: '3 min', label: 'Average translation time' },
+    { value: 'AI', label: 'Korean resume → professional English' },
+    { value: '4 ATS', label: 'Greenhouse, Lever & more auto-detected' },
+    { value: 'Per-job', label: 'Tailored resumes & cover letters' },
+    { value: '$0', label: 'Free to start · no card required' },
   ],
   footer: {
     copyright: '© 2026 MatchDa',

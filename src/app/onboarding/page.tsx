@@ -1,7 +1,9 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { Logo } from '@/components/matchda/ui/primitives'
 import OnboardingChat from './OnboardingChat'
+import ResumeUploadOption from './ResumeUploadOption'
 import { answersFromOnboardingKo } from './questions'
 
 export const dynamic = 'force-dynamic'
@@ -28,8 +30,14 @@ export default async function OnboardingPage({
   return (
     <div className="min-h-screen bg-[#F7F8FA]">
       <header className="border-b border-[#ECEEF0] bg-white">
-        <div className="mx-auto flex h-[60px] max-w-2xl items-center px-4">
+        <div className="mx-auto flex h-[60px] max-w-2xl items-center justify-between px-4">
           <Logo href="/" />
+          <Link
+            href="/discover"
+            className="text-[13px] text-[#98A2B3] transition-colors hover:text-[#667085]"
+          >
+            나중에 하기 →
+          </Link>
         </div>
       </header>
 
@@ -42,6 +50,7 @@ export default async function OnboardingPage({
             채팅으로 답하면 영어 프로필로 정리해 드려요. 한국어로 편하게 답해주세요.
           </p>
         </div>
+        {!redo && <ResumeUploadOption />}
         <OnboardingChat initialAnswers={initialAnswers} />
       </div>
     </div>

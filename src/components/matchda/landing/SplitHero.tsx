@@ -3,13 +3,6 @@ import GlobalConnectGraphic from './GlobalConnectGraphic'
 import { Check } from '../ui/icons'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
-const TRUST_AVATARS = [
-  { initial: '지', bg: '#A7D8C4', fg: '#0B5238' },
-  { initial: 'M', bg: '#BBD4F2', fg: '#1E4B8F' },
-  { initial: '현', bg: '#F2D9B8', fg: '#8A5A1E' },
-  { initial: '+', bg: '#E2C7E8', fg: '#6B3A78' },
-]
-
 /** 분할 히어로 (좌 카피·검색바, 우 글로벌 연결 그래픽) */
 export default function SplitHero({ t, searchHref }: { t: Dictionary; searchHref?: string }) {
   return (
@@ -40,27 +33,6 @@ export default function SplitHero({ t, searchHref }: { t: Dictionary; searchHref
         <div className="mt-3 flex items-center gap-1.5 text-[13px] font-medium text-[#046C4E]">
           <Check size={14} strokeWidth={2.4} />
           {t.hero.freeNote}
-        </div>
-
-        <div className="mt-3 flex items-center gap-3">
-          <div className="flex">
-            {TRUST_AVATARS.map((a, i) => (
-              <span
-                key={i}
-                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-[12px] font-semibold ${
-                  i === 0 ? '' : '-ml-[9px]'
-                }`}
-                style={{ background: a.bg, color: a.fg }}
-              >
-                {a.initial}
-              </span>
-            ))}
-          </div>
-          <span className="text-[14px] text-[#667085]">
-            {t.hero.trustPrefix}
-            <b className="text-[#1F2A37]">{t.hero.trustCount}</b>
-            {t.hero.trustSuffix}
-          </span>
         </div>
       </div>
 
