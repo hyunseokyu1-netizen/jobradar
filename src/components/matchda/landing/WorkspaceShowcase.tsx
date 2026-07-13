@@ -51,7 +51,7 @@ export default function WorkspaceShowcase({
         <div className="mb-10 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#CEEBDC] bg-[#ECFDF3] px-[13px] py-[6px] text-[13px] font-semibold text-[#046C4E]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.6 4.6L18 9l-4.4 1.4L12 15l-1.6-4.6L6 9l4.4-1.4z" /></svg>
-            실제 화면 미리보기
+            화면 미리보기 · 예시 데이터
           </div>
           <h2 className="mt-4 text-[30px] font-bold leading-[1.2] tracking-[-0.03em] text-[#0B1A12] sm:text-[38px]">
             한국어로 쓰면,<br className="sm:hidden" /> 공고에 맞춘 영어 이력서가 됩니다

@@ -60,7 +60,14 @@ export default function AddSourceForm() {
           {loading ? '등록 중...' : '페이지 등록'}
         </button>
       </div>
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-500 mt-1">
+          {error}
+          {error.includes('업그레이드') && (
+            <a href="/pricing" className="ml-2 font-semibold text-[#046C4E] hover:underline">요금제 보기 →</a>
+          )}
+        </p>
+      )}
       <p className="text-xs text-[#98A2B3] mt-1.5">
         Greenhouse · Lever · Ashby · SmartRecruiters는 자동 인식됩니다. 그 외 페이지는 AI가 공고 목록을 추출합니다.
       </p>

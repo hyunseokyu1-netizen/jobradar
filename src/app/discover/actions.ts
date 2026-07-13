@@ -19,7 +19,7 @@ async function overSourceLimit(profile: { id: string; plan?: string | null; subs
   return (count ?? 0) >= FREE_LIMITS.jobSources
 }
 
-const SOURCE_LIMIT_MSG = `무료 플랜은 채용페이지를 ${FREE_LIMITS.jobSources}개까지 등록할 수 있어요. 프리미엄으로 업그레이드하면 무제한입니다. (요금제 페이지 /pricing)`
+const SOURCE_LIMIT_MSG = `무료 플랜은 채용페이지를 ${FREE_LIMITS.jobSources}개까지 등록할 수 있어요. 프리미엄으로 업그레이드하면 무제한입니다.`
 
 /**
  * 잡 탐색의 공유 공고 풀에서 공고를 지원 현황으로 보낸다 (관리 보내기).

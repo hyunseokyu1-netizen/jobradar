@@ -92,7 +92,7 @@ const ko = {
       { label: '평균 매칭률', delta: '상위 15%', tone: 'green' as const },
     ],
     boardTitle: '지원 현황',
-    boardSub: '준비부터 오퍼까지 한눈에 추적하세요',
+    boardSub: '준비부터 오퍼까지 한눈에 추적하세요. 카드를 누르면 워크스페이스에서 맞춤 이력서·커버레터를 만들 수 있어요.',
     viewBoard: '보드',
     viewList: '리스트',
     columns: {
@@ -222,7 +222,7 @@ const en: typeof ko = {
       { label: 'Average match rate', delta: 'Top 15%', tone: 'green' as const },
     ],
     boardTitle: 'Applications',
-    boardSub: 'Track everything from preparation to offer',
+    boardSub: 'Track everything from preparation to offer. Tap a card to open the workspace and build a tailored resume or cover letter.',
     viewBoard: 'Board',
     viewList: 'List',
     columns: {

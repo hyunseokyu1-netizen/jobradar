@@ -2,10 +2,10 @@ import { Check } from '../ui/icons'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
 const NODES = [
-  { cx: 150, cy: 160, label: '베를린', tx: 166, ty: 164, anchor: 'start' as const },
-  { cx: 440, cy: 135, label: '뉴욕', tx: 392, ty: 120, anchor: 'start' as const },
-  { cx: 120, cy: 335, label: '토론토', tx: 136, ty: 339, anchor: 'start' as const },
-  { cx: 450, cy: 345, label: '싱가포르', tx: 376, ty: 370, anchor: 'start' as const },
+  { cx: 150, cy: 160, label: '시드니', tx: 166, ty: 164, anchor: 'start' as const },
+  { cx: 440, cy: 135, label: '멜번', tx: 392, ty: 120, anchor: 'start' as const },
+  { cx: 120, cy: 335, label: '브리즈번', tx: 136, ty: 339, anchor: 'start' as const },
+  { cx: 450, cy: 345, label: '오클랜드', tx: 376, ty: 370, anchor: 'start' as const },
 ]
 
 const DOTS = [

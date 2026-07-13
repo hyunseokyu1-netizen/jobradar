@@ -35,6 +35,8 @@ export default function OnboardingChat({
   // 스킬 단계 전용: 자동완성 칩 입력 상태
   const [skillList, setSkillList] = useState<string[]>([])
   const [errorMsg, setErrorMsg] = useState('')
+  // "← 이전"으로 돌아온 단계: 리스트 단계도 줄바꿈 일괄 편집으로 처리 (prefill 모드와 동일)
+  const [revisit, setRevisit] = useState(false)
 
   const initialized = useRef(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -105,6 +107,7 @@ export default function OnboardingChat({
 
   // 다음 단계로 이동 (없으면 마무리)
   function goNextStep(nextAnswers: OnboardingAnswers) {
+    setRevisit(false)
     const nextIndex = stepIndex + 1
     if (nextIndex < STEPS.length) {
       setStepIndex(nextIndex)
@@ -113,6 +116,33 @@ export default function OnboardingChat({
     } else {
       finish(nextAnswers)
     }
+  }
+
+  // "← 이전" — 이전 단계로 돌아가 기존 답변을 프리필하고 수정하게 한다.
+  // askMore 중이면 단계 이동 없이 현재 리스트를 일괄 편집 모드로 전환.
+  function handleBack() {
+    if (mode === 'finishing' || mode === 'done') return
+    const targetIndex = mode === 'askMore' ? stepIndex : stepIndex - 1
+    if (targetIndex < 0) return
+    const target = STEPS[targetIndex]
+
+    setStepIndex(targetIndex)
+    setMode('input')
+    setRevisit(true)
+    setErrorMsg('')
+
+    if (target.kind === 'single' && target.key === 'skills') {
+      setSkillList(answers.skills.split(',').map(v => v.trim()).filter(Boolean))
+      setInput('')
+    } else {
+      setInput(stepInputValue(target, answers))
+    }
+
+    pushAi(
+      target.kind === 'list'
+        ? `${target.question}\n(기존 내용이 채워져 있어요. 줄바꿈으로 항목을 수정·추가·삭제하세요.)`
+        : `다시 여쭤볼게요. ${target.question}`
+    )
   }
 
   async function finish(finalAnswers: OnboardingAnswers) {
@@ -146,8 +176,8 @@ export default function OnboardingChat({
         pushUser('(건너뜀)')
         setInput('')
         goNextStep(answers)
-      } else if (prefill && step.kind === 'list') {
-        // 다시 작성: 비우고 보내면 해당 목록 삭제
+      } else if ((prefill || revisit) && step.kind === 'list') {
+        // 다시 작성·이전으로 돌아온 경우: 비우고 보내면 해당 목록 삭제
         pushUser('(없음)')
         setInput('')
         const next = { ...answers, [step.key]: [] }
@@ -166,8 +196,8 @@ export default function OnboardingChat({
       setAnswers(next)
       persist(next)
       goNextStep(next)
-    } else if (prefill) {
-      // 다시 작성: 여러 줄을 한 번에 항목 배열로 처리(수정·추가·삭제)
+    } else if (prefill || revisit) {
+      // 다시 작성·이전으로 돌아온 경우: 여러 줄을 한 번에 항목 배열로 처리(수정·추가·삭제)
       const items = text.split('\n').map(s => s.trim()).filter(Boolean)
       const next = { ...answers, [step.key]: items }
       setAnswers(next)
@@ -263,6 +293,17 @@ export default function OnboardingChat({
       {/* 입력 영역 */}
       <div className="border-t border-[#F0F2F4] p-3">
         {errorMsg && <p className="text-xs text-red-500 px-2 pb-2">{errorMsg}</p>}
+
+        {/* 이전 단계로 (첫 질문·완료 중에는 숨김) */}
+        {!busy && (stepIndex > 0 || mode === 'askMore') && (
+          <button
+            type="button"
+            onClick={handleBack}
+            className="mb-2 px-2 text-xs text-[#98A2B3] transition-colors hover:text-[#046C4E]"
+          >
+            ← 이전 답변 수정
+          </button>
+        )}
 
         {mode === 'askMore' ? (
           <div className="flex gap-2">

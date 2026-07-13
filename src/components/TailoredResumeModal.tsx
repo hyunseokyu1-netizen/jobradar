@@ -16,6 +16,23 @@ interface Props {
 
 type ActionState = 'idle' | 'loading' | 'saving' | 'generating' | 'applyingDocx' | 'applyingPdf' | 'translating' | 'editing'
 
+// 에러 메시지 + 무료 한도 초과("업그레이드" 포함) 시 요금제 링크 버튼
+function ErrorNote({ error, className }: { error: string; className?: string }) {
+  return (
+    <p className={`text-xs text-red-500 ${className ?? ''}`}>
+      {error}
+      {error.includes('업그레이드') && (
+        <a
+          href="/pricing"
+          className="ml-2 inline-block rounded-md bg-[#046C4E] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#035A40]"
+        >
+          요금제 보기 →
+        </a>
+      )}
+    </p>
+  )
+}
+
 function downloadBase64Docx(base64: string, filename: string) {
   const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
   const blob = new Blob([bytes], {
@@ -185,7 +202,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
               >
                 ✦ 맞춤 이력서 생성
               </button>
-              {error && <p className="text-xs text-red-500 mt-4">{error}</p>}
+              {error && <ErrorNote error={error} className="mt-4" />}
             </div>
           )}
 
@@ -249,7 +266,7 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
           )}
 
           {error && content && !busyOverlay && (
-            <p className="text-xs text-red-500 mt-2">{error}</p>
+            <ErrorNote error={error} className="mt-2" />
           )}
           {ragNote && content && !busyOverlay && (
             <p className="text-xs text-[#046C4E] mt-2">{ragNote}</p>

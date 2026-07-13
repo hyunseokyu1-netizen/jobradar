@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  DndContext, PointerSensor, useSensor, useSensors,
+  DndContext, PointerSensor, TouchSensor, useSensor, useSensors,
   useDraggable, useDroppable, closestCorners, type DragEndEvent,
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
@@ -45,8 +45,12 @@ export default function InteractiveKanban({ columns: initial }: { columns: Kanba
   // 드래그 직후 발생하는 click이 카드 클릭(워크스페이스 이동)으로 새지 않게 차단
   const dragHappened = useRef(false)
 
-  // 8px 이상 움직여야 드래그 시작 — 일반 클릭·상태 드롭다운 조작을 방해하지 않음
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  // 마우스: 8px 이상 움직여야 드래그 시작 — 일반 클릭·상태 드롭다운 조작을 방해하지 않음
+  // 터치: 200ms 길게 누른 뒤 드래그 시작 — 페이지 스크롤 제스처와 충돌하지 않음
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  )
 
   async function handleDragEnd(e: DragEndEvent) {
     const jobId = String(e.active.id)
@@ -132,7 +136,8 @@ function DraggableCard({ job, emphasized }: { job: KanbanColumnView['jobs'][numb
       {...attributes}
       {...listeners}
       style={{ transform: CSS.Translate.toString(transform) }}
-      className={isDragging ? 'z-30 cursor-grabbing opacity-90 shadow-[0_10px_28px_rgba(16,24,40,0.16)]' : 'cursor-grab'}
+      // touch-manipulation: 더블탭 줌 등 브라우저 제스처를 막아 길게 누르기 → 드래그가 안정적으로 시작되게 함 (스크롤은 유지)
+      className={`touch-manipulation ${isDragging ? 'z-30 cursor-grabbing opacity-90 shadow-[0_10px_28px_rgba(16,24,40,0.16)]' : 'cursor-grab'}`}
     >
       <InteractiveJobCard job={job} matchLabel={job.matchLabel} emphasized={emphasized} />
     </div>

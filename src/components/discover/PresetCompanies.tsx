@@ -77,6 +77,11 @@ export default function PresetCompanies() {
           페이지에 따라 2~3분 걸릴 수 있어요. 이 화면을 유지해주세요.
         </p>
       )}
+      {Object.values(result).some(m => m.includes('업그레이드')) && (
+        <p className="mt-2 text-xs">
+          <a href="/pricing" className="font-semibold text-[#046C4E] hover:underline">요금제 보기 →</a>
+        </p>
+      )}
     </section>
   )
 }

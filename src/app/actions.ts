@@ -195,7 +195,7 @@ export async function generateTailoredResume(jobId: string): Promise<{ content?:
         .select('id', { count: 'exact', head: true })
         .eq('user_id', profile.id)
       if ((count ?? 0) >= FREE_LIMITS.tailoredResumes) {
-        return { error: `무료 플랜은 맞춤 이력서를 ${FREE_LIMITS.tailoredResumes}개까지 만들 수 있어요. 프리미엄으로 업그레이드하면 무제한입니다. (요금제 페이지 /pricing)` }
+        return { error: `무료 플랜은 맞춤 이력서를 ${FREE_LIMITS.tailoredResumes}개까지 만들 수 있어요. 프리미엄으로 업그레이드하면 무제한입니다.` }
       }
     }
   }

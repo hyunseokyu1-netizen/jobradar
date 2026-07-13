@@ -26,29 +26,29 @@ const COLUMNS: DemoColumn[] = [
     label: '준비 중',
     dot: '#98A2B3',
     cards: [
-      { initial: 'S', chipBg: '#1DB954', role: '백엔드 엔지니어', company: 'Spotify', location: '스톡홀름, 스웨덴', salary: '€65K–85K', match: 82 },
-      { initial: 'K', chipBg: '#FF6F91', role: '데이터 분석가', company: 'Klarna', location: '베를린, 독일', salary: '€60K–78K', match: 75 },
+      { initial: 'A', chipBg: '#0052CC', role: '백엔드 엔지니어', company: 'Atlassian', location: '시드니, 호주', salary: 'A$130K–160K', match: 82 },
+      { initial: 'C', chipBg: '#8B3DFF', role: '데이터 분석가', company: 'Canva', location: '시드니, 호주 · 원격', salary: 'A$110K–135K', match: 75 },
     ],
   },
   {
     label: '지원 완료',
     dot: '#1A56DB',
     cards: [
-      { initial: 'S', chipBg: '#5C6AC4', role: '프론트엔드 개발자', company: 'Shopify', location: '토론토, 캐나다 · 원격', salary: 'CA$95K–120K', match: 88 },
+      { initial: 'X', chipBg: '#13B5EA', role: '프론트엔드 개발자', company: 'Xero', location: '오클랜드, 뉴질랜드', salary: 'NZ$105K–130K', match: 88 },
     ],
   },
   {
     label: '면접 진행',
     dot: '#B45309',
     cards: [
-      { initial: 'G', chipBg: '#00B14F', role: '프로덕트 매니저', company: 'Grab', location: '싱가포르', salary: 'S$110K–140K', match: 91, note: { text: '2차 면접 · 6월 30일', tone: 'interview' } },
+      { initial: 'C', chipBg: '#E14F62', role: '프로덕트 매니저', company: 'Culture Amp', location: '멜번, 호주', salary: 'A$140K–170K', match: 91, note: { text: '2차 면접 · 6월 30일', tone: 'interview' } },
     ],
   },
   {
     label: '오퍼',
     dot: '#046C4E',
     cards: [
-      { initial: 'N', chipBg: '#2F313D', role: '테크니컬 라이터', company: 'Notion', location: '더블린, 아일랜드', salary: '€55K–70K', match: 79, note: { text: '오퍼 수신 · 검토 중', tone: 'offer' }, emphasized: true },
+      { initial: 'S', chipBg: '#6559FF', role: '풀스택 개발자', company: 'SafetyCulture', location: '시드니, 호주', salary: 'A$125K–150K', match: 79, note: { text: '오퍼 수신 · 검토 중', tone: 'offer' }, emphasized: true },
     ],
   },
 ]
