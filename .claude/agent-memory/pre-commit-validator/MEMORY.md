@@ -4,3 +4,4 @@
 - [MatchDa 디자인 토큰 마이그레이션](matchda-design-tokens.md) — zinc-* 유틸리티 → 브랜드 hex 컬러 치환 작업 진행 중
 - [기존 ESLint 이슈는 선반영 상태](preexisting-lint-issues.md) — OnboardingChat set-state-in-effect, ats.ts any 등은 새 위반 아님, 신규 코드가 답습만 함
 - [로그인 후 온보딩 리다이렉트 패턴](post-login-onboarding-redirect.md) — postLoginPath()/auth callback/LoginForm이 onboarding_completed로 분기, analyzeResumeFile 재사용
+- [랜딩 데모 데이터는 PII 아님](landing-demo-data-not-pii.md) — matchda/landing/* 의 하드코딩 회사명·도시명은 CRITICAL 위반 대상 아님
