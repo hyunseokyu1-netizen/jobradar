@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: '서비스 약관',
   description: 'MatchDa 서비스 이용약관 — 서비스 제공 범위, 유료 구독, 회원의 권리와 의무를 안내합니다.',
+  alternates: { canonical: '/terms' },
 }
 
 export default function TermsPage() {

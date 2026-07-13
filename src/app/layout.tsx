@@ -32,6 +32,7 @@ export const metadata: Metadata = {
   },
   description: DEFAULT_DESCRIPTION,
   keywords: ["해외취업", "영문 이력서", "이력서 번역", "커버레터", "해외 채용", "AI 이력서", "잡 매칭"],
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "ko_KR",
@@ -47,6 +48,30 @@ export const metadata: Metadata = {
     description: DEFAULT_DESCRIPTION,
     images: ["/opengraph-image"],
   },
+  // 네이버 서치어드바이저 소유 확인 — Vercel 환경변수 NAVER_SITE_VERIFICATION 설정 시에만 노출
+  ...(process.env.NAVER_SITE_VERIFICATION && {
+    verification: { other: { "naver-site-verification": process.env.NAVER_SITE_VERIFICATION } },
+  }),
+};
+
+// 구글 리치 결과·네이버 지식 패널용 구조화 데이터(JSON-LD).
+// SearchAction은 넣지 않음 — 사이트 전역 검색 기능이 없어 실제로 지원하지 않는 기능을 약속하면 안 됨.
+const ORGANIZATION_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "MatchDa",
+  alternateName: "매치다",
+  url: SITE_URL,
+  logo: `${SITE_URL}/matchda-mark.png`,
+  description: DEFAULT_DESCRIPTION,
+};
+
+const WEBSITE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "MatchDa",
+  url: SITE_URL,
+  inLanguage: "ko-KR",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -57,6 +82,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ko" className={`${geist.variable} ${plexKr.variable} ${plexMono.variable} h-full`}>
       <body className="min-h-full flex flex-col bg-[#F7F8FA] text-[#101828]">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSON_LD) }}
+        />
         <AppChrome
           userEmail={user?.email ?? null}
           showOnboardingBanner={showOnboardingBanner}

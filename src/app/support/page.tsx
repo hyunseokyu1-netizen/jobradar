@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: '고객센터',
   description: '공고 추가, 영어 이력서 만들기, 구독 관리, 환불 등 MatchDa 자주 묻는 질문과 문의 방법을 안내합니다.',
+  alternates: { canonical: '/support' },
 }
 
 const FAQS = [

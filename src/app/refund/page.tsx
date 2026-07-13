@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: '환불 정책',
   description: 'MatchDa 프리미엄 구독의 환불 가능 조건, 제한 사유, 요청 방법을 안내합니다.',
+  alternates: { canonical: '/refund' },
 }
 
 export default function RefundPage() {

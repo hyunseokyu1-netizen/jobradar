@@ -14,9 +14,30 @@ export const metadata: Metadata = {
   title: '요금제',
   description:
     `무료로 시작해 맞춤 이력서 ${FREE_LIMITS.tailoredResumes}개까지 체험하고, 프리미엄으로 업그레이드하면 채용페이지 등록·맞춤 이력서·커버레터를 무제한으로 이용할 수 있습니다.`,
+  alternates: { canonical: '/pricing' },
 }
 
 const CHECK = '✓'
+
+// 구글 요금제 리치 스니펫용 구조화 데이터. PREMIUM_PRICE_LABEL("$7.99 / 월")에서 숫자만 뽑아
+// 별도 상수 없이 항상 표시 가격과 동기화되게 함.
+const PREMIUM_PRICE_NUMBER = PREMIUM_PRICE_LABEL.match(/[\d.]+/)?.[0] ?? '7.99'
+const PRICING_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: 'MatchDa 프리미엄',
+  description: '채용페이지 무제한 등록, 맞춤 이력서·영어 번역·커버레터 무제한 생성, 우선 AI 매칭',
+  offers: [
+    { '@type': 'Offer', name: '무료', price: '0', priceCurrency: 'USD' },
+    {
+      '@type': 'Offer',
+      name: '프리미엄',
+      price: PREMIUM_PRICE_NUMBER,
+      priceCurrency: 'USD',
+      priceSpecification: { '@type': 'UnitPriceSpecification', billingDuration: 'P1M' },
+    },
+  ],
+}
 
 const FREE_FEATURES = [
   `채용페이지(공고 회사) ${FREE_LIMITS.jobSources}개까지 등록`,
@@ -141,11 +162,15 @@ export default async function PricingPage({
   const email = await getAuthUserEmail()
   const { success } = await searchParams
 
-  // 비로그인 — 공개 요금제 (랜딩 크롬)
+  // 비로그인 — 공개 요금제 (랜딩 크롬). 크롤러는 항상 이 분기로 진입하므로 JSON-LD도 여기에만 둔다.
   if (!email) {
     const t = getMatchdaDict('ko')
     return (
       <div className="min-h-screen bg-white font-[family-name:var(--font-plex-kr)] text-[#111827] antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(PRICING_JSON_LD) }}
+        />
         <LandingHeader t={t} />
         <main className="mx-auto max-w-[1200px] px-4 py-16 sm:px-8">
           <PricingBody isPremium={false} authed={false} />

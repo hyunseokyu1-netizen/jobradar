@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: '서비스 소개',
   description:
     '해외 취업의 가장 큰 벽인 영어 이력서를 AI가 해결합니다. 이력서 업로드부터 영문 번역, 공고 매칭, 맞춤 이력서·커버레터 생성까지 MatchDa 사용법을 확인하세요.',
+  alternates: { canonical: '/about' },
 }
 
 /** 서비스 소개 — MatchDa가 무엇이고 어떻게 쓰는지 (공개 페이지) */
