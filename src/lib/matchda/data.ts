@@ -70,7 +70,7 @@ export async function getMatchdaDashboard(): Promise<MatchdaDashboardData | null
 
   const { data: matchRows } = await supabaseAdmin
     .from('matches')
-    .select('job_id, score, status, position')
+    .select('job_id, score, status, position, created_at')
     .eq('user_id', profile.id)
   const matches = matchRows ?? []
 
@@ -83,16 +83,13 @@ export async function getMatchdaDashboard(): Promise<MatchdaDashboardData | null
     : { data: [] as { id: string; title: string; company: string; location: string; salary: string | null }[] }
   const jobMap = new Map((jobRows ?? []).map((j) => [j.id, j]))
 
-  // 컬럼 버킷 채우기 (position 오름차순, 없으면 점수 내림차순)
+  // 컬럼 버킷 채우기 — 최신 추가 순 (수동 정렬 position은 리스트 뷰 전용)
   const buckets: Record<ApplicationStatus, JobCardData[]> = {
     preparing: [], applied: [], interview: [], offer: [],
   }
-  const sorted = [...matches].sort((a, b) => {
-    const pa = a.position ?? Infinity
-    const pb = b.position ?? Infinity
-    if (pa !== pb) return pa - pb
-    return (b.score ?? 0) - (a.score ?? 0)
-  })
+  const sorted = [...matches].sort(
+    (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
+  )
   for (const m of sorted) {
     const col = STATUS_TO_COLUMN[m.status as string]
     if (!col) continue
@@ -267,7 +264,9 @@ export async function getMatchdaWorkspace(
     memo?: string | null
     applied_resume_filename?: string | null
     applied_resume_text?: string | null
+    applied_documents?: unknown
     applied_at?: string | null
+    status?: string | null
   }
 
   const name = profile.name?.trim() || email.split('@')[0] || ''
@@ -317,8 +316,12 @@ export async function getMatchdaWorkspace(
       memo: matchRow.memo ?? null,
       appliedResumeFilename: matchRow.applied_resume_filename ?? null,
       appliedResumeText: matchRow.applied_resume_text ?? null,
+      appliedDocuments: Array.isArray(matchRow.applied_documents)
+        ? (matchRow.applied_documents as import('@/lib/applied-documents').AppliedDocument[])
+        : [],
       location: job.location ?? null,
       appliedAt: matchRow.applied_at ?? null,
+      status: matchRow.status ?? null,
     },
     // 스튜디오 디자인 설정 (ko에 저장, 한/영 문서 공통 적용)
     design: ko.design ? normalizeResumeDesign(ko.design) : undefined,

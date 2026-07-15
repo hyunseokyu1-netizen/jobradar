@@ -106,8 +106,10 @@ export interface ResumeWorkspaceData {
     memo: string | null
     appliedResumeFilename: string | null
     appliedResumeText: string | null
+    appliedDocuments: import('@/lib/applied-documents').AppliedDocument[]
     location: string | null
     appliedAt: string | null
+    status: string | null
   }
   /** 이력서 스튜디오에서 설정한 문서 디자인 (폰트·줄간격·포인트 컬러·템플릿) */
   design?: import('./resume-design').ResumeDesign

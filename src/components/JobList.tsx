@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
@@ -82,14 +83,16 @@ function ScoreBadge({ score, jobId, onMatched }: { score: number | null; jobId: 
 
 function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem; draggable: boolean; onDelete: (id: string) => void; onUpdate: (id: string, patch: Partial<JobItem>) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: job.id, disabled: !draggable })
+  const router = useRouter()
   const [deleting, setDeleting] = useState(false)
   const [showJdInput, setShowJdInput] = useState(false)
   const [showMemo, setShowMemo] = useState(false)
   const [memo, setMemo] = useState(job.memo ?? '')
   const [savingMemo, setSavingMemo] = useState(false)
   const [showResume, setShowResume] = useState(false)
-  const [resumeFilename, setResumeFilename] = useState(job.applied_resume_filename ?? '')
-  const [resumeText, setResumeText] = useState(job.applied_resume_text ?? '')
+  // 업로드 후에는 router.refresh()로 서버 데이터가 갱신되므로 props에서 직접 읽는다
+  const resumeFilename = job.applied_resume_filename ?? ''
+  const resumeText = job.applied_resume_text ?? ''
   const [appliedAt, setAppliedAt] = useState(job.applied_at ?? '')
   const [editingDate, setEditingDate] = useState(false)
   const [dateInput, setDateInput] = useState('')
@@ -504,10 +507,7 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
           initialFilename={resumeFilename}
           initialText={resumeText}
           onClose={() => setShowResume(false)}
-          onUploaded={(fname, text) => {
-            setResumeFilename(fname)
-            setResumeText(text)
-          }}
+          onUploaded={() => router.refresh()}
         />
       )}
     </li>

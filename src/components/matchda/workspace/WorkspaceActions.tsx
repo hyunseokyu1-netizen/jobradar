@@ -8,7 +8,9 @@ import JdInputModal from '@/components/JdInputModal'
 import AppliedResumeModal from '@/components/AppliedResumeModal'
 import MemoModal from './MemoModal'
 import JobInfoModal from './JobInfoModal'
-import { matchSingleJob, deleteJob } from '@/app/actions'
+import { matchSingleJob, deleteJob, updateMatchStatus } from '@/app/actions'
+import { STATUS_OPTIONS, type Status } from '@/components/StatusButton'
+import type { AppliedDocument } from '@/lib/applied-documents'
 import { FileText, Sparkle } from '../ui/icons'
 
 type ModalKind = 'cover' | 'tailored' | 'jd' | 'applied' | 'memo' | 'info' | null
@@ -25,8 +27,10 @@ export default function WorkspaceActions({
   memo,
   appliedResumeFilename,
   appliedResumeText,
+  appliedDocuments,
   location,
   appliedAt,
+  status,
 }: {
   jobId: string
   jobTitle: string
@@ -35,22 +39,42 @@ export default function WorkspaceActions({
   memo: string | null
   appliedResumeFilename: string | null
   appliedResumeText: string | null
+  appliedDocuments?: AppliedDocument[]
   location: string | null
   appliedAt: string | null
+  status?: string | null
 }) {
   const router = useRouter()
   const [modal, setModal] = useState<ModalKind>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [busy, setBusy] = useState<'match' | 'delete' | null>(null)
+  // 메뉴 뷰: 기본 항목 목록 ↔ 지원 상태 선택 목록
+  const [menuView, setMenuView] = useState<'main' | 'status'>('main')
+  const [curStatus, setCurStatus] = useState<Status>((status as Status) ?? 'new')
+  const [busy, setBusy] = useState<'match' | 'delete' | 'status' | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+        setMenuView('main')
+      }
     }
     document.addEventListener('mousedown', onClick)
     return () => document.removeEventListener('mousedown', onClick)
   }, [])
+
+  async function changeStatus(next: Status) {
+    setMenuOpen(false)
+    setMenuView('main')
+    if (next === curStatus) return
+    setBusy('status')
+    const res = await updateMatchStatus(jobId, next)
+    setBusy(null)
+    if (res.error) { alert(res.error); return }
+    setCurStatus(next)
+    router.refresh()
+  }
 
   async function rematch() {
     setMenuOpen(false)
@@ -97,29 +121,65 @@ export default function WorkspaceActions({
           className={`${btn} px-[10px]`}
           aria-label="더보기"
         >
-          {busy === 'match' ? '매칭…' : busy === 'delete' ? '삭제…' : '⋯'}
+          {busy === 'match' ? '매칭…' : busy === 'delete' ? '삭제…' : busy === 'status' ? '변경…' : '⋯'}
         </button>
         {menuOpen && (
-          <div className="absolute right-0 z-30 mt-1 w-[184px] overflow-hidden rounded-[10px] border border-[#ECEEF0] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.12)]">
-            <button type="button" className={menuItem} onClick={() => { setMenuOpen(false); setModal('jd') }}>
-              JD 직접 입력
-            </button>
-            <button type="button" className={menuItem} onClick={() => { setMenuOpen(false); setModal('applied') }}>
-              제출 서류
-            </button>
-            <button type="button" className={menuItem} onClick={() => { setMenuOpen(false); setModal('memo') }}>
-              메모
-            </button>
-            <button type="button" className={menuItem} onClick={() => { setMenuOpen(false); setModal('info') }}>
-              공고 정보 편집
-            </button>
-            <button type="button" className={menuItem} onClick={rematch}>
-              AI 재매칭
-            </button>
-            <div className="my-1 border-t border-[#F0F2F4]" />
-            <button type="button" className={`${menuItem} text-red-500 hover:bg-red-50`} onClick={remove}>
-              공고 삭제
-            </button>
+          <div className="absolute right-0 z-30 mt-1 w-[196px] overflow-hidden rounded-[10px] border border-[#ECEEF0] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.12)]">
+            {menuView === 'status' ? (
+              <>
+                <button
+                  type="button"
+                  className={`${menuItem} border-b border-[#F0F2F4] text-[#98A2B3]`}
+                  onClick={() => setMenuView('main')}
+                >
+                  ← 뒤로
+                </button>
+                {STATUS_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`${menuItem} ${opt.menu} flex items-center justify-between`}
+                    onClick={() => changeStatus(opt.value)}
+                  >
+                    <span>{opt.label}</span>
+                    {opt.value === curStatus && <span className="text-[#046C4E]">✓</span>}
+                  </button>
+                ))}
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`${menuItem} flex items-center justify-between gap-2`}
+                  onClick={() => setMenuView('status')}
+                >
+                  <span>지원 상태 변경</span>
+                  <span className="shrink-0 text-[11px] text-[#98A2B3]">
+                    {STATUS_OPTIONS.find(o => o.value === curStatus)?.label ?? '미분류'}
+                  </span>
+                </button>
+                <div className="my-1 border-t border-[#F0F2F4]" />
+                <button type="button" className={menuItem} onClick={() => { setMenuOpen(false); setModal('jd') }}>
+                  JD 직접 입력
+                </button>
+                <button type="button" className={menuItem} onClick={() => { setMenuOpen(false); setModal('applied') }}>
+                  제출 서류
+                </button>
+                <button type="button" className={menuItem} onClick={() => { setMenuOpen(false); setModal('memo') }}>
+                  메모
+                </button>
+                <button type="button" className={menuItem} onClick={() => { setMenuOpen(false); setModal('info') }}>
+                  공고 정보 편집
+                </button>
+                <button type="button" className={menuItem} onClick={rematch}>
+                  AI 재매칭
+                </button>
+                <div className="my-1 border-t border-[#F0F2F4]" />
+                <button type="button" className={`${menuItem} text-red-500 hover:bg-red-50`} onClick={remove}>
+                  공고 삭제
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -148,6 +208,7 @@ export default function WorkspaceActions({
           company={company}
           initialFilename={appliedResumeFilename}
           initialText={appliedResumeText}
+          initialDocuments={appliedDocuments}
           onClose={() => setModal(null)}
           onUploaded={() => router.refresh()}
         />

@@ -10,6 +10,7 @@ import { parseResumeFile } from '@/lib/resume-parser'
 import { planOf, billingEnabled, FREE_LIMITS } from '@/lib/plan'
 import { retrievePastResumes, ragSourceCount } from '@/lib/resume-rag'
 import { structuredResumeText } from '@/lib/resume'
+import { MAX_APPLIED_DOCUMENTS, type AppliedDocument } from '@/lib/applied-documents'
 
 export async function triggerMatching() {
   try {
@@ -700,6 +701,161 @@ export async function uploadAppliedResume(formData: FormData): Promise<{ text?: 
   } catch (e) {
     return { error: String(e) }
   }
+}
+
+// ── 제출 서류 (다중 파일, 최대 5개) ──────────────────────────
+// 파일 원본은 Storage 'application-docs'에 보관, matches.applied_documents(JSONB)에 메타데이터 저장.
+
+const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024 // 포트폴리오 PDF 등 고려해 10MB
+const DOCS_BUCKET = 'application-docs'
+
+// 본인 match 행을 확인하고 현재 서류 목록을 반환 (없으면 null)
+async function getOwnedMatchDocs(profileId: string, jobId: string): Promise<AppliedDocument[] | null> {
+  const { data: match } = await supabaseAdmin
+    .from('matches')
+    .select('applied_documents')
+    .eq('user_id', profileId)
+    .eq('job_id', jobId)
+    .maybeSingle()
+  if (!match) return null
+  const docs = (match as { applied_documents?: unknown }).applied_documents
+  return Array.isArray(docs) ? (docs as AppliedDocument[]) : []
+}
+
+export async function uploadApplicationDocument(
+  formData: FormData
+): Promise<{ documents?: AppliedDocument[]; resumeText?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const file = formData.get('document') as File | null
+  const jobId = formData.get('jobId') as string
+  if (!file || file.size === 0) return { error: '파일을 선택해주세요.' }
+  if (file.size > MAX_DOCUMENT_SIZE) return { error: '파일 크기는 10MB 이하여야 합니다.' }
+  if (!jobId) return { error: 'Job ID가 없습니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const docs = await getOwnedMatchDocs(profile.id, jobId)
+  if (docs === null) return { error: '공고를 찾을 수 없습니다.' }
+  if (docs.length >= MAX_APPLIED_DOCUMENTS) {
+    return { error: `서류는 공고당 최대 ${MAX_APPLIED_DOCUMENTS}개까지 올릴 수 있어요. 기존 파일을 삭제하고 다시 시도해주세요.` }
+  }
+
+  // Storage 키는 ASCII 안전 문자만 (한글 파일명 등은 표시용 name에만 유지)
+  const ext = (file.name.split('.').pop() ?? 'bin').toLowerCase().replace(/[^a-z0-9]/g, '')
+  const path = `${profile.id}/${jobId}/${Date.now()}.${ext || 'bin'}`
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const doUpload = () =>
+      supabaseAdmin.storage.from(DOCS_BUCKET).upload(path, buffer, {
+        contentType: file.type || 'application/octet-stream',
+      })
+    let { error: uploadError } = await doUpload()
+    if (uploadError?.message?.includes('Bucket not found')) {
+      await supabaseAdmin.storage.createBucket(DOCS_BUCKET, { public: false })
+      ;({ error: uploadError } = await doUpload())
+    }
+    if (uploadError) return { error: `파일 저장 실패: ${uploadError.message}` }
+  } catch (e) {
+    return { error: String(e) }
+  }
+
+  const next: AppliedDocument[] = [
+    ...docs,
+    { name: file.name, path, size: file.size, uploadedAt: new Date().toISOString() },
+  ]
+
+  // PDF/DOCX면 텍스트 추출을 시도해 지원 이력서 텍스트(비어있을 때만)를 채운다 — 기존 단일 업로드 기능 계승
+  let resumeText: string | undefined
+  const patch: Record<string, unknown> = { applied_documents: next }
+  if (/\.(pdf|docx)$/i.test(file.name)) {
+    try {
+      const { data: cur } = await supabaseAdmin
+        .from('matches')
+        .select('applied_resume_text')
+        .eq('user_id', profile.id)
+        .eq('job_id', jobId)
+        .maybeSingle()
+      if (!cur?.applied_resume_text) {
+        const text = await parseResumeFile(file)
+        if (text?.trim()) {
+          patch.applied_resume_text = text
+          patch.applied_resume_filename = file.name
+          resumeText = text
+        }
+      }
+    } catch {
+      // 텍스트 추출 실패는 치명적이지 않음 — 파일 보관은 이미 완료
+    }
+  }
+
+  const { error } = await supabaseAdmin
+    .from('matches')
+    .update(patch)
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+  if (error) {
+    // DB 반영 실패 시 고아 파일 정리
+    await supabaseAdmin.storage.from(DOCS_BUCKET).remove([path]).catch(() => {})
+    return { error: error.message }
+  }
+
+  revalidatePath('/workspace')
+  return { documents: next, resumeText }
+}
+
+export async function deleteApplicationDocument(
+  jobId: string,
+  path: string
+): Promise<{ documents?: AppliedDocument[]; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  const docs = await getOwnedMatchDocs(profile.id, jobId)
+  if (docs === null) return { error: '공고를 찾을 수 없습니다.' }
+
+  // 본인 소유 목록에 있는 경로만 삭제 (임의 경로 삭제 방지)
+  if (!docs.some(d => d.path === path)) return { error: '해당 서류를 찾을 수 없습니다.' }
+
+  await supabaseAdmin.storage.from(DOCS_BUCKET).remove([path]).catch(() => {})
+
+  const next = docs.filter(d => d.path !== path)
+  const { error } = await supabaseAdmin
+    .from('matches')
+    .update({ applied_documents: next })
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/workspace')
+  return { documents: next }
+}
+
+export async function getApplicationDocumentUrl(
+  jobId: string,
+  path: string
+): Promise<{ url?: string; error?: string }> {
+  const email = await getAuthUserEmail()
+  if (!email) return { error: '로그인이 필요합니다.' }
+
+  const profile = await getOrCreateProfile(email)
+  if (!profile) return { error: 'Profile not found' }
+
+  // 본인 소유 목록에 있는 경로만 서명 URL 발급 (타 유저 파일 접근 차단)
+  const docs = await getOwnedMatchDocs(profile.id, jobId)
+  if (docs === null || !docs.some(d => d.path === path)) {
+    return { error: '해당 서류를 찾을 수 없습니다.' }
+  }
+
+  const { data, error } = await supabaseAdmin.storage.from(DOCS_BUCKET).createSignedUrl(path, 60)
+  if (error || !data?.signedUrl) return { error: error?.message ?? 'URL 생성 실패' }
+  return { url: data.signedUrl }
 }
 
 export async function updateJobTitle(jobId: string, title: string): Promise<{ error?: string }> {

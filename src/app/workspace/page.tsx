@@ -50,8 +50,10 @@ export default async function MatchdaWorkspacePage({
               memo={data.jobExtra?.memo ?? null}
               appliedResumeFilename={data.jobExtra?.appliedResumeFilename ?? null}
               appliedResumeText={data.jobExtra?.appliedResumeText ?? null}
+              appliedDocuments={data.jobExtra?.appliedDocuments ?? []}
               location={data.jobExtra?.location ?? data.target.location}
               appliedAt={data.jobExtra?.appliedAt ?? null}
+              status={data.jobExtra?.status ?? null}
             />
           ) : undefined
         }

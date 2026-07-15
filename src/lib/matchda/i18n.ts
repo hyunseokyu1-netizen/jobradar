@@ -104,7 +104,7 @@ const ko = {
     matchLabel: (n: number) => `매칭 ${n}%`,
   },
   workspace: {
-    back: '대시보드',
+    back: '지원 현황',
     docTitlePrefix: '이력서 · ',
     autoSaved: '자동 저장됨',
     apply: '이 공고에 지원하기',
@@ -234,7 +234,7 @@ const en: typeof ko = {
     matchLabel: (n: number) => `${n}% match`,
   },
   workspace: {
-    back: 'Dashboard',
+    back: 'Applications',
     docTitlePrefix: 'Resume · ',
     autoSaved: 'Auto-saved',
     apply: 'Apply to this job',

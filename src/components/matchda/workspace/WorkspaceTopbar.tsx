@@ -18,7 +18,7 @@ export default function WorkspaceTopbar({
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-[#ECEEF0] bg-white px-4 sm:px-6">
       <div className="flex min-w-0 items-center gap-[14px]">
         <Link
-          href="/dashboard"
+          href="/applications"
           className="flex flex-shrink-0 items-center gap-[6px] rounded-[9px] border border-[#ECEEF0] bg-[#F4F6F8] px-3 py-2 text-[13px] font-semibold text-[#475467] hover:bg-[#EAEDEF]"
         >
           <ArrowLeft size={15} />
