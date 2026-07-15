@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { detectPlatform } from '@/lib/detect-platform'
-import { detectAtsType, scrapeJobSource } from '@/lib/discover/ats'
+import { detectAtsType } from '@/lib/discover/ats'
+import { getPostingsWithCache } from '@/lib/discover/scrape-cache'
 import { prefilterPostings, scorePostings } from '@/lib/discover/scoring'
 import { planOf, billingEnabled, FREE_LIMITS } from '@/lib/plan'
 
@@ -142,6 +143,7 @@ export async function scrapeSourceAction(sourceId: string): Promise<{
   found?: number
   added?: number
   scored?: number
+  fromCache?: boolean
   error?: string
 }> {
   const email = await getAuthUserEmail()
@@ -159,9 +161,11 @@ export async function scrapeSourceAction(sourceId: string): Promise<{
 
   if (!source) return { error: '소스를 찾을 수 없습니다.' }
 
+  // 다른 유저가 최근 같은 페이지를 수집했으면 공유 캐시에서 읽어 재스크래핑 생략
   let postings
+  let fromCache = false
   try {
-    postings = await scrapeJobSource(source.url, source.source_type)
+    ;({ postings, fromCache } = await getPostingsWithCache(source.url, source.source_type))
   } catch (e) {
     const message = `수집 실패: ${String(e)}`
     // 실패 상태를 영구 기록 → UI에서 "수집 불가" 표시 (last_scraped_at은 유지)
@@ -246,7 +250,7 @@ export async function scrapeSourceAction(sourceId: string): Promise<{
     .eq('user_id', profile.id)
 
   revalidatePath('/discover')
-  return { found: postings.length, added: fresh.length, scored: scored.length }
+  return { found: postings.length, added: fresh.length, scored: scored.length, fromCache }
 }
 
 export async function dismissDiscoveredJob(discoveredJobId: string): Promise<{ error?: string }> {

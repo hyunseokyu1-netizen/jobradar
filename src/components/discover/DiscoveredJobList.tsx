@@ -43,7 +43,8 @@ export default function DiscoveredJobList({
   initialSearch?: string
 }) {
   const [sourceFilter, setSourceFilter] = useState<string>('all')
-  const [scoreFilter, setScoreFilter] = useState<ScoreFilter>('all')
+  // 기본은 "나와 맞는 공고"(40점+)만 — 미채점·저점수 공고는 필터로 직접 선택해야 보인다
+  const [scoreFilter, setScoreFilter] = useState<ScoreFilter>('40')
   const [search, setSearch] = useState(initialSearch)
   const [sort, setSort] = useState<SortKey>('recent')
   const [addingId, setAddingId] = useState<string | null>(null)

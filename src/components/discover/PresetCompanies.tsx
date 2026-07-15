@@ -30,7 +30,7 @@ export default function PresetCompanies() {
     }
     setResult(prev => ({
       ...prev,
-      [name]: `✓ ${scrape.found ?? 0}건 발견 · ${scrape.added ?? 0}건 추가`,
+      [name]: `✓ ${scrape.found ?? 0}건 발견 · ${scrape.added ?? 0}건 추가${scrape.fromCache ? ' · 빠른 수집' : ''}`,
     }))
     router.refresh()
   }
