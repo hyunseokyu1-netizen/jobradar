@@ -141,7 +141,11 @@ export default function ResumeStudio({
       setLang('ko')
       setEnStale(true)
       setSaved(false)
-      setEnrichMsg('✨ AI가 내용을 보강했어요. 확인·수정 후 저장을 눌러주세요. (이전 내용은 이미 저장돼 있어요)')
+      // 사실 변경 감지 결과가 있으면 구체적으로 알려 검토를 유도한다
+      const factNote = res.warnings?.length
+        ? ` ⚠️ 확인 필요: ${res.warnings.map(w => w.message).join(' · ')}`
+        : ''
+      setEnrichMsg(`✨ AI가 내용을 보강했어요. 사실이 맞는지 확인·수정 후 저장을 눌러주세요. (이전 내용은 이미 저장돼 있어요)${factNote}`)
     }
   }
 

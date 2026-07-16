@@ -8,6 +8,7 @@ import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import type { StudioResume } from '@/lib/resume'
 import { toStudioResume, sanitizeStudio } from '@/lib/resume'
 import { translateStudioToEnglish } from '@/lib/resume-translate'
+import { checkResumeFacts, type FactWarning } from '@/lib/resume-fact-check'
 export type { StudioResume, StudioExp, StudioEdu, StudioDesign } from '@/lib/resume'
 
 // 매칭 설정 저장 (이름·스킬·경력 요약은 이력서 스튜디오에서 관리)
@@ -229,7 +230,7 @@ export async function saveResumeStudio(input: StudioResume): Promise<{ error?: s
  */
 export async function enrichResumeStudio(
   input: StudioResume
-): Promise<{ ko?: StudioResume; error?: string }> {
+): Promise<{ ko?: StudioResume; warnings?: FactWarning[]; error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
 
@@ -305,7 +306,7 @@ JSON으로만 응답하세요. 다른 텍스트 금지:
       }),
     })
 
-    return { ko: enriched }
+    return { ko: enriched, warnings: checkResumeFacts(current, enriched) }
   } catch (e) {
     console.error('enrichResumeStudio error:', e)
     return { error: 'AI 보강 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
@@ -362,15 +363,16 @@ export async function syncResumeEnglish(
 }
 
 /**
- * AI 어시스턴트로 이력서(한국어 원본)를 대화형으로 수정한다.
- * 지시사항에 따라 ko를 재작성 → 영어(en) 재동기화 → 저장 → 갱신된 ko/en 반환.
- * 워크스페이스 하단 채팅에서 호출한다.
+ * AI 어시스턴트로 이력서(한국어)를 대화형으로 수정한다.
+ * 지시사항에 따라 ko를 재작성 → 영어(en) 번역 → 결과 반환. **저장하지 않는다** —
+ * 호출부(워크스페이스)가 검토 후 공고별 저장(saveJobResumeDraft)으로 확정한다.
+ * 원본 대비 사실 변경(숫자·회사명·기간 등)을 감지해 warnings로 함께 반환한다.
  */
 export async function chatEditResume(
   instruction: string,
   current: StudioResume,
   jobContext?: { title?: string; company?: string; description?: string }
-): Promise<{ ko?: StudioResume; en?: StudioResume; reply?: string; error?: string }> {
+): Promise<{ ko?: StudioResume; en?: StudioResume; reply?: string; warnings?: FactWarning[]; error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
   if (!instruction.trim()) return { error: '수정 요청을 입력해주세요.' }
@@ -460,13 +462,14 @@ ${instruction}${jobBlock}`,
     ],
   })
 
-  // 저장 + 영어 재동기화 (syncResumeEnglish가 ko/en 모두 저장)
-  const sync = await syncResumeEnglish(nextKo)
-  if (sync.error) return { error: sync.error }
+  // 번역만 수행하고 저장하지 않는다 — 마스터/공고별 어느 쪽도 여기서 확정하지 않음
+  const translated = await translateStudioToEnglish(nextKo)
+  if (translated.error) return { error: translated.error }
 
   return {
     ko: nextKo,
-    en: sync.en,
+    en: translated.en,
+    warnings: checkResumeFacts(ko, nextKo),
     reply: typeof raw.reply === 'string' && raw.reply.trim() ? raw.reply.trim() : '요청하신 대로 이력서를 수정했어요.',
   }
 }
@@ -481,7 +484,7 @@ export async function tailorResumeForJob(
   jobId: string,
   current: StudioResume,
   jobContext: { title: string; company: string; description: string | null }
-): Promise<{ ko?: StudioResume; error?: string }> {
+): Promise<{ ko?: StudioResume; warnings?: FactWarning[]; error?: string }> {
   const email = await getAuthUserEmail()
   if (!email) return { error: '로그인이 필요합니다.' }
 
@@ -577,7 +580,7 @@ ${JSON.stringify({
     ],
   })
 
-  return { ko: nextKo }
+  return { ko: nextKo, warnings: checkResumeFacts(ko, nextKo) }
 }
 
 /**

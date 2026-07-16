@@ -62,6 +62,9 @@ export default function WorkspaceResume({
   // 모바일(lg 미만): 원본/영문 탭 전환 + AI 채팅 하단 시트. lg 이상에서는 상태 무관하게 둘 다 표시.
   const [mobilePane, setMobilePane] = useState<'ko' | 'en'>('ko')
   const [chatOpen, setChatOpen] = useState(false)
+  // AI 수정 직후의 사실 확인 UX — 경고 목록 + 수정 전 스냅샷(되돌리기용)
+  const [factWarnings, setFactWarnings] = useState<string[]>([])
+  const [undoSnapshot, setUndoSnapshot] = useState<StudioResume | null>(null)
 
   // 핸들러가 최신 ko를 읽도록 ref 동기화 (blur 커밋 직후 클릭 시 stale 방지)
   const koRef = useRef(ko)
@@ -107,6 +110,9 @@ export default function WorkspaceResume({
     if (sync.en) setEnDoc(studioToDoc(sync.en, contact))
     setDirty(false)
     setSavedAt(true)
+    // 저장 = 사용자가 AI 제안을 검토·확정한 것 — 경고와 되돌리기 스냅샷 해제
+    setFactWarnings([])
+    setUndoSnapshot(null)
     setTimeout(() => setSavedAt(false), 2500)
     router.refresh()
   }
@@ -135,7 +141,8 @@ export default function WorkspaceResume({
     setError('')
     setMessages(m => [...m, { role: 'user', text: instruction }])
     setBusy('chat')
-    const res = await chatEditResume(instruction, koRef.current, {
+    const before = koRef.current
+    const res = await chatEditResume(instruction, before, {
       title: jobContext.title,
       company: jobContext.company,
       description: jobContext.description ?? undefined,
@@ -146,17 +153,25 @@ export default function WorkspaceResume({
       setMessages(m => [...m, { role: 'ai', text: `⚠️ ${res.error}` }])
       return
     }
-    if (res.ko) { setKo(res.ko); setEditKey(k => k + 1); setDirty(false) }
+    // AI 수정은 저장되지 않은 제안 상태 — 사용자가 검토 후 "저장"으로 확정한다
+    if (res.ko) {
+      setUndoSnapshot(before)
+      setFactWarnings((res.warnings ?? []).map(w => w.message))
+      setKo(res.ko)
+      setEditKey(k => k + 1)
+      setDirty(true)
+      setSavedAt(false)
+    }
     if (res.en) setEnDoc(studioToDoc(res.en, contact))
-    setMessages(m => [...m, { role: 'ai', text: res.reply ?? '수정했어요.' }])
-    router.refresh()
+    setMessages(m => [...m, { role: 'ai', text: `${res.reply ?? '수정했어요.'} 검토 후 "저장"을 눌러 확정해주세요.` }])
   }
 
   // "이 공고에 맞춰 AI 분석" — 한국어 원본을 JD에 맞춰 재구성 (번역·저장은 별도 단계)
   async function handleTailorToJob() {
     setBusy('tailor')
     setError('')
-    const res = await tailorResumeForJob(jobId, koRef.current, {
+    const before = koRef.current
+    const res = await tailorResumeForJob(jobId, before, {
       title: jobContext.title,
       company: jobContext.company,
       description: jobContext.description,
@@ -164,11 +179,22 @@ export default function WorkspaceResume({
     setBusy(null)
     if (res.error) { setError(res.error); return }
     if (res.ko) {
+      setUndoSnapshot(before)
+      setFactWarnings((res.warnings ?? []).map(w => w.message))
       setKo(res.ko)
       setEditKey(k => k + 1)
       setDirty(true)
       setSavedAt(false)
     }
+  }
+
+  // AI 제안 거절 — 수정 직전 상태로 복원 (저장 전이므로 DB에는 아무 영향 없음)
+  function handleUndoAi() {
+    if (!undoSnapshot) return
+    setKo(undoSnapshot)
+    setEditKey(k => k + 1)
+    setUndoSnapshot(null)
+    setFactWarnings([])
   }
 
   // "AI 번역 · 맞춤화 (영어)" — 현재 한국어를 영어로 재동기화하고 저장까지 함께 처리
@@ -214,6 +240,34 @@ export default function WorkspaceResume({
           </button>
         </div>
       </div>
+
+      {/* AI 수정 직후 사실 확인 — 저장 전까지는 제안 상태이며, 되돌리기로 거절할 수 있다 */}
+      {undoSnapshot && (
+        <div className="mx-auto mt-3 max-w-[1320px] px-4 sm:px-7">
+          <div className="rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-semibold">
+                ✨ AI가 이력서를 수정했어요 — 제출 전 사실이 맞는지 확인해주세요. 저장을 눌러야 반영됩니다.
+              </span>
+              <button
+                type="button"
+                onClick={handleUndoAi}
+                disabled={busy !== null}
+                className="shrink-0 rounded-[8px] border border-amber-300 bg-white px-3 py-1 font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+              >
+                ↺ 수정 전으로 되돌리기
+              </button>
+            </div>
+            {factWarnings.length > 0 && (
+              <ul className="mt-2 list-disc space-y-0.5 pl-5 text-[12.5px]">
+                {factWarnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 마스터 이력서(/profile)가 이 공고 초안보다 나중에 수정됨 — 자동 덮어쓰기 없이 안내만 */}
       {masterChanged && (
