@@ -27,14 +27,14 @@ const COLUMNS: DemoColumn[] = [
     dot: '#98A2B3',
     cards: [
       { initial: 'A', chipBg: '#0052CC', role: '백엔드 엔지니어', company: 'Atlassian', location: '시드니, 호주', salary: 'A$130K–160K', match: 82 },
-      { initial: 'C', chipBg: '#8B3DFF', role: '데이터 분석가', company: 'Canva', location: '시드니, 호주 · 원격', salary: 'A$110K–135K', match: 75 },
+      { initial: 'R', chipBg: '#003B71', role: '간호사 (RN)', company: 'Ramsay Health Care', location: '시드니, 호주', salary: 'A$85K–105K', match: 84 },
     ],
   },
   {
     label: '지원 완료',
     dot: '#1A56DB',
     cards: [
-      { initial: 'X', chipBg: '#13B5EA', role: '프론트엔드 개발자', company: 'Xero', location: '오클랜드, 뉴질랜드', salary: 'NZ$105K–130K', match: 88 },
+      { initial: 'Q', chipBg: '#E40000', role: '마케팅 매니저', company: 'Qantas', location: '시드니, 호주', salary: 'A$115K–140K', match: 88 },
     ],
   },
   {
@@ -48,7 +48,7 @@ const COLUMNS: DemoColumn[] = [
     label: '오퍼',
     dot: '#046C4E',
     cards: [
-      { initial: 'S', chipBg: '#6559FF', role: '풀스택 개발자', company: 'SafetyCulture', location: '시드니, 호주', salary: 'A$125K–150K', match: 79, note: { text: '오퍼 수신 · 검토 중', tone: 'offer' }, emphasized: true },
+      { initial: 'X', chipBg: '#13B5EA', role: '재무 회계사 (CA)', company: 'Xero', location: '오클랜드, 뉴질랜드', salary: 'NZ$95K–115K', match: 79, note: { text: '오퍼 수신 · 검토 중', tone: 'offer' }, emphasized: true },
     ],
   },
 ]

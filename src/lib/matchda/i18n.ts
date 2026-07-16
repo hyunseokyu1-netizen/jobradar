@@ -23,7 +23,7 @@ const ko = {
     subhead:
       '한국어 이력서를 전문가 수준의 영어로 번역하고, 전 세계 채용 공고에 맞춰 자동으로 최적화하세요.',
     searchCountry: '호주 · 뉴질랜드',
-    searchPlaceholder: '직무, 회사 또는 기술 검색',
+    searchPlaceholder: '직무, 회사 또는 키워드 검색',
     searchButton: '검색',
     freeNote: '맞춤 이력서 2개 무료 체험 · 카드 등록 없이 시작',
     floatRealtime: 'AI 매칭',
@@ -32,10 +32,10 @@ const ko = {
     floatTranslatedSub: '영어 · 방금 전',
   },
   heroB: {
-    subheadLine1: '관심 회사의 채용 공고를 한 번에 모아 직무·기술로 검색하세요.',
+    subheadLine1: '관심 회사의 채용 공고를 한 번에 모아 직무·키워드로 검색하세요.',
     subheadLine2: 'AI가 당신의 이력서를 번역하고 맞춤 최적화합니다.',
     popularLabel: '인기 검색',
-    popularChips: ['시드니 · 백엔드', '멜번 · 풀스택', '오클랜드 · 데이터', '원격 근무'],
+    popularChips: ['시드니 · 간호', '멜번 · 마케팅', '오클랜드 · 회계', '원격 근무'],
   },
   features: [
     {
@@ -81,7 +81,6 @@ const ko = {
       button: '업그레이드',
     },
     plan: '무료 플랜',
-    topbarSearch: '공고, 회사 또는 국가 검색',
     newResume: '새 이력서',
     greeting: (name: string) => `안녕하세요, ${name}님`,
     greetingSub: '오늘도 글로벌 커리어를 향해 한 걸음 나아가 볼까요?',
@@ -153,7 +152,7 @@ const en: typeof ko = {
     subhead:
       'Translate your Korean resume into professional English and automatically tailor it to job postings around the world.',
     searchCountry: 'Australia · NZ',
-    searchPlaceholder: 'Search role, company or skill',
+    searchPlaceholder: 'Search role, company or keyword',
     searchButton: 'Search',
     freeNote: '2 tailored resumes free · no card required',
     floatRealtime: 'AI match',
@@ -162,10 +161,10 @@ const en: typeof ko = {
     floatTranslatedSub: 'English · just now',
   },
   heroB: {
-    subheadLine1: 'Collect postings from companies you follow in one click and search by role or skill.',
+    subheadLine1: 'Collect postings from companies you follow in one click and search by role or keyword.',
     subheadLine2: 'AI translates and tailors your resume to each role.',
     popularLabel: 'Popular',
-    popularChips: ['Sydney · Backend', 'Melbourne · Full-stack', 'Auckland · Data', 'Remote'],
+    popularChips: ['Sydney · Nursing', 'Melbourne · Marketing', 'Auckland · Accounting', 'Remote'],
   },
   features: [
     {
@@ -211,7 +210,6 @@ const en: typeof ko = {
       button: 'Upgrade',
     },
     plan: 'Free plan',
-    topbarSearch: 'Search jobs, companies or countries',
     newResume: 'New Resume',
     greeting: (name: string) => `Hello, ${name}`,
     greetingSub: "Let's take one more step toward your global career today.",

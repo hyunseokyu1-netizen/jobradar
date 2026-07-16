@@ -34,7 +34,7 @@ export default function Sidebar({
 
   return (
     <aside className="sticky top-0 hidden min-h-screen w-[248px] flex-shrink-0 flex-col self-start border-r border-[#ECEEF0] bg-white px-[14px] py-5 lg:flex">
-      <Link href="/dashboard" className="flex cursor-pointer items-center gap-[9px] px-2 pb-[18px] pt-[6px]">
+      <Link href="/" className="flex cursor-pointer items-center gap-[9px] px-2 pb-[18px] pt-[6px]">
         <Image src="/matchda-mark.png" alt="MatchDa" width={30} height={30} className="rounded-lg" />
         <span className="text-[18px] font-bold tracking-[-0.02em] text-[#0C1A14]">MatchDa</span>
       </Link>

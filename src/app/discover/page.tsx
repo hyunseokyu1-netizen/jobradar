@@ -80,8 +80,9 @@ export default async function DiscoverPage({
         <GettingStartedGuide profileDone={!!profile.onboarding_completed} />
       )}
 
-      <AddSourceForm />
+      {/* 회사 중심 탐색 — 회사 선택이 기본 동선, URL 직접 등록은 보조 */}
       <PresetCompanies />
+      <AddSourceForm />
       <SourceList sources={(sources ?? []) as SourceItem[]} />
 
       {jobs.length > 0 && (

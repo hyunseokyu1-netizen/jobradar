@@ -28,7 +28,7 @@ export default function AppShell({
       <main className="min-w-0 flex-1">
         {/* 모바일: 사이드바가 숨겨지므로 로고 + 햄버거 메뉴 노출 */}
         <header className="sticky top-0 z-20 flex h-[60px] items-center justify-between border-b border-[#ECEEF0] bg-white px-4 sm:px-6 lg:hidden">
-          <Logo href="/dashboard" />
+          <Logo href="/" />
           <MobileNav activeKey={activeKey} />
         </header>
 

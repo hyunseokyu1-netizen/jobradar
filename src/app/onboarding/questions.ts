@@ -47,7 +47,7 @@ export const STEPS: Step[] = [
     question:
       '학력을 알려주세요. 학교명, 전공, 학위, 재학 기간을 한 번에 적어주시면 됩니다.',
     addMoreQuestion: '다른 학력이 더 있으면 적어주세요.',
-    placeholder: '예: 서울대학교 컴퓨터공학과 학사, 2011-2015',
+    placeholder: '예: 서울대학교 간호학과 학사, 2011-2015',
   },
   {
     kind: 'list',
@@ -55,19 +55,19 @@ export const STEPS: Step[] = [
     question:
       '경력을 알려주세요. 회사명, 직무, 근무 기간, 주요 업무를 적어주시면 됩니다.',
     addMoreQuestion: '다른 경력이 더 있으면 적어주세요.',
-    placeholder: '예: ABC테크 백엔드 개발자, 2018-2022, Node.js로 결제 시스템 개발',
+    placeholder: '예: 서울성모병원 간호사, 2018-2022, 내과 병동 · 응급실 근무',
   },
   {
     kind: 'single',
     key: 'skills',
-    question: '보유하신 기술 스택과 스킬을 쉼표로 구분해 적어주세요.',
-    placeholder: '예: Node.js, React Native, TypeScript, AWS, MySQL',
+    question: '보유하신 스킬·자격을 쉼표로 구분해 적어주세요.',
+    placeholder: '예: 응급 간호, AHPRA 등록, 환자 케어 (개발자라면: Node.js, React, AWS)',
   },
   {
     kind: 'single',
     key: 'positions',
     question: '어떤 포지션을 찾고 계신가요? 여러 개면 쉼표로 구분해주세요.',
-    placeholder: '예: 풀스택 개발자, 백엔드 개발자, React Native 개발자',
+    placeholder: '예: 간호사, 마케팅 매니저, 백엔드 개발자',
   },
   {
     kind: 'single',

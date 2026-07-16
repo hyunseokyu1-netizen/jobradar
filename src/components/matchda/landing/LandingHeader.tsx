@@ -1,10 +1,11 @@
 import Link from 'next/link'
-import { Logo } from '../ui/primitives'
+import { Logo, Avatar } from '../ui/primitives'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
 /**
  * 랜딩 sticky 헤더 (72px, 반투명 + blur).
  * tinted: 랜딩 B 의 연그린 배경 변형.
+ * userEmail 이 있으면 우측을 아바타 + 대시보드 버튼으로 교체한다.
  */
 export default function LandingHeader({
   t,
@@ -12,17 +13,24 @@ export default function LandingHeader({
   logoHref = '/',
   loginHref = '/login',
   signupHref = loginHref,
+  userName,
+  userEmail,
 }: {
   t: Dictionary
   tinted?: boolean
-  /** @deprecated 랜딩 헤더는 항상 방문자 관점(로그인·가입 버튼)으로 표시한다 */
+  /** @deprecated userEmail 로 대체 — 전달해도 무시된다 */
   authed?: boolean
   logoHref?: string
   /** 로그인 버튼 목적지 (공개 랜딩은 /login) */
   loginHref?: string
   /** 무료로 시작하기 버튼 목적지 (공개 랜딩은 /login?mode=signup) */
   signupHref?: string
+  /** 로그인 유저 이름 (없으면 이메일 앞부분으로 대체) */
+  userName?: string | null
+  /** 로그인 유저 이메일 — 있으면 로그인·가입 버튼 대신 유저 정보 표시 */
+  userEmail?: string | null
 }) {
+  const displayName = userName || userEmail?.split('@')[0] || ''
   return (
     <header
       className={`sticky top-0 z-50 border-b backdrop-blur-[12px] ${
@@ -59,21 +67,41 @@ export default function LandingHeader({
             </Link>
           </nav>
         </div>
-        <div className="flex items-center gap-[6px]">
-          {/* 항상 방문자 관점 버튼 — 로그인 유저가 눌러도 미들웨어가 앱으로 보낸다 */}
-          <Link
-            href={loginHref}
-            className="hidden rounded-lg px-4 py-[9px] text-[14px] font-semibold text-[#344054] hover:bg-[#F4F6F8] sm:inline-block"
-          >
-            {t.nav.login}
-          </Link>
-          <Link
-            href={signupHref}
-            className="rounded-lg bg-[#046C4E] px-[18px] py-[10px] text-[14px] font-semibold text-white shadow-[0_1px_2px_rgba(4,108,78,0.25)] hover:bg-[#035A40]"
-          >
-            {t.nav.signup}
-          </Link>
-        </div>
+        {userEmail ? (
+          <div className="flex items-center gap-[10px]">
+            <Link
+              href="/dashboard"
+              className="rounded-lg bg-[#046C4E] px-[18px] py-[10px] text-[14px] font-semibold text-white shadow-[0_1px_2px_rgba(4,108,78,0.25)] hover:bg-[#035A40]"
+            >
+              {t.dashboard.nav.dashboard}
+            </Link>
+            <Link
+              href="/settings"
+              title={userEmail}
+              className="flex items-center gap-[9px] rounded-lg p-[5px] pr-3 hover:bg-[#F4F6F8]"
+            >
+              <Avatar initial={displayName.slice(0, 1).toUpperCase()} size={32} />
+              <span className="hidden max-w-[140px] truncate text-[14px] font-semibold text-[#1F2A37] sm:block">
+                {displayName}
+              </span>
+            </Link>
+          </div>
+        ) : (
+          <div className="flex items-center gap-[6px]">
+            <Link
+              href={loginHref}
+              className="hidden rounded-lg px-4 py-[9px] text-[14px] font-semibold text-[#344054] hover:bg-[#F4F6F8] sm:inline-block"
+            >
+              {t.nav.login}
+            </Link>
+            <Link
+              href={signupHref}
+              className="rounded-lg bg-[#046C4E] px-[18px] py-[10px] text-[14px] font-semibold text-white shadow-[0_1px_2px_rgba(4,108,78,0.25)] hover:bg-[#035A40]"
+            >
+              {t.nav.signup}
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   )

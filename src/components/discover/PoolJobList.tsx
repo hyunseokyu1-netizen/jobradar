@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { addJobToApplications } from '@/app/discover/actions'
 import { Search } from '@/components/matchda/ui/icons'
@@ -40,13 +40,22 @@ export default function PoolJobList({
   const router = useRouter()
   const [search, setSearch] = useState(initialSearch)
   const [sort, setSort] = useState<SortKey>('recent')
+  const [companyFilter, setCompanyFilter] = useState<string>('all')
   const [addingId, setAddingId] = useState<string | null>(null)
   const [sentIds, setSentIds] = useState<Set<string>>(new Set())
   const [error, setError] = useState('')
 
+  // 회사별 공고 수 — 많은 순으로 칩 정렬
+  const companies = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const j of jobs) counts.set(j.company, (counts.get(j.company) ?? 0) + 1)
+    return [...counts.entries()].sort((a, b) => b[1] - a[1])
+  }, [jobs])
+
   const q = search.trim().toLowerCase()
   const visible = jobs
     .filter(j => {
+      if (companyFilter !== 'all' && j.company !== companyFilter) return false
       if (!q) return true
       return `${j.title} ${j.company} ${j.location ?? ''}`.toLowerCase().includes(q)
     })
@@ -80,6 +89,35 @@ export default function PoolJobList({
 
   return (
     <div>
+      {/* 회사 선택 칩 — 회사 중심 탐색의 기본 진입점 */}
+      {companies.length > 1 && (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setCompanyFilter('all')}
+            className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+              companyFilter === 'all'
+                ? 'border-[#046C4E] bg-[#046C4E] text-white'
+                : 'border-[#ECEEF0] bg-white text-[#667085] hover:border-[#98A2B3]'
+            }`}
+          >
+            모든 회사 ({jobs.length})
+          </button>
+          {companies.map(([name, count]) => (
+            <button
+              key={name}
+              onClick={() => setCompanyFilter(prev => (prev === name ? 'all' : name))}
+              className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                companyFilter === name
+                  ? 'border-[#046C4E] bg-[#046C4E] text-white'
+                  : 'border-[#ECEEF0] bg-white text-[#667085] hover:border-[#98A2B3]'
+              }`}
+            >
+              {name} ({count})
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* 검색 + 정렬 */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">

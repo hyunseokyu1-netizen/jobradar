@@ -24,6 +24,8 @@ export default function MatchdaLanding({
   loginHref,
   signupHref,
   searchHref,
+  userName,
+  userEmail,
   testimonials = [],
 }: {
   /** 로그인 상태면 쇼케이스 CTA·검색 목적지를 실제 앱으로 바꾼다 */
@@ -34,6 +36,10 @@ export default function MatchdaLanding({
   signupHref?: string
   /** 검색 제출 목적지 (공개 랜딩은 /login?mode=signup) */
   searchHref?: string
+  /** 로그인 유저 이름 — 헤더 아바타 표시용 */
+  userName?: string | null
+  /** 로그인 유저 이메일 — 있으면 헤더가 유저 정보를 표시 */
+  userEmail?: string | null
   /** 공개 동의 실후기 — 비어있으면 섹션이 '예시' 라벨 샘플로 폴백 */
   testimonials?: PublicTestimonial[]
 }) {
@@ -42,7 +48,7 @@ export default function MatchdaLanding({
 
   return (
     <div className="min-h-screen bg-white font-[family-name:var(--font-plex-kr)] text-[#111827] antialiased">
-      <LandingHeader t={t} authed={authed} loginHref={loginHref} signupHref={signupHref} />
+      <LandingHeader t={t} loginHref={loginHref} signupHref={signupHref} userName={userName} userEmail={userEmail} />
       <SplitHero t={t} searchHref={searchHref} />
       <WorkspaceShowcase ctaHref={authed ? '/profile' : signupHref ?? '/login?mode=signup'} />
       <DiscoverShowcase />

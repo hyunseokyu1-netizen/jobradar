@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Search, Plus, Bell } from '../ui/icons'
+import { Plus, Bell } from '../ui/icons'
 import { Avatar, Logo } from '../ui/primitives'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
@@ -19,13 +19,9 @@ export default function Topbar({
     <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between gap-3 border-b border-[#ECEEF0] bg-white px-4 sm:px-6 lg:px-9">
       {/* 모바일: 사이드바가 숨겨지므로 로고 노출 */}
       <div className="lg:hidden">
-        <Logo href="/dashboard" />
+        <Logo href="/" />
       </div>
-      {/* TODO(api): 공고/회사/국가 검색 연동 */}
-      <div className="hidden w-[200px] items-center gap-[9px] rounded-[10px] border border-[#ECEEF0] bg-[#F4F6F8] px-[14px] py-[9px] md:flex lg:w-[340px]">
-        <Search size={17} strokeWidth={1.8} className="text-[#98A2B3]" />
-        <span className="truncate text-[14px] text-[#98A2B3]">{t.dashboard.topbarSearch}</span>
-      </div>
+      <div className="flex-1" />
       <div className="flex items-center gap-[14px]">
         <Link
           href="/profile"

@@ -3,7 +3,7 @@
  * 실제 /discover UI(추천 기업 칩 + 점수 배지 공고 리스트)를 정적 데모로 재현.
  */
 
-const PRESETS = ['Apple', 'Spotify', 'Stripe', 'Anthropic', 'Figma', 'Reddit']
+const PRESETS = ['Apple', 'Spotify', 'Ramsay Health', 'Qantas', 'Figma', 'Deloitte']
 
 const DEMO_JOBS = [
   {
@@ -14,15 +14,15 @@ const DEMO_JOBS = [
   },
   {
     score: 80,
-    title: 'Manager, Software Engineering - AI Product',
-    meta: 'Figma · London, England',
-    reason: 'AI 제품 소프트웨어 엔지니어링 매니저는 AI 경험·엔지니어링·제품 리더십이 부합',
+    title: 'Registered Nurse — Emergency Department',
+    meta: 'Ramsay Health Care · Sydney, NSW · Australia',
+    reason: '응급실 간호 경력과 AHPRA 등록 요건이 공고의 핵심 요구사항과 일치',
   },
   {
     score: 74,
-    title: 'Senior Backend Engineer, Payments',
-    meta: 'Stripe · Remote · United States',
-    reason: '결제 시스템 백엔드 경력이 핵심 요구사항과 일치, 원격 근무 가능',
+    title: 'Marketing Manager, APAC',
+    meta: 'Spotify · Remote · Singapore',
+    reason: 'APAC 캠페인 운영·브랜드 마케팅 경력이 요구사항과 일치, 원격 근무 가능',
   },
 ]
 
