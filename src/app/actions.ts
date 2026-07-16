@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { detectPlatform } from '@/lib/detect-platform'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { parseResumeFile } from '@/lib/resume-parser'
-import { planOf, billingEnabled, FREE_LIMITS } from '@/lib/plan'
+import { planOf, limitsEnforced, limitExceededSuffix, FREE_LIMITS } from '@/lib/plan'
 import { retrievePastResumes, ragSourceCount } from '@/lib/resume-rag'
 import { structuredResumeText } from '@/lib/resume'
 import { MAX_APPLIED_DOCUMENTS, type AppliedDocument } from '@/lib/applied-documents'
@@ -183,7 +183,7 @@ export async function generateTailoredResume(jobId: string): Promise<{ content?:
   if (!profile) return { error: 'Profile not found' }
 
   // 무료 플랜 맞춤 이력서 한도: 새 공고에 한해 제한 (기존 공고 재생성은 허용)
-  if (billingEnabled() && planOf(profile) !== 'premium') {
+  if (limitsEnforced() && planOf(profile) !== 'premium') {
     const { data: existingForJob } = await supabaseAdmin
       .from('tailored_resumes')
       .select('id')
@@ -196,7 +196,7 @@ export async function generateTailoredResume(jobId: string): Promise<{ content?:
         .select('id', { count: 'exact', head: true })
         .eq('user_id', profile.id)
       if ((count ?? 0) >= FREE_LIMITS.tailoredResumes) {
-        return { error: `무료 플랜은 맞춤 이력서를 ${FREE_LIMITS.tailoredResumes}개까지 만들 수 있어요. 프리미엄으로 업그레이드하면 무제한입니다.` }
+        return { error: `무료 플랜은 맞춤 이력서를 ${FREE_LIMITS.tailoredResumes}개까지 만들 수 있어요. ${limitExceededSuffix()}` }
       }
     }
   }

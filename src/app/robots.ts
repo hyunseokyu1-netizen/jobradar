@@ -15,7 +15,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: ['/', '/about', '/pricing', '/terms', '/privacy', '/refund', '/support'],
       disallow: [
         '/dashboard', '/applications', '/discover', '/profile', '/workspace',
-        '/settings', '/onboarding', '/login', '/auth', '/api', '/matchda', '/r/',
+        '/settings', '/onboarding', '/login', '/auth', '/api', '/matchda', '/r/', '/admin',
       ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,

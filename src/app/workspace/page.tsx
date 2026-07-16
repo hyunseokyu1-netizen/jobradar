@@ -1,5 +1,5 @@
+import { redirect } from 'next/navigation'
 import { getMatchdaDict } from '@/lib/matchda/i18n'
-import { getWorkspaceData } from '@/lib/matchda/mock-data'
 import { getMatchdaWorkspace } from '@/lib/matchda/data'
 import WorkspaceTopbar from '@/components/matchda/workspace/WorkspaceTopbar'
 import OptimizationBanner from '@/components/matchda/workspace/OptimizationBanner'
@@ -20,7 +20,6 @@ export default async function MatchdaWorkspacePage({
   const t = getMatchdaDict('ko')
   const { jobId } = await searchParams
 
-  // 로그인 + jobId + 영어 이력서 작성 시 실데이터, 그 외 목업 데모로 폴백
   const result = await getMatchdaWorkspace(jobId)
 
   // 내 공고인데 구조화 이력서가 없음 → 목업(가짜 이력서) 대신 연결 안내
@@ -32,8 +31,13 @@ export default async function MatchdaWorkspacePage({
     )
   }
 
+  // jobId가 없거나 내 공고가 아니면 목업(가짜 데이터)을 보여주지 않는다 —
+  // 진짜 화면과 구분이 안 돼 혼란만 준다. 지원 현황에서 공고를 골라 진입하도록 유도.
+  // (디자인 데모는 /matchda/workspace 에 그대로 있음)
+  if (!result) redirect('/applications')
+
   const real = result
-  const data = real ?? getWorkspaceData()
+  const data = real
 
   return (
     <div className="min-h-screen bg-[#F4F6F8] text-[#111827]">

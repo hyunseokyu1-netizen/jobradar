@@ -9,14 +9,13 @@ import type { Dictionary } from '@/lib/matchda/i18n'
 export default function LandingHeader({
   t,
   tinted = false,
-  authed = false,
   logoHref = '/',
   loginHref = '/login',
   signupHref = loginHref,
 }: {
   t: Dictionary
   tinted?: boolean
-  /** 로그인 상태면 로그인 버튼을 숨기고 CTA를 대시보드로 바꾼다 */
+  /** @deprecated 랜딩 헤더는 항상 방문자 관점(로그인·가입 버튼)으로 표시한다 */
   authed?: boolean
   logoHref?: string
   /** 로그인 버튼 목적지 (공개 랜딩은 /login) */
@@ -61,20 +60,18 @@ export default function LandingHeader({
           </nav>
         </div>
         <div className="flex items-center gap-[6px]">
-          {/* 로그인 상태에선 로그인 버튼을 숨기고 CTA를 대시보드로 연결 */}
-          {!authed && (
-            <Link
-              href={loginHref}
-              className="hidden rounded-lg px-4 py-[9px] text-[14px] font-semibold text-[#344054] hover:bg-[#F4F6F8] sm:inline-block"
-            >
-              {t.nav.login}
-            </Link>
-          )}
+          {/* 항상 방문자 관점 버튼 — 로그인 유저가 눌러도 미들웨어가 앱으로 보낸다 */}
           <Link
-            href={authed ? '/dashboard' : signupHref}
+            href={loginHref}
+            className="hidden rounded-lg px-4 py-[9px] text-[14px] font-semibold text-[#344054] hover:bg-[#F4F6F8] sm:inline-block"
+          >
+            {t.nav.login}
+          </Link>
+          <Link
+            href={signupHref}
             className="rounded-lg bg-[#046C4E] px-[18px] py-[10px] text-[14px] font-semibold text-white shadow-[0_1px_2px_rgba(4,108,78,0.25)] hover:bg-[#035A40]"
           >
-            {authed ? t.dashboard.nav.dashboard : t.nav.signup}
+            {t.nav.signup}
           </Link>
         </div>
       </div>

@@ -5,8 +5,7 @@ export const dynamic = 'force-dynamic'
 
 /**
  * 공개 랜딩(설명) 페이지. 로그인 여부와 무관하게 항상 랜딩을 보여준다.
- * 로그인 상태면 헤더의 "로그인" 버튼을 숨기고 CTA를 대시보드로 연결한다.
- * 실제 대시보드는 /dashboard 에서 렌더한다.
+ * 헤더는 항상 방문자 관점(로그인·가입 버튼) — 로그인 유저가 눌러도 미들웨어가 앱으로 보낸다.
  */
 export default async function HomePage() {
   const authed = !!(await getAuthUserEmail())
@@ -15,7 +14,7 @@ export default async function HomePage() {
     <MatchdaLanding
       authed={authed}
       loginHref="/login"
-      signupHref={authed ? '/dashboard' : '/login?mode=signup'}
+      signupHref="/login?mode=signup"
       searchHref={authed ? '/discover' : '/login?mode=signup'}
     />
   )

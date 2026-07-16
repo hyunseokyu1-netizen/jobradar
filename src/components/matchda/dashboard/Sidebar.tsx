@@ -3,6 +3,8 @@ import Image from 'next/image'
 import { LayoutDashboard, FileText, Target, Briefcase } from '../ui/icons'
 import { Avatar } from '../ui/primitives'
 import { signOut } from '@/app/auth-actions'
+import FeedbackButton from '@/components/FeedbackButton'
+import { isAdminEmail } from '@/lib/admin'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
 /**
@@ -55,6 +57,22 @@ export default function Sidebar({
       </nav>
 
       <div className="flex-1" />
+
+      {/* 무료 공개 기간: 후기 수집이 곧 반응 지표 */}
+      {userEmail && (
+        <div className="mb-2">
+          <FeedbackButton />
+          {/* 관리자 전용 (ADMIN_EMAILS) — 일반 유저에게는 렌더되지 않음 */}
+          {isAdminEmail(userEmail) && (
+            <Link
+              href="/admin/feedback"
+              className="flex items-center gap-[11px] rounded-[10px] px-3 py-[10px] text-[14px] font-medium text-[#475467] hover:bg-[#F4F6F8]"
+            >
+              🛠 후기 관리
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="mb-3 rounded-[14px] bg-[linear-gradient(160deg,#046C4E,#035A40)] p-4">
         <div className="text-[14px] font-bold text-white">{t.dashboard.premium.title}</div>

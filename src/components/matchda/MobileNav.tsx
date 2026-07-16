@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import FeedbackButton from '@/components/FeedbackButton'
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: '대시보드', href: '/dashboard' },
@@ -57,6 +58,9 @@ export default function MobileNav({ activeKey }: { activeKey?: string }) {
                 </Link>
               )
             })}
+            <div className="border-t border-[#F4F6F8]">
+              <FeedbackButton className="block w-full px-5 py-3.5 text-left text-[15px] font-medium text-[#344054] hover:bg-[#F7F8FA]" />
+            </div>
           </nav>
         </>
       )}

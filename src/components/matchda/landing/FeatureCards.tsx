@@ -3,8 +3,9 @@ import { Languages, BarColumns, Target, ArrowRight } from '../ui/icons'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
 const ICONS = [Languages, BarColumns, Target]
-// 각 기능 카드의 "자세히 보기" 라우팅 (README 네비게이션 흐름)
-const HREFS = ['/workspace', '/dashboard', '/workspace']
+// "자세히 보기" 목적지 — 로그인 유저는 실제 기능 화면으로, 비로그인은 서비스 소개로.
+// (목업 데모 화면으로 보내면 진짜 데이터로 착각하므로 데모 라우팅 금지)
+const AUTHED_HREFS = ['/profile', '/applications', '/discover']
 
 /**
  * 기능 3카드 (아이콘 박스 + 제목 + 설명 + 선택적 "자세히 보기").
@@ -13,9 +14,11 @@ const HREFS = ['/workspace', '/dashboard', '/workspace']
 export default function FeatureCards({
   t,
   variant = 'a',
+  authed = false,
 }: {
   t: Dictionary
   variant?: 'a' | 'b'
+  authed?: boolean
 }) {
   const isB = variant === 'b'
   return (
@@ -39,7 +42,7 @@ export default function FeatureCards({
               <p className="m-0 text-[15px] leading-[1.62] text-[#667085]">{f.desc}</p>
               {!isB && (
                 <Link
-                  href={HREFS[i]}
+                  href={authed ? AUTHED_HREFS[i] : '/about'}
                   className="mt-[18px] inline-flex items-center gap-[5px] text-[14px] font-semibold text-[#046C4E]"
                 >
                   {t.featureMore}

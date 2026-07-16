@@ -7,11 +7,11 @@ import { detectPlatform } from '@/lib/detect-platform'
 import { detectAtsType } from '@/lib/discover/ats'
 import { getPostingsWithCache } from '@/lib/discover/scrape-cache'
 import { prefilterPostings, scorePostings } from '@/lib/discover/scoring'
-import { planOf, billingEnabled, FREE_LIMITS } from '@/lib/plan'
+import { planOf, limitsEnforced, limitExceededSuffix, FREE_LIMITS } from '@/lib/plan'
 
 // 무료 플랜 채용페이지 등록 한도 검사 (프리미엄은 무제한)
 async function overSourceLimit(profile: { id: string; plan?: string | null; subscription_status?: string | null }): Promise<boolean> {
-  if (!billingEnabled()) return false
+  if (!limitsEnforced()) return false
   if (planOf(profile) === 'premium') return false
   const { count } = await supabaseAdmin
     .from('job_sources')
@@ -20,7 +20,7 @@ async function overSourceLimit(profile: { id: string; plan?: string | null; subs
   return (count ?? 0) >= FREE_LIMITS.jobSources
 }
 
-const SOURCE_LIMIT_MSG = `무료 플랜은 채용페이지를 ${FREE_LIMITS.jobSources}개까지 등록할 수 있어요. 프리미엄으로 업그레이드하면 무제한입니다.`
+const SOURCE_LIMIT_MSG = `무료 플랜은 채용페이지를 ${FREE_LIMITS.jobSources}개까지 등록할 수 있어요. ${limitExceededSuffix()}`
 
 /**
  * 잡 탐색의 공유 공고 풀에서 공고를 지원 현황으로 보낸다 (관리 보내기).

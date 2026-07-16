@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { getMatchdaDict } from '@/lib/matchda/i18n'
-import { planOf, FREE_LIMITS, PREMIUM_PRICE_LABEL } from '@/lib/plan'
+import { planOf, billingEnabled, FREE_LIMITS, PREMIUM_PRICE_LABEL } from '@/lib/plan'
 import UpgradeButton from '@/components/billing/UpgradeButton'
 import AppShell from '@/components/matchda/AppShell'
 import LandingHeader from '@/components/matchda/landing/LandingHeader'
@@ -51,8 +51,8 @@ const PREMIUM_FEATURES = [
   '우선 AI 매칭',
 ]
 
-/** 요금제 카드 2장 — 공개/로그인 화면 공용 */
-function PlanCards({ isPremium, authed }: { isPremium: boolean; authed: boolean }) {
+/** 요금제 카드 2장 — 공개/로그인 화면 공용. canBuy=false(결제 미연동)면 프리미엄은 준비 중 표시 */
+function PlanCards({ isPremium, authed, canBuy }: { isPremium: boolean; authed: boolean; canBuy: boolean }) {
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       {/* 무료 */}
@@ -103,7 +103,16 @@ function PlanCards({ isPremium, authed }: { isPremium: boolean; authed: boolean 
           ))}
         </ul>
         <div className="mt-6">
-          {!authed ? (
+          {!canBuy ? (
+            <div>
+              <div className="rounded-lg bg-[#F4F6F8] px-5 py-3 text-center text-sm font-semibold text-[#667085]">
+                출시 준비 중
+              </div>
+              <p className="mt-2 text-center text-xs text-[#98A2B3]">
+                무료 공개 기간이에요. 결제 오픈 전까지 무료 플랜을 이용해주세요.
+              </p>
+            </div>
+          ) : !authed ? (
             <Link
               href="/login?mode=signup"
               className="block rounded-lg bg-[#046C4E] px-5 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-[#035A40]"
@@ -125,17 +134,21 @@ function PricingBody({
   isPremium,
   authed,
   success,
+  canBuy,
 }: {
   isPremium: boolean
   authed: boolean
   success?: string
+  canBuy: boolean
 }) {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold text-[#101828]">요금제</h1>
         <p className="mt-1 text-sm text-[#667085]">
-          무료로 시작하고, 필요할 때 프리미엄으로 무제한 이용하세요.
+          {canBuy
+            ? '무료로 시작하고, 필요할 때 프리미엄으로 무제한 이용하세요.'
+            : '지금은 무료 공개 기간 — 가입하면 바로 사용할 수 있어요.'}
         </p>
       </div>
 
@@ -145,11 +158,13 @@ function PricingBody({
         </div>
       )}
 
-      <PlanCards isPremium={isPremium} authed={authed} />
+      <PlanCards isPremium={isPremium} authed={authed} canBuy={canBuy} />
 
-      <p className="mt-6 text-center text-xs text-[#98A2B3]">
-        결제는 Paddle로 안전하게 처리됩니다. 구독은 고객 포털에서 언제든 해지할 수 있어요.
-      </p>
+      {canBuy && (
+        <p className="mt-6 text-center text-xs text-[#98A2B3]">
+          결제는 Paddle로 안전하게 처리됩니다. 구독은 고객 포털에서 언제든 해지할 수 있어요.
+        </p>
+      )}
     </div>
   )
 }
@@ -173,7 +188,7 @@ export default async function PricingPage({
         />
         <LandingHeader t={t} />
         <main className="mx-auto max-w-[1200px] px-4 py-16 sm:px-8">
-          <PricingBody isPremium={false} authed={false} />
+          <PricingBody isPremium={false} authed={false} canBuy={billingEnabled()} />
         </main>
         <SiteFooter t={t} />
       </div>
@@ -185,7 +200,7 @@ export default async function PricingPage({
 
   return (
     <AppShell activeKey="profile" userName={(profile?.name as string) ?? undefined} userEmail={email}>
-      <PricingBody isPremium={isPremium} authed success={success} />
+      <PricingBody isPremium={isPremium} authed success={success} canBuy={billingEnabled()} />
     </AppShell>
   )
 }

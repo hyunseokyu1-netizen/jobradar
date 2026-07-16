@@ -42,7 +42,7 @@ export default function MatchdaLanding({
       <WorkspaceShowcase ctaHref={authed ? '/profile' : signupHref ?? '/login?mode=signup'} />
       <DiscoverShowcase />
       <ApplicationsShowcase />
-      <FeatureCards t={t} />
+      <FeatureCards t={t} authed={authed} />
       <StatsBand t={t} />
       <SiteFooter t={t} />
     </div>

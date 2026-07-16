@@ -12,10 +12,23 @@ export const FREE_LIMITS = {
 
 export const PREMIUM_PRICE_LABEL = '$7.99 / 월'
 
-// 결제(구독)가 설정된 환경에서만 무료 한도를 적용한다.
-// NEXT_PUBLIC_PADDLE_PRICE_ID 가 없으면 업그레이드 경로가 없으므로 한도를 강제하지 않는다.
+// 결제(Paddle) 연동 여부 — 업그레이드 버튼 노출·문구 분기에 사용
 export function billingEnabled(): boolean {
   return !!process.env.NEXT_PUBLIC_PADDLE_PRICE_ID
+}
+
+// 무료 한도 강제 여부.
+// 결제 미연동 공개 기간에도 API 비용 보호를 위해 한도는 항상 강제한다.
+// (개발·테스트 등에서 끄려면 DISABLE_FREE_LIMITS=1)
+export function limitsEnforced(): boolean {
+  return process.env.DISABLE_FREE_LIMITS !== '1'
+}
+
+// 한도 초과 시 안내 문구 — 결제 오픈 전에는 업그레이드를 약속하지 않는다
+export function limitExceededSuffix(): string {
+  return billingEnabled()
+    ? '프리미엄으로 업그레이드하면 무제한입니다.'
+    : '무료 공개 기간에는 이 한도로 제공돼요. 프리미엄(무제한)은 준비 중입니다.'
 }
 
 /** profile row에서 현재 플랜을 판정 (구독 활성 상태면 premium) */
