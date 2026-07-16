@@ -106,6 +106,8 @@ export interface ResumeWorkspaceData {
   /** per-job 액션(JD 입력·지원 이력서·메모·정보 편집)에 필요한 실데이터 부가 정보 */
   jobExtra?: {
     description: string | null
+    /** 외부 공고 페이지 링크 — 직접 입력 공고(합성 URL)는 null */
+    applyUrl?: string | null
     memo: string | null
     appliedResumeFilename: string | null
     appliedResumeText: string | null

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { GlobeMark, ChevronDown, Search } from '../ui/icons'
+import { GlobeMark, Search } from '../ui/icons'
 
 /**
  * 히어로 검색바. 클라이언트 컴포넌트이므로 문자열 props 만 받는다.
@@ -44,16 +44,15 @@ export default function SearchBar({
           : 'flex max-w-[528px] items-center gap-[6px] rounded-[14px] border border-[#E2E6EA] bg-white p-[7px] shadow-[0_6px_24px_rgba(16,24,40,0.07)]'
       }
     >
-      <button
-        type="button"
+      {/* 서비스 대상 지역 표시 — 국가 선택 기능은 없으므로 드롭다운처럼 보이지 않게 정적 라벨로 */}
+      <span
         className={`hidden items-center gap-[7px] whitespace-nowrap text-[14px] font-medium text-[#344054] sm:flex ${
           lg ? 'px-[14px] py-[11px]' : 'px-3 py-[10px]'
         }`}
       >
         <GlobeMark size={16} strokeWidth={1.8} className="text-[#046C4E]" />
         {country}
-        <ChevronDown size={14} className="text-[#98A2B3]" />
-      </button>
+      </span>
       <div className={`hidden w-px bg-[#E5E8EB] sm:block ${lg ? 'h-[26px]' : 'h-6'}`} />
       <input
         value={query}

@@ -254,7 +254,7 @@ export async function getMatchdaWorkspace(
 
   const { data: job } = await supabaseAdmin
     .from('jobs')
-    .select('title, company, location, description')
+    .select('title, company, location, description, url')
     .eq('id', jobId)
     .maybeSingle()
   if (!job) return null
@@ -339,6 +339,8 @@ export async function getMatchdaWorkspace(
     translated,
     jobExtra: {
       description: job.description ?? null,
+      // 외부 공고 링크 — 직접 입력 공고(manual:// 합성 URL)는 열 수 없으므로 null
+      applyUrl: job.url && !job.url.startsWith('manual://') ? job.url : null,
       memo: matchRow.memo ?? null,
       appliedResumeFilename: matchRow.applied_resume_filename ?? null,
       appliedResumeText: matchRow.applied_resume_text ?? null,

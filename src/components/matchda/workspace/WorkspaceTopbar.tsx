@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, Check, Share, ArrowRight } from '../ui/icons'
+import { ArrowLeft, Check, ArrowRight } from '../ui/icons'
 import type { ResumeWorkspaceData } from '@/lib/matchda/types'
 import type { Dictionary } from '@/lib/matchda/i18n'
 
@@ -48,19 +48,20 @@ export default function WorkspaceTopbar({
           <Check size={14} className="text-[#046C4E]" />
           {t.workspace.autoSaved}
         </div>
-        <button
-          type="button"
-          className="hidden h-[38px] w-[38px] items-center justify-center rounded-[9px] border border-[#E2E6EA] bg-white text-[#475467] hover:bg-[#F4F6F8] sm:flex"
-        >
-          <Share size={17} />
-        </button>
-        <button
-          type="button"
-          className="flex items-center gap-[7px] rounded-[9px] bg-[#046C4E] px-3 py-[10px] text-[14px] font-semibold text-white shadow-[0_1px_2px_rgba(4,108,78,0.25)] hover:bg-[#035A40] sm:px-[18px]"
-        >
-          <ArrowRight size={16} className="text-white" />
-          <span className="hidden sm:inline">{t.workspace.apply}</span>
-        </button>
+        {/* 외부 공고 페이지 열기 — 링크를 열어도 지원 완료로 처리하지 않는다 (실제 제출 후
+            사용자가 직접 상태를 바꾸는 것이 정확). 직접 입력 공고(URL 없음)는 버튼 미노출. */}
+        {data.jobExtra?.applyUrl && (
+          <a
+            href={data.jobExtra.applyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="공고 페이지를 새 탭으로 엽니다. 제출을 마치면 지원 상태를 '지원 완료'로 바꿔주세요."
+            className="flex items-center gap-[7px] rounded-[9px] bg-[#046C4E] px-3 py-[10px] text-[14px] font-semibold text-white shadow-[0_1px_2px_rgba(4,108,78,0.25)] hover:bg-[#035A40] sm:px-[18px]"
+          >
+            <ArrowRight size={16} className="text-white" />
+            <span className="hidden sm:inline">{t.workspace.apply}</span>
+          </a>
+        )}
       </div>
     </header>
   )
