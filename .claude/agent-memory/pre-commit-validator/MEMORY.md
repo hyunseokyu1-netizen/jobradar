@@ -9,3 +9,4 @@
 - [user_feedback 공개 후기 조회 예외](user-feedback-public-testimonials.md) — allow_public=true 게이트로 user_id 필터 대체, PII는 제출 시점 moderateFeedback으로 차단. 샘플 폴백엔 "예시" 배지 필수
 - [이력서 AI 수정 "검토 후 저장" 게이트](resume-ai-review-before-save-gate.md) — chatEditResume 등은 저장 안 함(제안만), router.refresh() 미호출은 의도적, checkResumeFacts는 순수 경고 함수
 - [SSRF url-guard 설계 및 잔여 리스크](ssrf-url-guard.md) — url-guard.ts 커버 범위(IP 난독화·멀티 A레코드 방어 확인됨), page.route 동기검사 갭·DNS 리바인딩 TOCTOU 등 알려진 리스크는 재플래그 금지
+- [크론 자동 수집(scrape-sources) 소유권/잠금 패턴](cron-scrape-sources-background-job.md) — scrapeSourceCore 공용 로직 검증 완료, 마이그레이션 024 선적용 필요(배포 순서 리스크)
