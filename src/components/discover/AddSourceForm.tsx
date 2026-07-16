@@ -70,6 +70,7 @@ export default function AddSourceForm() {
       )}
       <p className="text-xs text-[#98A2B3] mt-1.5">
         Greenhouse · Lever · Ashby · SmartRecruiters는 자동 인식됩니다. 그 외 페이지는 AI가 공고 목록을 추출합니다.
+        등록된 페이지는 하루 한 번 자동으로 새 공고를 확인해요.
       </p>
     </form>
   )

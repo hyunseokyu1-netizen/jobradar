@@ -11,6 +11,8 @@ export interface SourceItem {
   source_type: string
   last_scraped_at: string | null
   last_scrape_error: string | null
+  /** 반복 실패로 백그라운드 자동 수집이 중지됨 — 수동 수집 성공 시 자동 재개 */
+  auto_scrape_paused?: boolean
 }
 
 function timeAgo(iso: string | null): string {
@@ -79,7 +81,7 @@ export default function SourceList({ sources }: { sources: SourceItem[] }) {
               </a>
               {s.last_scrape_error ? (
                 <p className="text-[11px] text-red-500" title={s.last_scrape_error}>
-                  수집 불가
+                  수집 불가{s.auto_scrape_paused ? ' · 자동 수집 중지' : ''}
                 </p>
               ) : (
                 <p className="text-[11px] text-[#98A2B3]">{timeAgo(s.last_scraped_at)}</p>

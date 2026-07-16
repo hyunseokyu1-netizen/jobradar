@@ -30,7 +30,7 @@ export default async function DiscoverPage({
 
   const { data: sources, error: sourceError } = await supabaseAdmin
     .from('job_sources')
-    .select('id, name, url, source_type, last_scraped_at, last_scrape_error')
+    .select('id, name, url, source_type, last_scraped_at, last_scrape_error, auto_scrape_paused')
     .eq('user_id', profile.id)
     .order('created_at', { ascending: true })
 

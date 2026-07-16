@@ -5,8 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { detectPlatform } from '@/lib/detect-platform'
 import { detectAtsType } from '@/lib/discover/ats'
-import { getPostingsWithCache } from '@/lib/discover/scrape-cache'
-import { prefilterPostings, scorePostings } from '@/lib/discover/scoring'
+import { scorePostings } from '@/lib/discover/scoring'
+import { scrapeSourceCore } from '@/lib/discover/scrape-source'
 import { findUrlViolationWithDns } from '@/lib/url-guard'
 import { planOf, limitsEnforced, limitExceededSuffix, FREE_LIMITS } from '@/lib/plan'
 
@@ -133,9 +133,6 @@ export async function addJobSource(formData: FormData): Promise<{ error?: string
   return {}
 }
 
-// 한 번의 수집에서 Haiku 채점할 신규 공고 상한 (비용 제어)
-const MAX_SCORED_PER_SCRAPE = 50
-
 export async function scrapeSourceAction(sourceId: string): Promise<{
   found?: number
   added?: number
@@ -151,103 +148,22 @@ export async function scrapeSourceAction(sourceId: string): Promise<{
 
   const { data: source } = await supabaseAdmin
     .from('job_sources')
-    .select('id, url, source_type')
+    .select('id, url, source_type, consecutive_failures')
     .eq('id', sourceId)
     .eq('user_id', profile.id)
     .single()
 
   if (!source) return { error: '소스를 찾을 수 없습니다.' }
 
-  // 다른 유저가 최근 같은 페이지를 수집했으면 공유 캐시에서 읽어 재스크래핑 생략
-  let postings
-  let fromCache = false
-  try {
-    ;({ postings, fromCache } = await getPostingsWithCache(source.url, source.source_type))
-  } catch (e) {
-    const message = `수집 실패: ${String(e)}`
-    // 실패 상태를 영구 기록 → UI에서 "수집 불가" 표시 (last_scraped_at은 유지)
-    await supabaseAdmin
-      .from('job_sources')
-      .update({ last_scrape_error: message })
-      .eq('id', source.id)
-      .eq('user_id', profile.id)
-    revalidatePath('/discover')
-    return { error: message }
-  }
-
-  if (postings.length === 0) {
-    await supabaseAdmin
-      .from('job_sources')
-      .update({ last_scraped_at: new Date().toISOString(), last_scrape_error: null })
-      .eq('id', source.id)
-      .eq('user_id', profile.id)
-    revalidatePath('/discover')
-    return { found: 0, added: 0, scored: 0 }
-  }
-
-  // 이미 수집된 URL은 제외 (재채점 방지)
-  const { data: existing } = await supabaseAdmin
-    .from('discovered_jobs')
-    .select('url')
-    .eq('user_id', profile.id)
-    .in('url', postings.map(p => p.url))
-
-  const existingUrls = new Set((existing ?? []).map(e => e.url))
-  const fresh = postings.filter(p => !existingUrls.has(p.url))
-
-  // 1단계: 키워드 프리필터 (무료) → 2단계: Haiku 배치 채점
-  const { passed, filtered } = prefilterPostings(fresh, profile)
-  const toScore = passed.slice(0, MAX_SCORED_PER_SCRAPE)
-  const overflow = passed.slice(MAX_SCORED_PER_SCRAPE)
-
-  let scored
-  try {
-    scored = await scorePostings(toScore, profile)
-  } catch (e) {
-    return { error: `매칭 채점 실패: ${String(e)}` }
-  }
-
-  const rows = [
-    ...scored.map(p => ({
-      user_id: profile.id,
-      source_id: source.id,
-      title: p.title,
-      url: p.url,
-      location: p.location ?? null,
-      department: p.department ?? null,
-      match_score: p.score,
-      match_reason: p.reason,
-      status: 'new',
-    })),
-    // 프리필터 탈락·상한 초과분은 점수 없이 저장 (다음 수집 때 중복 채점 방지)
-    ...[...overflow, ...filtered].map(p => ({
-      user_id: profile.id,
-      source_id: source.id,
-      title: p.title,
-      url: p.url,
-      location: p.location ?? null,
-      department: p.department ?? null,
-      match_score: null,
-      match_reason: null,
-      status: 'new',
-    })),
-  ]
-
-  if (rows.length > 0) {
-    const { error: insertError } = await supabaseAdmin
-      .from('discovered_jobs')
-      .upsert(rows, { onConflict: 'user_id,url', ignoreDuplicates: true })
-    if (insertError) return { error: insertError.message }
-  }
-
-  await supabaseAdmin
-    .from('job_sources')
-    .update({ last_scraped_at: new Date().toISOString(), last_scrape_error: null })
-    .eq('id', source.id)
-    .eq('user_id', profile.id)
+  // 수집·채점·스케줄 갱신은 크론과 공유하는 핵심 로직으로 (성공 시 자동 수집 재개 포함)
+  const result = await scrapeSourceCore(
+    { id: source.id, user_id: profile.id, url: source.url, source_type: source.source_type },
+    profile,
+    { currentFailures: source.consecutive_failures ?? 0 }
+  )
 
   revalidatePath('/discover')
-  return { found: postings.length, added: fresh.length, scored: scored.length, fromCache }
+  return result
 }
 
 export async function dismissDiscoveredJob(discoveredJobId: string): Promise<{ error?: string }> {
