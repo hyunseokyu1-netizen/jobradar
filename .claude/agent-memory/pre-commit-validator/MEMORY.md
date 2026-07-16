@@ -6,3 +6,4 @@
 - [로그인 후 온보딩 리다이렉트 패턴](post-login-onboarding-redirect.md) — postLoginPath()/auth callback/LoginForm이 onboarding_completed로 분기, analyzeResumeFile 재사용
 - [랜딩 데모 데이터는 PII 아님](landing-demo-data-not-pii.md) — matchda/landing/* 의 하드코딩 회사명·도시명은 CRITICAL 위반 대상 아님
 - [discover_scrape_cache는 전역 공유 캐시](discover-scrape-cache-shared-table.md) — user_id 없는 공개 채용공고 캐시, supabaseAdmin 필터 예외
+- [user_feedback 공개 후기 조회 예외](user-feedback-public-testimonials.md) — allow_public=true 게이트로 user_id 필터 대체, PII는 제출 시점 moderateFeedback으로 차단. 샘플 폴백엔 "예시" 배지 필수
