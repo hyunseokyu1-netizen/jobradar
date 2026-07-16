@@ -61,6 +61,8 @@ export default async function DiscoverPage({
   const { data: allJobs } = await supabaseAdmin
     .from('jobs')
     .select('id, title, company, location, salary, url, source, scraped_at')
+    // 유저가 직접 붙여넣거나 입력한 개인 지원 링크는 공유 풀에서 제외
+    .eq('is_personal', false)
     .order('scraped_at', { ascending: false })
     .limit(300)
   const poolJobs: PoolJobItem[] = (allJobs ?? []).filter(j => !matchedIds.has(j.id))

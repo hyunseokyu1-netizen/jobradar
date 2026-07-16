@@ -999,6 +999,8 @@ export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string;
       company: '',
       location: '',
       scraped_at: new Date().toISOString(),
+      // 유저가 직접 붙여넣은 개인 지원 링크 — 잡 탐색 공유 풀에는 노출하지 않는다
+      is_personal: true,
     }, { onConflict: 'url' })
     .select('id')
     .single()
@@ -1051,6 +1053,8 @@ export async function addJobManually(
       location,
       description: description || null,
       scraped_at: new Date().toISOString(),
+      // 직접 입력한 개인 공고 — 잡 탐색 공유 풀에는 노출하지 않는다
+      is_personal: true,
     })
     .select('id')
     .single()

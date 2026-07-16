@@ -7,8 +7,8 @@ import FeedbackButton from '@/components/FeedbackButton'
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: '대시보드', href: '/dashboard' },
-  { key: 'applications', label: '지원 현황', href: '/applications' },
   { key: 'discover', label: '잡 탐색', href: '/discover' },
+  { key: 'applications', label: '지원 현황', href: '/applications' },
   { key: 'profile', label: '내 이력서', href: '/profile' },
   { key: 'settings', label: '설정', href: '/settings' },
   { key: 'pricing', label: '요금제', href: '/pricing' },

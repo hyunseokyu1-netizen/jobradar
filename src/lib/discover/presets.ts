@@ -6,6 +6,8 @@
 export interface PresetCompany {
   name: string
   url: string
+  /** 클릭 한 번으로 자동 수집이 안 되는 소스(예: Apple은 검색 키워드 필수) — 클릭 시 안내로 유도 */
+  needsSearchUrl?: boolean
 }
 
 export const PRESET_COMPANIES: PresetCompany[] = [
@@ -18,7 +20,7 @@ export const PRESET_COMPANIES: PresetCompany[] = [
   // ── 글로벌 ──────────────────────────────────────
   { name: 'OpenAI', url: 'https://jobs.ashbyhq.com/openai' },
   { name: 'Anthropic', url: 'https://boards.greenhouse.io/anthropic' },
-  { name: 'Apple', url: 'https://jobs.apple.com/en-us/search' },
+  { name: 'Apple', url: 'https://jobs.apple.com/en-us/search', needsSearchUrl: true },
   { name: 'Stripe', url: 'https://boards.greenhouse.io/stripe' },
   { name: 'Airbnb', url: 'https://boards.greenhouse.io/airbnb' },
   { name: 'Notion', url: 'https://jobs.ashbyhq.com/notion' },

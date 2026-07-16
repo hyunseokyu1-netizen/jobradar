@@ -12,8 +12,15 @@ export default function PresetCompanies() {
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [result, setResult] = useState<Record<string, string>>({})
+  // 검색 키워드가 필요한 소스(Apple 등) — 클릭 시 수집 대신 안내 카드로 펼침
+  const [guideOpen, setGuideOpen] = useState<string | null>(null)
 
-  async function handleCollect(name: string, url: string) {
+  async function handleCollect(name: string, url: string, needsSearchUrl?: boolean) {
+    if (needsSearchUrl) {
+      setGuideOpen(prev => (prev === name ? null : name))
+      return
+    }
+    setGuideOpen(null)
     setBusy(name)
     setResult(prev => ({ ...prev, [name]: '' }))
     const add = await addPresetSource(name, url)
@@ -42,7 +49,7 @@ export default function PresetCompanies() {
         큰 기업 채용페이지를 클릭 한 번으로 등록하고 공고를 수집합니다.
       </p>
       <div className="flex flex-wrap gap-2">
-        {PRESET_COMPANIES.map(({ name, url }) => {
+        {PRESET_COMPANIES.map(({ name, url, needsSearchUrl }) => {
           const msg = result[name]
           const isBusy = busy === name
           return (
@@ -50,14 +57,16 @@ export default function PresetCompanies() {
               key={name}
               type="button"
               disabled={isBusy}
-              onClick={() => handleCollect(name, url)}
-              title={msg || url}
+              onClick={() => handleCollect(name, url, needsSearchUrl)}
+              title={needsSearchUrl ? `${name} · 검색 링크 등록 안내 보기` : msg || url}
               className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-60 ${
-                msg?.startsWith('✓')
-                  ? 'border-[#CEEBDC] bg-[#ECFDF3] text-[#046C4E]'
-                  : msg?.startsWith('⚠️')
-                    ? 'border-amber-200 bg-amber-50 text-amber-700'
-                    : 'border-[#ECEEF0] bg-white text-[#344054] hover:border-[#046C4E] hover:text-[#046C4E]'
+                guideOpen === name
+                  ? 'border-[#046C4E] bg-[#ECFDF3] text-[#046C4E]'
+                  : msg?.startsWith('✓')
+                    ? 'border-[#CEEBDC] bg-[#ECFDF3] text-[#046C4E]'
+                    : msg?.startsWith('⚠️')
+                      ? 'border-amber-200 bg-amber-50 text-amber-700'
+                      : 'border-[#ECEEF0] bg-white text-[#344054] hover:border-[#046C4E] hover:text-[#046C4E]'
               }`}
             >
               {isBusy ? (
@@ -65,12 +74,37 @@ export default function PresetCompanies() {
               ) : msg ? (
                 <span>{name} · {msg.replace(/^[✓⚠️]\s*/, '')}</span>
               ) : (
-                <span>+ {name}</span>
+                <span>+ {name}{needsSearchUrl ? ' ℹ️' : ''}</span>
               )}
             </button>
           )
         })}
       </div>
+
+      {guideOpen && (
+        <div className="mt-3 rounded-xl border border-[#CEEBDC] bg-[#F6FEF9] p-4 text-[13px] leading-relaxed text-[#054F38]">
+          <p className="font-semibold">{guideOpen}은 검색 링크가 필요해요</p>
+          <p className="mt-1 text-[#345C4B]">
+            이 회사는 채용페이지 전체를 한 번에 수집할 수 없어서, 원하는 포지션을 직접 검색한 뒤
+            그 검색 결과 링크를 등록해주셔야 해요.
+          </p>
+          <ol className="mt-2 list-decimal space-y-1 pl-4 text-[#345C4B]">
+            <li>
+              <a
+                href={PRESET_COMPANIES.find(c => c.name === guideOpen)?.url}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-[#046C4E] underline underline-offset-2"
+              >
+                {guideOpen} 채용 사이트 열기 →
+              </a>
+            </li>
+            <li>원하는 직무·키워드로 검색</li>
+            <li>검색 결과 페이지의 URL을 복사</li>
+            <li>위 &quot;채용 페이지 URL&quot; 칸에 붙여넣고 &quot;페이지 등록&quot;</li>
+          </ol>
+        </div>
+      )}
       {busy && (
         <p className="mt-2 text-xs text-[#667085]">
           <span className="animate-pulse">⟳</span> 페이지 접속 → 공고 추출 → AI 채점 순서로 진행됩니다.

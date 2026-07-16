@@ -22,7 +22,9 @@ export default function ApplicationsView({
   board: React.ReactNode
   list?: React.ReactNode
 }) {
-  const [view, setView] = useState<'board' | 'list'>('board')
+  // 칸반 보드는 기능(필터·정렬·상태변경)이 잘 안 보인다는 피드백으로 리스트를 기본값으로 변경
+  // (list 미제공인 공개 데모에서는 보드만 있으므로 보드로 시작)
+  const [view, setView] = useState<'board' | 'list'>(list ? 'list' : 'board')
 
   const btn = (active: boolean) =>
     `cursor-pointer rounded-[7px] px-[14px] py-[6px] text-[13px] transition-colors ${

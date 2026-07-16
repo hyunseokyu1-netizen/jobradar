@@ -24,8 +24,8 @@ export default function Sidebar({
 }) {
   const navItems = [
     { key: 'dashboard', label: t.dashboard.nav.dashboard, Icon: LayoutDashboard, href: '/dashboard' },
-    { key: 'applications', label: t.dashboard.nav.applications, Icon: Briefcase, href: '/applications' },
     { key: 'discover', label: t.dashboard.nav.discover, Icon: Target, href: '/discover' },
+    { key: 'applications', label: t.dashboard.nav.applications, Icon: Briefcase, href: '/applications' },
     { key: 'profile', label: t.dashboard.nav.myResume, Icon: FileText, href: '/profile' },
   ] as const
 

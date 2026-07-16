@@ -32,7 +32,7 @@ export const STEPS: Step[] = [
     kind: 'single',
     key: 'name',
     question: '이름이 어떻게 되시나요? (영문 이름이 있다면 함께 적어주셔도 좋아요)',
-    placeholder: '예: 유현석 (Hyunseok Yu)',
+    placeholder: '예: 김지민 (Jimin Kim)',
   },
   {
     kind: 'single',
@@ -80,7 +80,7 @@ export const STEPS: Step[] = [
     key: 'salary',
     question:
       '마지막으로, 희망 연봉을 알려주세요. 통화와 함께 최소~최대 범위로 적어주시면 좋아요.',
-    placeholder: '예: AUD 90,000 ~ 150,000',
+    placeholder: '예: USD 90,000 ~ 150,000',
     optional: true,
   },
 ]
