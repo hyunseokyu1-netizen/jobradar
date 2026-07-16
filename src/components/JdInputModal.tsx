@@ -9,7 +9,8 @@ interface Props {
   company: string
   initialDescription?: string | null
   onClose: () => void
-  onMatched: (score: number) => void
+  /** score === null: JD 저장은 성공했지만 AI 분석이 실패한 경우 (재시도 가능) */
+  onMatched: (score: number | null, scoreType?: string | null) => void
 }
 
 export default function JdInputModal({ jobId, jobTitle, company, initialDescription, onClose, onMatched }: Props) {
@@ -36,7 +37,7 @@ export default function JdInputModal({ jobId, jobTitle, company, initialDescript
     if (matchRes.error) {
       setError(matchRes.error)
     } else if (matchRes.score !== undefined) {
-      onMatched(matchRes.score)
+      onMatched(matchRes.score, matchRes.scoreType ?? null)
       onClose()
     }
   }

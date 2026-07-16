@@ -606,13 +606,15 @@ export async function deleteJob(jobId: string): Promise<{ error?: string }> {
   return {}
 }
 
-export async function matchSingleJob(jobId: string): Promise<{ error?: string; score?: number }> {
+export async function matchSingleJob(
+  jobId: string
+): Promise<{ error?: string; score?: number | null; scoreType?: 'jd_analysis' | 'title_estimate' }> {
   try {
     const { matchJob } = await import('@/lib/matching')
     const result = await matchJob(jobId)
     if ('error' in result) return { error: result.error }
     revalidatePath('/')
-    return { score: result.score }
+    return { score: result.score, scoreType: result.scoreType }
   } catch (e) {
     return { error: String(e) }
   }
@@ -1073,7 +1075,7 @@ export async function addJobManually(
   let score: number | undefined
   if (description) {
     const matchRes = await matchSingleJob(data.id)
-    if (!matchRes.error && matchRes.score !== undefined) {
+    if (!matchRes.error && typeof matchRes.score === 'number') {
       matched = true
       score = matchRes.score
     }
@@ -1181,7 +1183,7 @@ export async function fixJobWithText(
   let score: number | undefined
   if (p.description) {
     const matchRes = await matchSingleJob(jobId)
-    if (!matchRes.error && matchRes.score !== undefined) {
+    if (!matchRes.error && typeof matchRes.score === 'number') {
       matched = true
       score = matchRes.score
     }

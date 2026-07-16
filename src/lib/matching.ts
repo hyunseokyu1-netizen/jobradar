@@ -2,10 +2,21 @@ import { anthropic, textOf } from '@/lib/claude'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 
+/** 점수 근거 — jd_analysis: JD 전문 기반 정밀 분석 / title_estimate: 제목·회사만으로 추정(신뢰도 낮음) */
+export type ScoreType = 'jd_analysis' | 'title_estimate'
+
 interface MatchResult {
-  score: number
+  /** null = 분석 실패 (0점과 구분 — 0은 "무관한 직무"라는 실제 판정) */
+  score: number | null
   reason: string
   highlights: string[]
+}
+
+// 모델 응답을 신뢰하지 않고 범위·타입을 강제한다
+function clampScore(v: unknown): number | null {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return null
+  return Math.max(0, Math.min(100, Math.round(n)))
 }
 
 async function analyzeMatch(
@@ -15,9 +26,10 @@ async function analyzeMatch(
     skills: string[] | null
     desired_positions: string[] | null
     career_summary: string | null
-    preferences: { salary_min?: number; salary_max?: number } | null
+    preferences: { salary_min?: number; salary_max?: number; salary_currency?: string } | null
   }
 ): Promise<MatchResult> {
+  const currency = profile.preferences?.salary_currency ?? 'USD'
   const prompt = `당신은 채용 매칭 전문가입니다. 아래 채용공고(JD)와 후보자 프로파일을 분석하여 매칭 점수를 평가해주세요.
 
 ## 후보자 프로파일
@@ -25,7 +37,7 @@ async function analyzeMatch(
 - 스킬: ${profile.skills?.join(', ') ?? '미입력'}
 - 목표 포지션: ${profile.desired_positions?.join(', ') ?? '미입력'}
 - 경력 요약: ${profile.career_summary ?? '미입력'}
-- 희망 연봉: ${profile.preferences?.salary_min ?? '?'} ~ ${profile.preferences?.salary_max ?? '?'} AUD
+- 희망 연봉: ${profile.preferences?.salary_min ?? '?'} ~ ${profile.preferences?.salary_max ?? '?'} ${currency}
 
 ## 채용공고 (JD)
 ${jd.slice(0, 3000)}
@@ -54,9 +66,19 @@ ${jd.slice(0, 3000)}
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) throw new Error('No JSON found')
-    return JSON.parse(jsonMatch[0]) as MatchResult
+    const parsed = JSON.parse(jsonMatch[0]) as { score?: unknown; reason?: unknown; highlights?: unknown }
+    const score = clampScore(parsed.score)
+    if (score === null) throw new Error('Invalid score in response')
+    return {
+      score,
+      reason: typeof parsed.reason === 'string' ? parsed.reason : '',
+      highlights: Array.isArray(parsed.highlights)
+        ? parsed.highlights.filter((h): h is string => typeof h === 'string').slice(0, 5)
+        : [],
+    }
   } catch {
-    return { score: 0, reason: '분석 실패', highlights: [] }
+    // 실패는 0점이 아니라 미채점(null) — UI에서 "분석 실패, 다시 시도"로 구분 표시
+    return { score: null, reason: '분석 실패 — 다시 시도해주세요.', highlights: [] }
   }
 }
 
@@ -75,6 +97,9 @@ export async function matchJob(jobId: string) {
   const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }
 
+  // JD 전문이 있으면 정밀 분석, 없으면 제목·회사만으로 추정 (점수 신뢰도가 다르므로 기록)
+  const hasJd = !!job.description?.trim()
+  const scoreType: ScoreType = hasJd ? 'jd_analysis' : 'title_estimate'
   const jd = job.description ?? `${job.title} at ${job.company}. Location: ${job.location}`
   const result = await analyzeMatch(jd, profile)
 
@@ -90,12 +115,14 @@ export async function matchJob(jobId: string) {
     user_id: profile.id,
     job_id: job.id,
     score: result.score,
+    score_type: result.score !== null ? scoreType : null,
     reason: result.reason,
     highlights: result.highlights,
     status: existing?.status ?? 'new',
   }, { onConflict: 'user_id,job_id' })
 
-  return { jobId, score: result.score, reason: result.reason }
+  // 분석 실패(null) 시 scoreType도 반환하지 않는다 — DB 저장(위)과 일관되게
+  return { jobId, score: result.score, scoreType: result.score !== null ? scoreType : undefined, reason: result.reason }
 }
 
 export async function runMatching() {
@@ -129,6 +156,7 @@ export async function runMatching() {
 
   for (const job of unmatched) {
     try {
+      const hasJd = !!job.description?.trim()
       const jd = job.description ?? `${job.title} at ${job.company}`
       const result = await analyzeMatch(jd, profile)
 
@@ -136,6 +164,7 @@ export async function runMatching() {
         user_id: profile.id,
         job_id: job.id,
         score: result.score,
+        score_type: result.score !== null ? (hasJd ? 'jd_analysis' : 'title_estimate') : null,
         reason: result.reason,
         highlights: result.highlights,
         status: 'new',  // 배치 매칭은 신규 공고만 대상이므로 항상 new
@@ -146,10 +175,12 @@ export async function runMatching() {
       errors++
       if (!firstError) firstError = String(e)
       console.error(`[matching] job ${job.id} failed:`, e)
+      // 실패는 미채점(null)으로 저장 — 0점(실제 판정)과 섞이지 않게 한다
       await supabaseAdmin.from('matches').upsert({
         user_id: profile.id,
         job_id: job.id,
-        score: 0,
+        score: null,
+        score_type: null,
         reason: `매칭 실패: ${String(e).slice(0, 200)}`,
         highlights: [],
         status: 'new',

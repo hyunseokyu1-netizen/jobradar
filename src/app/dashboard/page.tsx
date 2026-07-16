@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 async function getListJobs(profileId: string): Promise<JobItem[]> {
   const { data: myMatches } = await supabaseAdmin
     .from('matches')
-    .select('job_id, score, reason, status, memo, applied_resume_text, applied_resume_filename, applied_at, position')
+    .select('job_id, score, score_type, reason, status, memo, applied_resume_text, applied_resume_filename, applied_at, position')
     .eq('user_id', profileId)
   if (!myMatches?.length) return []
 
@@ -30,6 +30,7 @@ async function getListJobs(profileId: string): Promise<JobItem[]> {
     return {
       ...j,
       match_score: m?.score ?? null,
+      match_score_type: m?.score_type ?? null,
       match_reason: m?.reason ?? null,
       match_status: m?.status ?? 'new',
       memo: m?.memo ?? null,

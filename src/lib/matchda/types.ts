@@ -84,7 +84,10 @@ export interface ResumeWorkspaceData {
     location: string
     brand: CompanyBrand
   }
-  matchRate: number
+  /** null = 미채점·분석 실패 (0은 "무관한 직무"라는 실제 판정이므로 구분) */
+  matchRate: number | null
+  /** 점수 근거 — 'jd_analysis'(JD 정밀) / 'title_estimate'(제목 추정, 신뢰도 낮음) / null(구버전·미채점) */
+  matchScoreType?: string | null
   original: ResumeDocumentData
   translated: ResumeDocumentData
   /**

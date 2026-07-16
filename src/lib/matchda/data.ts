@@ -261,6 +261,7 @@ export async function getMatchdaWorkspace(
 
   const matchRow = match as {
     score?: number
+    score_type?: string | null
     memo?: string | null
     applied_resume_filename?: string | null
     applied_resume_text?: string | null
@@ -327,7 +328,9 @@ export async function getMatchdaWorkspace(
       location: job.location || '',
       brand: brandFor(job.company || ''),
     },
-    matchRate: match.score ?? 0,
+    // null 유지 — 분석 실패·미채점을 0점(실제 판정)으로 뭉개지 않는다
+    matchRate: match.score ?? null,
+    matchScoreType: matchRow.score_type ?? null,
     // 최적화 분석 완료 시 맞춤본(하이라이트·노트 표시), 아니면 일반 이력서 비교
     tailored: optimized,
     optimizable: !optimized, // 아직 분석 전이면 생성 버튼 노출

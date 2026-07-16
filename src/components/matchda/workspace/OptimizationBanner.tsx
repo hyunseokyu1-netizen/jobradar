@@ -30,12 +30,21 @@ export default function OptimizationBanner({
         </span>
       </div>
       <div className="flex items-center gap-2">
+        {/* 제목만으로 추정한 점수는 신뢰도가 낮음을 명시 — JD 입력 시 정밀 분석으로 전환 */}
+        {data.matchScoreType === 'title_estimate' && (
+          <span
+            className="rounded-full border border-amber-200 bg-amber-50 px-2 py-[2px] text-[11px] font-medium text-amber-700"
+            title="JD 없이 제목·회사만으로 추정한 점수예요. ⋯ 메뉴의 'JD 직접 입력' 후 재측정하면 정밀 분석됩니다."
+          >
+            제목 기반 예상
+          </span>
+        )}
         <span className="text-[12px] font-medium text-[#046C4E]">{t.workspace.matchRateLabel}</span>
         {jobId ? (
           <RematchScoreBadge jobId={jobId} matchRate={data.matchRate} />
         ) : (
           <span className="rounded-[7px] bg-[#046C4E] px-[11px] py-[3px] text-[14px] font-bold text-white">
-            {data.matchRate}%
+            {data.matchRate === null ? '미측정' : `${data.matchRate}%`}
           </span>
         )}
       </div>

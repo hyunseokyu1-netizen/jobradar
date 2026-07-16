@@ -29,6 +29,8 @@ export interface JobItem {
   posted_at: string | null
   scraped_at: string
   match_score: number | null
+  /** 점수 근거 — 'jd_analysis'(JD 정밀) / 'title_estimate'(제목 추정) / null(구버전·실패) */
+  match_score_type?: string | null
   match_reason: string | null
   match_status: string
   memo: string | null
@@ -47,13 +49,18 @@ function timeAgo(dateStr: string): string {
   return '방금'
 }
 
-function ScoreBadge({ score, jobId, onMatched }: { score: number | null; jobId: string; onMatched: (score: number) => void }) {
+function ScoreBadge({ score, scoreType, jobId, onMatched }: {
+  score: number | null
+  scoreType?: string | null
+  jobId: string
+  onMatched: (score: number | null, scoreType?: string | null) => void
+}) {
   const [matching, setMatching] = useState(false)
 
   async function handleMatch() {
     setMatching(true)
     const res = await matchSingleJob(jobId)
-    if (res.score !== undefined) onMatched(res.score)
+    if (!res.error && res.score !== undefined) onMatched(res.score, res.scoreType ?? null)
     setMatching(false)
   }
 
@@ -68,15 +75,17 @@ function ScoreBadge({ score, jobId, onMatched }: { score: number | null; jobId: 
       </button>
     )
   }
+  // 제목만으로 추정한 점수는 JD 정밀 분석과 구분해 낮은 신뢰도임을 표시
+  const isEstimate = scoreType === 'title_estimate'
   const color = score >= 70 ? 'bg-green-100 text-green-700 hover:bg-green-200' : score >= 50 ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-[#F4F6F8] text-[#667085] hover:bg-[#ECEEF0]'
   return (
     <button
       onClick={handleMatch}
       disabled={matching}
-      title="클릭해서 재매칭"
+      title={isEstimate ? 'JD 없이 제목만으로 추정한 점수예요. JD를 입력하면 정밀 분석됩니다. (클릭: 재매칭)' : 'JD 전문을 분석한 점수예요. (클릭: 재매칭)'}
       className={`text-xs font-bold px-2 py-0.5 rounded-full transition-colors disabled:opacity-50 ${matching ? 'bg-[#F4F6F8] text-[#98A2B3]' : color}`}
     >
-      {matching ? '매칭 중...' : `${score}점`}
+      {matching ? '매칭 중...' : isEstimate ? `예상 ${score}점` : `${score}점`}
     </button>
   )
 }
@@ -232,8 +241,9 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
             </span>
             <ScoreBadge
               score={job.match_score}
+              scoreType={job.match_score_type}
               jobId={job.id}
-              onMatched={score => onUpdate(job.id, { match_score: score, match_status: 'new' })}
+              onMatched={(score, scoreType) => onUpdate(job.id, { match_score: score, match_score_type: scoreType, match_status: 'new' })}
             />
             {job.match_score !== null && (
               <StatusButton
@@ -492,8 +502,8 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
           company={job.company}
           initialDescription={job.description}
           onClose={() => setShowJdInput(false)}
-          onMatched={score => {
-            onUpdate(job.id, { match_score: score, description: 'updated' })
+          onMatched={(score, scoreType) => {
+            onUpdate(job.id, { match_score: score, match_score_type: scoreType, description: 'updated' })
             setShowJdInput(false)
           }}
         />

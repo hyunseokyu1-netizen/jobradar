@@ -310,8 +310,9 @@ export default function DiscoveredJobList({
                 <div className="flex items-center gap-2 flex-wrap">
                   <span
                     className={`text-xs font-bold rounded-md px-2 py-0.5 ${scoreBadgeClass(job.match_score)}`}
+                    title={job.match_score !== null ? '제목·위치만으로 추정한 예상 점수예요. 지원 현황에 추가하면 JD를 분석해 정밀 점수를 계산합니다.' : undefined}
                   >
-                    {job.match_score !== null ? `${job.match_score}점` : '미채점'}
+                    {job.match_score !== null ? `예상 ${job.match_score}점` : '미채점'}
                   </span>
                   {job.match_score === null && !editMode && (
                     <button

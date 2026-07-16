@@ -13,11 +13,12 @@ export default function RematchScoreBadge({
   matchRate,
 }: {
   jobId: string
-  matchRate: number
+  /** null = 미채점·분석 실패 */
+  matchRate: number | null
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [score, setScore] = useState(matchRate)
+  const [score, setScore] = useState<number | null>(matchRate)
   const [error, setError] = useState('')
 
   async function rematch() {
@@ -27,6 +28,7 @@ export default function RematchScoreBadge({
     const res = await matchSingleJob(jobId)
     setLoading(false)
     if (res.error) { setError(res.error); return }
+    // score === null: AI 분석 실패 — 0점(실제 판정)과 구분해 재시도를 유도
     if (res.score !== undefined) setScore(res.score)
     router.refresh()
   }
@@ -41,7 +43,7 @@ export default function RematchScoreBadge({
         title="클릭하면 현재 이력서로 매칭률을 다시 측정합니다"
         className="group flex items-center gap-1.5 rounded-[7px] bg-[#046C4E] px-[11px] py-[3px] text-[14px] font-bold text-white transition hover:bg-[#035A40] disabled:opacity-70"
       >
-        {loading ? '측정 중...' : `${score}%`}
+        {loading ? '측정 중...' : score === null ? '미측정' : `${score}%`}
         {!loading && (
           <span aria-hidden className="text-[11px] font-normal opacity-70 transition group-hover:rotate-180">↻</span>
         )}

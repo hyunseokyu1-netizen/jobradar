@@ -88,7 +88,7 @@ export default async function DiscoverPage({
         <section className="mb-8">
           <h2 className="mb-1 text-base font-semibold text-[#1F2A37]">내 채용페이지 수집 공고</h2>
           <p className="mb-3 text-xs text-[#98A2B3]">
-            내가 등록한 채용페이지에서 수집한 공고입니다. 내 이력서 기준 매칭 점수순으로 보여드려요.
+            내가 등록한 채용페이지에서 수집한 공고입니다. 점수는 제목 기반 예상치예요 — 지원 현황에 추가하면 JD를 분석해 정밀 점수를 계산합니다.
           </p>
           <DiscoveredJobList jobs={jobs} initialSearch={initialSearch} />
         </section>
