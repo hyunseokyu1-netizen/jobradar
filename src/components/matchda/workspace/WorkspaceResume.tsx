@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import ResumeDocument from './ResumeDocument'
 import { Sparkle, FileText } from '../ui/icons'
-import { saveResumeStudio, syncResumeEnglish, chatEditResume, tailorResumeForJob } from '@/app/profile/actions'
+import { chatEditResume, tailorResumeForJob } from '@/app/profile/actions'
+import { saveJobResumeDraft, syncJobResumeEnglish, resyncJobResumeFromMaster } from '@/app/workspace/actions'
 import {
   studioToDoc, studioToRender, docToRender, renderResumeHtml, type StudioResume,
 } from '@/lib/resume'
@@ -27,6 +28,7 @@ export default function WorkspaceResume({
   note,
   contact,
   jobContext,
+  masterChanged: initialMasterChanged,
   labels,
 }: {
   jobId: string
@@ -36,6 +38,8 @@ export default function WorkspaceResume({
   note?: ResumeWorkspaceData['optimizationNote']
   contact: string
   jobContext: { title: string; company: string; description: string | null }
+  /** 이 공고 초안을 만든 이후 마스터 이력서(/profile)가 더 최근에 수정됨 */
+  masterChanged?: boolean
   labels: {
     original: string
     translated: string
@@ -50,9 +54,11 @@ export default function WorkspaceResume({
   const [ko, setKo] = useState<StudioResume>(initialKo)
   const [enDoc, setEnDoc] = useState<ResumeDocumentData>(initialEnDoc)
   const [editKey, setEditKey] = useState(0) // AI 수정 시 contentEditable 강제 remount
-  const [busy, setBusy] = useState<'save' | 'chat' | 'tailor' | 'translate' | null>(null)
+  const [busy, setBusy] = useState<'save' | 'chat' | 'tailor' | 'translate' | 'resync' | null>(null)
   const [savedAt, setSavedAt] = useState(false)
   const [dirty, setDirty] = useState(false)
+  // 마스터 이력서(/profile)가 이 공고 초안보다 나중에 수정된 경우 안내 배너 노출
+  const [masterChanged, setMasterChanged] = useState(!!initialMasterChanged)
   // 모바일(lg 미만): 원본/영문 탭 전환 + AI 채팅 하단 시트. lg 이상에서는 상태 무관하게 둘 다 표시.
   const [mobilePane, setMobilePane] = useState<'ko' | 'en'>('ko')
   const [chatOpen, setChatOpen] = useState(false)
@@ -92,16 +98,33 @@ export default function WorkspaceResume({
   async function handleSave() {
     setBusy('save')
     setError('')
-    // 한국어 저장 + 영어 재동기화 (EN 패널 최신화)
-    const saveRes = await saveResumeStudio(koRef.current)
+    // 공고별 초안 저장 + 영어 재동기화 — 마스터 이력서(/profile)는 건드리지 않는다
+    const saveRes = await saveJobResumeDraft(jobId, koRef.current)
     if (saveRes.error) { setError(saveRes.error); setBusy(null); return }
-    const sync = await syncResumeEnglish(koRef.current)
+    const sync = await syncJobResumeEnglish(jobId, koRef.current)
     setBusy(null)
     if (sync.error) { setError(sync.error); return }
     if (sync.en) setEnDoc(studioToDoc(sync.en, contact))
     setDirty(false)
     setSavedAt(true)
     setTimeout(() => setSavedAt(false), 2500)
+    router.refresh()
+  }
+
+  // 마스터 이력서 최신 내용으로 이 공고 초안을 덮어쓴다 (명시적 확인 후 실행)
+  async function handleResyncFromMaster() {
+    if (!confirm('마스터 이력서 최신 내용을 이 공고 초안에 덮어쓸까요? 지금까지 이 공고에서 수정한 내용은 사라집니다.')) return
+    setBusy('resync')
+    setError('')
+    const res = await resyncJobResumeFromMaster(jobId)
+    setBusy(null)
+    if (res.error) { setError(res.error); return }
+    if (res.ko) {
+      setKo(res.ko)
+      setEditKey(k => k + 1)
+    }
+    setMasterChanged(false)
+    setDirty(false)
     router.refresh()
   }
 
@@ -152,7 +175,7 @@ export default function WorkspaceResume({
   async function handleTranslate() {
     setBusy('translate')
     setError('')
-    const sync = await syncResumeEnglish(koRef.current)
+    const sync = await syncJobResumeEnglish(jobId, koRef.current)
     setBusy(null)
     if (sync.error) { setError(sync.error); return }
     if (sync.en) setEnDoc(studioToDoc(sync.en, contact))
@@ -191,6 +214,23 @@ export default function WorkspaceResume({
           </button>
         </div>
       </div>
+
+      {/* 마스터 이력서(/profile)가 이 공고 초안보다 나중에 수정됨 — 자동 덮어쓰기 없이 안내만 */}
+      {masterChanged && (
+        <div className="mx-auto mt-3 max-w-[1320px] px-4 sm:px-7">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-2.5 text-[13px] text-amber-800">
+            <span>마스터 이력서(내 이력서)가 이 공고 초안을 만든 뒤 수정됐어요. 이 초안은 자동으로 바뀌지 않아요.</span>
+            <button
+              type="button"
+              onClick={handleResyncFromMaster}
+              disabled={busy !== null}
+              className="shrink-0 rounded-[8px] border border-amber-300 bg-white px-3 py-1 font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+            >
+              {busy === 'resync' ? '갱신 중...' : '최신 마스터로 갱신'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-[22px] px-4 pb-32 pt-4 sm:px-7 lg:grid-cols-2 lg:pb-6 lg:pt-6">
         {/* 좌: 한국어 원본 (편집 가능) */}

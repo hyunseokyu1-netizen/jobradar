@@ -40,6 +40,40 @@ export function contactLine(email: string, phone?: string, links?: string): stri
   return [email, phone, links].map(v => v?.trim()).filter(Boolean).join(' · ')
 }
 
+export const ACCENT_WHITELIST = ['#046C4E', '#1A56DB', '#1F2A37', '#B45309']
+
+// 클라이언트 입력을 신뢰하지 않고 필드별로 정제(길이 상한 포함). 마스터/공고별 이력서 저장 액션 공용.
+export function sanitizeStudio(input: StudioResume): StudioResume {
+  const s = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+  const arr = <T,>(v: unknown, max: number): T[] => (Array.isArray(v) ? v.slice(0, max) : [])
+  const design = input.design
+  return {
+    name: s(input.name, 100),
+    phone: s(input.phone, 50),
+    links: s(input.links, 200),
+    title: s(input.title, 100),
+    summary: s(input.summary, 3000),
+    skills: arr<string>(input.skills, 60).map(v => s(v, 60)).filter(Boolean),
+    hidden_skills: arr<string>(input.hidden_skills, 60).map(v => s(v, 60)).filter(Boolean),
+    experience: arr<StudioExp>(input.experience, 20).map(e => ({
+      company: s(e?.company), position: s(e?.position), period: s(e?.period, 60),
+      description: s(e?.description, 4000), hidden: !!e?.hidden,
+    })),
+    education: arr<StudioEdu>(input.education, 10).map(e => ({
+      school: s(e?.school), major: s(e?.major), degree: s(e?.degree), period: s(e?.period, 60),
+      hidden: !!e?.hidden,
+    })),
+    design: design
+      ? {
+          template: design.template === 'modern' ? 'modern' : 'classic',
+          font: ['plex', 'geist', 'serif'].includes(design.font) ? design.font : 'plex',
+          lineHeight: Math.min(2.0, Math.max(1.4, Number(design.lineHeight) || 1.75)),
+          accent: ACCENT_WHITELIST.includes(design.accent) ? design.accent : ACCENT_WHITELIST[0],
+        }
+      : undefined,
+  }
+}
+
 // JSONB 원본을 StudioResume로 정규화
 export function toStudioResume(raw: unknown, fallbackName = '', fallbackPhone = ''): StudioResume {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>

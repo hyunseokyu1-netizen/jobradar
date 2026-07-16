@@ -73,6 +73,7 @@ export default async function MatchdaWorkspacePage({
           design={data.design}
           note={data.optimizationNote}
           contact={data.email ?? ''}
+          masterChanged={data.masterChanged}
           jobContext={{
             title: data.target.role,
             company: data.target.company,

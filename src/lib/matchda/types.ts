@@ -116,4 +116,8 @@ export interface ResumeWorkspaceData {
   /** 편집·AI 수정·다운로드용 원본 구조화 이력서 (실데이터에서만 제공) */
   koStudio?: import('@/lib/resume').StudioResume
   enStudio?: import('@/lib/resume').StudioResume
+  /** true: koStudio가 이 공고 전용 초안(tailored_resumes). false/undefined: 아직 초안이 없어 마스터를 보여주는 중 */
+  hasJobDraft?: boolean
+  /** 이 공고 초안을 만든 이후 마스터 이력서(/profile)가 더 최근에 수정됨 — 재동기화 안내 배너용 */
+  masterChanged?: boolean
 }

@@ -99,7 +99,7 @@ export async function completeOnboarding(
     // 번역 실패 시 한국어 raw 원본만이라도 보존하고 재시도 안내
     await supabaseAdmin
       .from('profiles')
-      .update({ onboarding_ko: answers, updated_at: new Date().toISOString() })
+      .update({ onboarding_ko: answers, updated_at: new Date().toISOString(), resume_updated_at: new Date().toISOString() })
       .eq('id', profile.id)
     return { error: '프로필 정리 중 오류가 발생했어요. 입력 내용은 저장됐으니 잠시 후 다시 시도해주세요.' }
   }
@@ -111,6 +111,8 @@ export async function completeOnboarding(
       onboarding_ko: result.ko,
       onboarding_en: en,
       onboarding_completed: true,
+      // 마스터 이력서 실제 변경 시각 — 공고별 초안의 "마스터가 바뀜" 감지 기준
+      resume_updated_at: new Date().toISOString(),
       // 기존 매칭/커버레터 로직(영어 기반)과 호환되도록 평면 컬럼에 영어 데이터 매핑
       name: en.name || profile.name,
       phone: en.phone || null,

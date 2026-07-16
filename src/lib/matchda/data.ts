@@ -5,7 +5,7 @@
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { normalizeResumeDesign } from './resume-design'
-import { toStudioResume, contactLine } from '@/lib/resume'
+import { toStudioResume, contactLine, studioToDoc, type StudioResume } from '@/lib/resume'
 import type {
   ApplicationStatus,
   DashboardSummary,
@@ -273,7 +273,30 @@ export async function getMatchdaWorkspace(
   const koTitle = ko.experience?.[0]?.position || profile.desired_positions?.[0] || ''
   const enTitle = en.experience?.[0]?.position || ''
 
-  const translated = buildDoc(en, name, profile.email ?? '', enTitle)
+  // 공고 전용 초안(tailored_resumes) — 있으면 마스터 대신 이걸 편집 시작점으로 쓴다.
+  // 워크스페이스에서 저장·번역해도 여기(공고별 행)에만 쓰이고 마스터(profiles.onboarding_*)는 건드리지 않는다.
+  const { data: draft } = await supabaseAdmin
+    .from('tailored_resumes')
+    .select('content_ko, content_en, base_resume_synced_at')
+    .eq('user_id', profile.id)
+    .eq('job_id', jobId)
+    .maybeSingle()
+
+  const draftKo = (draft?.content_ko ?? null) as StudioResume | null
+  const draftEn = (draft?.content_en ?? null) as StudioResume | null
+  const hasJobDraft = !!draftKo
+  // resume_updated_at(마스터 이력서 실제 변경 시각)로만 비교 — profiles.updated_at은 매칭 설정
+  // 등 이력서와 무관한 변경에도 갱신되므로 여기 쓰면 배너가 잘못 뜬다(오탐).
+  const resumeUpdatedAt = profile.resume_updated_at as string | null | undefined
+  const masterChanged =
+    hasJobDraft && !!draft?.base_resume_synced_at && !!resumeUpdatedAt
+      ? new Date(resumeUpdatedAt).getTime() > new Date(draft.base_resume_synced_at).getTime()
+      : false
+
+  const koStudio = draftKo ?? toStudioResume(profile.onboarding_ko, name, (profile.phone as string) ?? '')
+  const translated = draftEn
+    ? studioToDoc(draftEn, profile.email ?? '')
+    : buildDoc(en, name, profile.email ?? '', enTitle)
 
   // 공고별 AI 최적화 결과(캐시) 적용 — 하이라이트 + 최적화 노트
   const opt = (match as { optimization?: unknown }).optimization as
@@ -325,9 +348,11 @@ export async function getMatchdaWorkspace(
     },
     // 스튜디오 디자인 설정 (ko에 저장, 한/영 문서 공통 적용)
     design: ko.design ? normalizeResumeDesign(ko.design) : undefined,
-    // 편집·AI 수정·다운로드용 원본 구조화 이력서
-    koStudio: toStudioResume(profile.onboarding_ko, name, (profile.phone as string) ?? ''),
+    // 편집·AI 수정·다운로드용 구조화 이력서 — 공고별 초안이 있으면 그것, 없으면 마스터
+    koStudio,
     enStudio: toStudioResume(profile.onboarding_en, name, (profile.phone as string) ?? ''),
+    hasJobDraft,
+    masterChanged,
   }
 }
 

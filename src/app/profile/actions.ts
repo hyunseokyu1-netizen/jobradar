@@ -5,8 +5,9 @@ import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { parseResumeFile } from '@/lib/resume-parser'
 import { getAuthUserEmail, getOrCreateProfile } from '@/lib/auth-helpers'
-import type { StudioResume, StudioExp, StudioEdu, StudioDesign } from '@/lib/resume'
-import { toStudioResume } from '@/lib/resume'
+import type { StudioResume } from '@/lib/resume'
+import { toStudioResume, sanitizeStudio } from '@/lib/resume'
+import { translateStudioToEnglish } from '@/lib/resume-translate'
 export type { StudioResume, StudioExp, StudioEdu, StudioDesign } from '@/lib/resume'
 
 // 매칭 설정 저장 (이름·스킬·경력 요약은 이력서 스튜디오에서 관리)
@@ -169,6 +170,9 @@ export async function translateResumeSection(
     .from('profiles')
     .update({
       onboarding_ko: koObj,
+      // 마스터 이력서 실제 변경 시각 — 공고별 초안의 "마스터가 바뀜" 감지 기준 (updated_at은
+      // 매칭 설정 등 무관한 필드 변경에도 갱신되므로 이 전용 컬럼으로 오탐을 막는다)
+      resume_updated_at: new Date().toISOString(),
       onboarding_en: enObj,
       ...flatPatch,
       updated_at: new Date().toISOString(),
@@ -183,40 +187,6 @@ export async function translateResumeSection(
 }
 
 // ── 이력서 스튜디오 (섹션 에디터 + 실시간 미리보기) ──────────────
-
-const ACCENT_WHITELIST = ['#046C4E', '#1A56DB', '#1F2A37', '#B45309']
-
-// 클라이언트 입력을 신뢰하지 않고 필드별로 정제 (길이 상한 포함)
-function sanitizeStudio(input: StudioResume): StudioResume {
-  const s = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
-  const arr = <T,>(v: unknown, max: number): T[] => (Array.isArray(v) ? v.slice(0, max) : [])
-  const design = input.design
-  return {
-    name: s(input.name, 100),
-    phone: s(input.phone, 50),
-    links: s(input.links, 200),
-    title: s(input.title, 100),
-    summary: s(input.summary, 3000),
-    skills: arr<string>(input.skills, 60).map(v => s(v, 60)).filter(Boolean),
-    hidden_skills: arr<string>(input.hidden_skills, 60).map(v => s(v, 60)).filter(Boolean),
-    experience: arr<StudioExp>(input.experience, 20).map(e => ({
-      company: s(e?.company), position: s(e?.position), period: s(e?.period, 60),
-      description: s(e?.description, 4000), hidden: !!e?.hidden,
-    })),
-    education: arr<StudioEdu>(input.education, 10).map(e => ({
-      school: s(e?.school), major: s(e?.major), degree: s(e?.degree), period: s(e?.period, 60),
-      hidden: !!e?.hidden,
-    })),
-    design: design
-      ? {
-          template: design.template === 'modern' ? 'modern' : 'classic',
-          font: ['plex', 'geist', 'serif'].includes(design.font) ? design.font : 'plex',
-          lineHeight: Math.min(2.0, Math.max(1.4, Number(design.lineHeight) || 1.75)),
-          accent: ACCENT_WHITELIST.includes(design.accent) ? design.accent : ACCENT_WHITELIST[0],
-        }
-      : undefined,
-  }
-}
 
 /** 이력서 스튜디오의 한국어 원본 + 디자인 설정 저장 */
 export async function saveResumeStudio(input: StudioResume): Promise<{ error?: string }> {
@@ -236,6 +206,9 @@ export async function saveResumeStudio(input: StudioResume): Promise<{ error?: s
     .from('profiles')
     .update({
       onboarding_ko: koObj,
+      // 마스터 이력서 실제 변경 시각 — 공고별 초안의 "마스터가 바뀜" 감지 기준 (updated_at은
+      // 매칭 설정 등 무관한 필드 변경에도 갱신되므로 이 전용 컬럼으로 오탐을 막는다)
+      resume_updated_at: new Date().toISOString(),
       ...(ko.name ? { name: ko.name } : {}),
       ...(ko.phone ? { phone: ko.phone } : {}),
       updated_at: new Date().toISOString(),
@@ -354,65 +327,9 @@ export async function syncResumeEnglish(
 
   const ko = sanitizeStudio(input)
 
-  interface RawEn {
-    name?: string; phone?: string; title?: string; summary?: string
-    skills?: string[]
-    experience?: { company?: string; position?: string; period?: string; description?: string }[]
-    education?: { school?: string; major?: string; degree?: string; period?: string }[]
-  }
-  let raw: RawEn
-  try {
-    const { anthropic } = await import('@/lib/claude')
-    const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 8000,
-      messages: [{
-        role: 'user',
-        content: `아래는 구조화된 이력서 JSON입니다(한국어 또는 한/영 혼용). 동일한 구조의 자연스러운 영어 버전으로 번역해 JSON으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
-
-규칙:
-- 이력서에 있는 사실만 사용하고 절대 지어내지 마세요.
-- skills 는 입력과 같은 개수·순서로 1:1 번역 (이미 영문인 항목은 그대로).
-- name 은 영문 이력서 표기(로마자)로 변환하세요. 예: "유현석" → "Hyunseok Yu". 이미 로마자면 그대로.
-- phone/period 는 번역하지 않고 원본 표기 유지.
-- experience.description 은 줄바꿈(\\n) 구분을 유지하고 줄 수도 동일하게.
-- hidden, hidden_skills, design 필드는 출력하지 마세요.
-
-입력:
-${JSON.stringify({ name: ko.name, phone: ko.phone, title: ko.title, summary: ko.summary, skills: ko.skills, experience: ko.experience.map(({ hidden: _h, ...e }) => e), education: ko.education.map(({ hidden: _h, ...e }) => e) })}`,
-      }],
-    })
-    const text = textOf(message)
-    const m = text.match(/\{[\s\S]*\}/)
-    if (!m) throw new Error('JSON 응답을 찾을 수 없습니다.')
-    raw = JSON.parse(m[0])
-  } catch (e) {
-    console.error('Resume EN sync error:', e)
-    return { error: '영어 동기화 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.' }
-  }
-
-  // hidden 플래그는 인덱스 기준으로 원본에서 복사 (skills 는 1:1 계약)
-  const en: StudioResume = {
-    name: raw.name || ko.name,
-    phone: raw.phone || ko.phone,
-    links: ko.links, // URL은 번역 대상이 아니므로 원본 유지
-    title: raw.title ?? '',
-    summary: raw.summary ?? '',
-    skills: Array.isArray(raw.skills) ? raw.skills.map(v => String(v)) : [],
-    hidden_skills: [],
-    experience: (raw.experience ?? []).map((e, i) => ({
-      company: e.company ?? '', position: e.position ?? '', period: e.period ?? '',
-      description: e.description ?? '', hidden: ko.experience[i]?.hidden ?? false,
-    })),
-    education: (raw.education ?? []).map((e, i) => ({
-      school: e.school ?? '', major: e.major ?? '', degree: e.degree ?? '', period: e.period ?? '',
-      hidden: ko.education[i]?.hidden ?? false,
-    })),
-    design: ko.design,
-  }
-  en.hidden_skills = ko.skills
-    .map((s, i) => (ko.hidden_skills.includes(s) ? en.skills[i] : null))
-    .filter((v): v is string => !!v)
+  const translated = await translateStudioToEnglish(ko)
+  if (translated.error || !translated.en) return { error: translated.error ?? '영어 동기화 중 오류가 발생했어요.' }
+  const en = translated.en
 
   const koObj = { ...((profile.onboarding_ko ?? {}) as Record<string, unknown>), ...ko }
   const enObj = { ...((profile.onboarding_en ?? {}) as Record<string, unknown>), ...en }
@@ -422,6 +339,9 @@ ${JSON.stringify({ name: ko.name, phone: ko.phone, title: ko.title, summary: ko.
     .from('profiles')
     .update({
       onboarding_ko: koObj,
+      // 마스터 이력서 실제 변경 시각 — 공고별 초안의 "마스터가 바뀜" 감지 기준 (updated_at은
+      // 매칭 설정 등 무관한 필드 변경에도 갱신되므로 이 전용 컬럼으로 오탐을 막는다)
+      resume_updated_at: new Date().toISOString(),
       onboarding_en: enObj,
       onboarding_completed: true,
       // 매칭/커버레터가 읽는 flat 컬럼 동기화
@@ -747,6 +667,9 @@ ${profile.resume_text.slice(0, 8000)}`,
     .from('profiles')
     .update({
       onboarding_ko: koObj,
+      // 마스터 이력서 실제 변경 시각 — 공고별 초안의 "마스터가 바뀜" 감지 기준 (updated_at은
+      // 매칭 설정 등 무관한 필드 변경에도 갱신되므로 이 전용 컬럼으로 오탐을 막는다)
+      resume_updated_at: new Date().toISOString(),
       onboarding_en: enObj,
       onboarding_completed: true,
       // 매칭/커버레터가 읽는 flat 컬럼 동기화 (기존 값이 있으면 유지)
@@ -880,6 +803,9 @@ ${text.slice(0, 8000)}`,
     .update({
       resume_text: text,
       onboarding_ko: koObj,
+      // 마스터 이력서 실제 변경 시각 — 공고별 초안의 "마스터가 바뀜" 감지 기준 (updated_at은
+      // 매칭 설정 등 무관한 필드 변경에도 갱신되므로 이 전용 컬럼으로 오탐을 막는다)
+      resume_updated_at: new Date().toISOString(),
       onboarding_en: enObj,
       onboarding_completed: true,
       ...(resumeFilePath ? { resume_file_path: resumeFilePath } : {}),
