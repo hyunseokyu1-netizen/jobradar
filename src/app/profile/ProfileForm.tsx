@@ -4,8 +4,8 @@ import { useState, useRef } from 'react'
 import { saveProfile, uploadResume } from './actions'
 
 const CURRENCIES = [
-  { code: 'AUD', label: 'AUD — 호주달러' },
   { code: 'USD', label: 'USD — 달러' },
+  { code: 'AUD', label: 'AUD — 호주달러' },
   { code: 'EUR', label: 'EUR — 유로' },
   { code: 'KRW', label: 'KRW — 원화' },
   { code: 'JPY', label: 'JPY — 엔화' },
@@ -119,7 +119,7 @@ export default function ProfileForm({ initialData }: { initialData: Profile | nu
           </div>
           <select
             name="salary_currency"
-            defaultValue={initialData?.preferences?.salary_currency ?? 'AUD'}
+            defaultValue={initialData?.preferences?.salary_currency ?? 'USD'}
             className="input"
             style={{ width: '30%' }}
           >

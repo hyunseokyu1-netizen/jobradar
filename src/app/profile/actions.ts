@@ -22,7 +22,7 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
 
   const salary_min = parseInt(formData.get('salary_min') as string) || null
   const salary_max = parseInt(formData.get('salary_max') as string) || null
-  const salary_currency = (formData.get('salary_currency') as string) || 'AUD'
+  const salary_currency = (formData.get('salary_currency') as string) || 'USD'
 
   const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }

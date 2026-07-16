@@ -50,7 +50,7 @@ ${answers.experience.map((e, i) => `  ${i + 1}. ${e}`).join('\n') || '  (없음)
 - 정보가 없는 필드는 빈 문자열 "" 또는 빈 배열 []로 둡니다. 절대 지어내지 마세요.
 - 학력/경력은 자유 텍스트를 school/major/degree/period 또는 company/position/period/description으로 분리합니다.
 - skills는 개별 항목 배열로 분리합니다.
-- 희망 연봉에서 숫자 범위와 통화를 추출해 salary_min, salary_max(정수, 없으면 null), salary_currency(예: "AUD", "USD", "KRW")로 넣습니다.
+- 희망 연봉에서 숫자 범위와 통화를 추출해 salary_min, salary_max(정수, 없으면 null), salary_currency(예: "USD", "AUD", "KRW")로 넣습니다.
 - "career_summary_en"은 경력·스킬을 바탕으로 AI 채용 매칭과 커버레터에 활용할 3~5문장 영어 경력 요약입니다(평문, 마크다운 없이).
 
 [JSON 스키마]
@@ -60,7 +60,7 @@ ${answers.experience.map((e, i) => `  ${i + 1}. ${e}`).join('\n') || '  (없음)
     "education": [{ "school": "", "major": "", "degree": "", "period": "" }],
     "experience": [{ "company": "", "position": "", "period": "", "description": "" }],
     "skills": [],
-    "desired": { "positions": [], "locations": [], "salary_min": null, "salary_max": null, "salary_currency": "AUD" }
+    "desired": { "positions": [], "locations": [], "salary_min": null, "salary_max": null, "salary_currency": "USD" }
   },
   "en": { "...ko와 동일 구조, 영어..." },
   "career_summary_en": ""
@@ -121,7 +121,7 @@ export async function completeOnboarding(
       preferences: {
         salary_min: en.desired?.salary_min ?? null,
         salary_max: en.desired?.salary_max ?? null,
-        salary_currency: en.desired?.salary_currency || 'AUD',
+        salary_currency: en.desired?.salary_currency || 'USD',
       },
       updated_at: new Date().toISOString(),
     })
