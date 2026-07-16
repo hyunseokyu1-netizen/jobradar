@@ -5,8 +5,10 @@ import WorkspaceShowcase from './WorkspaceShowcase'
 import DiscoverShowcase from './DiscoverShowcase'
 import ApplicationsShowcase from './ApplicationsShowcase'
 import FeatureCards from './FeatureCards'
+import TestimonialsSection from './TestimonialsSection'
 import StatsBand from './StatsBand'
 import SiteFooter from './SiteFooter'
+import type { PublicTestimonial } from '@/lib/matchda/data'
 
 /**
  * MatchDa 랜딩 A (Split Hero) 전체 화면.
@@ -22,8 +24,9 @@ export default function MatchdaLanding({
   loginHref,
   signupHref,
   searchHref,
+  testimonials = [],
 }: {
-  /** 로그인 상태면 헤더의 로그인 버튼을 숨기고 CTA를 대시보드로 바꾼다 */
+  /** 로그인 상태면 쇼케이스 CTA·검색 목적지를 실제 앱으로 바꾼다 */
   authed?: boolean
   /** 로그인 버튼 목적지 (공개 랜딩은 /login) */
   loginHref?: string
@@ -31,6 +34,8 @@ export default function MatchdaLanding({
   signupHref?: string
   /** 검색 제출 목적지 (공개 랜딩은 /login?mode=signup) */
   searchHref?: string
+  /** 공개 동의 실후기 — 비어있으면 섹션이 '예시' 라벨 샘플로 폴백 */
+  testimonials?: PublicTestimonial[]
 }) {
   // TODO(i18n): 로케일을 쿠키/헤더에서 읽어 전달 (현재 기본 ko)
   const t = getMatchdaDict('ko')
@@ -43,6 +48,7 @@ export default function MatchdaLanding({
       <DiscoverShowcase />
       <ApplicationsShowcase />
       <FeatureCards t={t} authed={authed} />
+      <TestimonialsSection items={testimonials} />
       <StatsBand t={t} />
       <SiteFooter t={t} />
     </div>

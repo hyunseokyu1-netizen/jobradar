@@ -1,4 +1,5 @@
 import { getAuthUserEmail } from '@/lib/auth-helpers'
+import { getPublicTestimonials } from '@/lib/matchda/data'
 import MatchdaLanding from '@/components/matchda/landing/MatchdaLanding'
 
 export const dynamic = 'force-dynamic'
@@ -8,7 +9,10 @@ export const dynamic = 'force-dynamic'
  * 헤더는 항상 방문자 관점(로그인·가입 버튼) — 로그인 유저가 눌러도 미들웨어가 앱으로 보낸다.
  */
 export default async function HomePage() {
-  const authed = !!(await getAuthUserEmail())
+  const [authed, testimonials] = await Promise.all([
+    getAuthUserEmail().then(e => !!e),
+    getPublicTestimonials(),
+  ])
 
   return (
     <MatchdaLanding
@@ -16,6 +20,7 @@ export default async function HomePage() {
       loginHref="/login"
       signupHref="/login?mode=signup"
       searchHref={authed ? '/discover' : '/login?mode=signup'}
+      testimonials={testimonials}
     />
   )
 }

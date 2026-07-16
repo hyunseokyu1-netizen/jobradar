@@ -330,3 +330,39 @@ export async function getMatchdaWorkspace(
     enStudio: toStudioResume(profile.onboarding_en, name, (profile.phone as string) ?? ''),
   }
 }
+
+// ── 공개 후기 (랜딩 후기 섹션용) ──────────────────────────────
+export interface PublicTestimonial {
+  rating: number
+  content: string
+  name: string
+}
+
+/**
+ * 공개 게재에 동의(allow_public)한 후기 중 별점 4점 이상, 본문 있는 것만.
+ * 랜딩은 공개 페이지이므로 이메일 등 개인정보는 절대 포함하지 않는다 (display_name만).
+ */
+export async function getPublicTestimonials(limit = 6): Promise<PublicTestimonial[]> {
+  try {
+    const { data } = await supabaseAdmin
+      .from('user_feedback')
+      .select('rating, content, display_name')
+      .eq('allow_public', true)
+      .gte('rating', 4)
+      .neq('content', '')
+      .order('updated_at', { ascending: false })
+      .limit(limit)
+
+    return (data ?? [])
+      .filter(r => (r.content ?? '').trim().length >= 10)
+      .map(r => ({
+        rating: r.rating,
+        content: r.content.trim(),
+        name: (r.display_name ?? '').trim() || '매치다 사용자',
+      }))
+  } catch (e) {
+    // 후기 조회 실패가 랜딩 렌더를 막으면 안 된다 — 빈 배열이면 호출부가 예시로 폴백
+    console.error('Public testimonials fetch error:', e)
+    return []
+  }
+}
