@@ -71,7 +71,7 @@
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 14 App Router + TypeScript |
+| Framework | Next.js 16 App Router + TypeScript |
 | Styling | Tailwind CSS |
 | Database | Supabase (PostgreSQL + Row Level Security) |
 | Auth | Supabase Auth (Google OAuth) |
@@ -201,7 +201,7 @@ ANTHROPIC_API_KEY=
 
 | 영역 | 기술 |
 |------|------|
-| 프레임워크 | Next.js 14 App Router + TypeScript |
+| 프레임워크 | Next.js 16 App Router + TypeScript |
 | 스타일 | Tailwind CSS |
 | DB | Supabase (PostgreSQL + RLS) |
 | 인증 | Supabase Auth (Google OAuth) |

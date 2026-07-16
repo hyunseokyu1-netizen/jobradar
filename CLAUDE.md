@@ -4,7 +4,7 @@
 AI 기반 잡 매칭 & 커버레터 자동화. 호주/NZ IT 채용공고 자동 수집 → Claude API 매칭 → 맞춤 커버레터 생성 → 이메일 다이제스트.
 
 ## 기술 스택
-- **프레임워크**: Next.js 14 App Router + TypeScript
+- **프레임워크**: Next.js 16 App Router + TypeScript
 - **스타일**: Tailwind CSS
 - **DB**: Supabase (PostgreSQL)
 - **AI**: Claude API (Anthropic SDK)
