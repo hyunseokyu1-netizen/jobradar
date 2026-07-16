@@ -7,6 +7,7 @@ import { detectPlatform } from '@/lib/detect-platform'
 import { detectAtsType } from '@/lib/discover/ats'
 import { getPostingsWithCache } from '@/lib/discover/scrape-cache'
 import { prefilterPostings, scorePostings } from '@/lib/discover/scoring'
+import { findUrlViolationWithDns } from '@/lib/url-guard'
 import { planOf, limitsEnforced, limitExceededSuffix, FREE_LIMITS } from '@/lib/plan'
 
 // 무료 플랜 채용페이지 등록 한도 검사 (프리미엄은 무제한)
@@ -65,11 +66,9 @@ export async function addPresetSource(
   const profile = await getOrCreateProfile(email)
   if (!profile) return { error: 'Profile not found' }
 
-  try {
-    new URL(url)
-  } catch {
-    return { error: '유효하지 않은 URL입니다.' }
-  }
+  // SSRF 방어: 내부 네트워크·비정상 주소는 등록 자체를 거부
+  const urlViolation = await findUrlViolationWithDns(url)
+  if (urlViolation) return { error: urlViolation }
 
   const { data: existing } = await supabaseAdmin
     .from('job_sources')
@@ -104,12 +103,10 @@ export async function addJobSource(formData: FormData): Promise<{ error?: string
   let name = (formData.get('name') as string)?.trim()
   if (!url) return { error: 'URL을 입력해주세요.' }
 
-  let parsed: URL
-  try {
-    parsed = new URL(url)
-  } catch {
-    return { error: '유효하지 않은 URL입니다.' }
-  }
+  // SSRF 방어: 내부 네트워크·비정상 주소는 등록 자체를 거부
+  const urlViolation = await findUrlViolationWithDns(url)
+  if (urlViolation) return { error: urlViolation }
+  const parsed = new URL(url)
 
   if (await overSourceLimit(profile)) return { error: SOURCE_LIMIT_MSG }
 

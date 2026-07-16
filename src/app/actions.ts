@@ -955,7 +955,10 @@ export async function addJobByUrl(formData: FormData): Promise<{ jobId?: string;
   const url = (formData.get('url') as string)?.trim()
   if (!url) return { error: 'URL을 입력해주세요.' }
 
-  try { new URL(url) } catch { return { error: '유효하지 않은 URL입니다.' } }
+  // SSRF 방어: 내부 네트워크·비정상 주소는 등록 자체를 거부
+  const { findUrlViolationWithDns } = await import('@/lib/url-guard')
+  const urlViolation = await findUrlViolationWithDns(url)
+  if (urlViolation) return { error: urlViolation }
 
   const source = detectPlatform(url)
 

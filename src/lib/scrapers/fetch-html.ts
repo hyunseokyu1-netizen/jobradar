@@ -1,6 +1,9 @@
 // 채용공고 URL 스크래핑용 공통 fetch 헬퍼.
 // 일부 사이트(예: Akamai/Cloudflare 봇 차단)는 데이터센터 IP에 간헐적으로 403/429를
 // 반환하므로, 브라우저와 유사한 헤더 + 일시적 오류에 대한 재시도로 성공률을 높인다.
+// 사용자 입력 URL을 요청하므로 SSRF 방어(초기 URL + 리다이렉트 홉마다 재검증)를 포함한다.
+
+import { assertPublicUrl, UrlGuardError } from '@/lib/url-guard'
 
 const BROWSER_HEADERS: Record<string, string> = {
   'User-Agent':
@@ -18,6 +21,11 @@ const BROWSER_HEADERS: Record<string, string> = {
 // 재시도 대상이 되는 일시적 차단/오류 상태 코드
 const RETRYABLE = new Set([403, 429, 500, 502, 503, 504])
 
+// 응답 본문 상한 — 악의적 서버가 무한 스트림으로 메모리·실행시간을 점유하지 못하게
+const MAX_BODY_BYTES = 5 * 1024 * 1024
+const FETCH_TIMEOUT_MS = 20_000
+const MAX_REDIRECTS = 5
+
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 // Cloudflare 등 봇 매니지먼트의 차단/챌린지 인터스티셜 판별.
@@ -34,6 +42,57 @@ export function isBotBlockPage(html: string): boolean {
     /checking (if the site connection is secure|your browser before accessing)/.test(head) ||
     /enable javascript and cookies to continue/.test(head)
   )
+}
+
+// 채용페이지로 유효한 응답 타입만 (바이너리·미디어 차단). 헤더 없으면 허용.
+function isAllowedContentType(res: Response): boolean {
+  const ct = res.headers.get('content-type')?.toLowerCase() ?? ''
+  if (!ct) return true
+  return ct.startsWith('text/') || ct.includes('json') || ct.includes('xml') || ct.includes('xhtml')
+}
+
+// 본문을 상한까지만 읽는다 (초과분은 절단 — 공고 추출엔 앞부분이면 충분)
+async function readBodyCapped(res: Response): Promise<string> {
+  const reader = res.body?.getReader()
+  if (!reader) return ''
+  const chunks: Buffer[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    chunks.push(Buffer.from(value))
+    if (total >= MAX_BODY_BYTES) {
+      await reader.cancel().catch(() => {})
+      break
+    }
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks))
+}
+
+/**
+ * 리다이렉트를 수동으로 따라가며 홉마다 SSRF 검증한다.
+ * (redirect:'follow'는 공개 URL이 내부 주소로 리다이렉트하는 우회를 막지 못한다)
+ */
+async function fetchWithGuard(url: string, headers: Record<string, string>): Promise<Response> {
+  let current = url
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    await assertPublicUrl(current)
+    const res = await fetch(current, {
+      headers,
+      redirect: 'manual',
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    })
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location')
+      if (!location) return res
+      res.body?.cancel().catch(() => {})
+      current = new URL(location, current).toString()
+      continue
+    }
+    return res
+  }
+  throw new UrlGuardError('리다이렉트가 너무 많습니다.')
 }
 
 interface FetchHtmlOptions {
@@ -57,14 +116,19 @@ export async function fetchHtml(url: string, opts: FetchHtmlOptions = {}): Promi
 
     let res: Response
     try {
-      res = await fetch(url, { headers })
+      res = await fetchWithGuard(url, headers)
     } catch (e) {
       lastError = `${label} fetch failed: ${String(e)}`
-      continue // 네트워크 오류 → 재시도
+      // SSRF 정책 위반·리다이렉트 초과는 재시도해도 결과가 같으므로 즉시 실패
+      if (e instanceof UrlGuardError) throw new Error(lastError)
+      continue // 네트워크 오류·타임아웃 → 재시도
     }
 
     if (res.ok) {
-      const body = await res.text()
+      if (!isAllowedContentType(res)) {
+        throw new Error(`${label}: 지원하지 않는 응답 형식입니다 (${res.headers.get('content-type') ?? 'unknown'}).`)
+      }
+      const body = await readBodyCapped(res)
       // 200이어도 Cloudflare 챌린지면 차단으로 간주 → 브라우저 폴백 시도
       if (browserFallback && isBotBlockPage(body)) {
         blocked = true

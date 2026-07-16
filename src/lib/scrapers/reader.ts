@@ -4,9 +4,13 @@
 // 직접 fetch·헤드리스 브라우저가 모두 막혔을 때 최후의 우회 수단으로 사용한다.
 
 import { textOf } from '@/lib/claude'
+import { assertPublicUrl } from '@/lib/url-guard'
 import type { ScrapedJob } from './seek-url'
 
 export async function fetchReaderMarkdown(url: string): Promise<string> {
+  // 프록시에 넘기기 전에도 동일한 URL 정책 적용 (내부 주소는 애초에 정책 위반)
+  await assertPublicUrl(url)
+
   const headers: Record<string, string> = { 'X-Return-Format': 'markdown' }
   // 키가 있으면 요청 한도가 크게 늘어난다 (없어도 저빈도 사용은 동작)
   if (process.env.JINA_API_KEY) headers.Authorization = `Bearer ${process.env.JINA_API_KEY}`
