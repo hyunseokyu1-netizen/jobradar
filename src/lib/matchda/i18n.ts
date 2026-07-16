@@ -22,7 +22,7 @@ const ko = {
     titleLine2: '여기서 시작됩니다.',
     subhead:
       '한국어 이력서를 전문가 수준의 영어로 번역하고, 전 세계 채용 공고에 맞춰 자동으로 최적화하세요.',
-    searchCountry: '호주 · 뉴질랜드',
+    searchCountry: '전 세계',
     searchPlaceholder: '직무, 회사 또는 키워드 검색',
     searchButton: '검색',
     freeNote: '맞춤 이력서 2개 무료 체험 · 카드 등록 없이 시작',
@@ -151,7 +151,7 @@ const en: typeof ko = {
     titleLine2: 'starts right here.',
     subhead:
       'Translate your Korean resume into professional English and automatically tailor it to job postings around the world.',
-    searchCountry: 'Australia · NZ',
+    searchCountry: 'Worldwide',
     searchPlaceholder: 'Search role, company or keyword',
     searchButton: 'Search',
     freeNote: '2 tailored resumes free · no card required',
