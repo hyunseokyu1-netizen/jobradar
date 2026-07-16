@@ -27,18 +27,42 @@ export default function OnboardingChat({
 }) {
   const router = useRouter()
   const prefill = !!initialAnswers // "다시 작성" 모드: 기존 답변을 미리 채워 수정
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
+    { role: 'ai', text: INTRO },
+    {
+      role: 'ai',
+      text:
+        prefill && STEPS[0].kind === 'list'
+          ? `${STEPS[0].question}\n(기존 내용이 채워져 있어요. 줄바꿈으로 항목을 수정·추가·삭제하세요.)`
+          : STEPS[0].question,
+    },
+  ])
   const [stepIndex, setStepIndex] = useState(0)
   const [mode, setMode] = useState<'input' | 'askMore' | 'finishing' | 'done'>('input')
-  const [answers, setAnswers] = useState<OnboardingAnswers>(initialAnswers ?? EMPTY_ANSWERS)
-  const [input, setInput] = useState('')
+  // 신규 작성은 localStorage 임시저장 복원(브라우저에서만), 다시 작성은 기존 프로필 사용.
+  // 답변 상태는 화면에 직접 렌더되지 않으므로 서버/클라이언트 초기값 차이가 hydration에 영향 없음.
+  const [answers, setAnswers] = useState<OnboardingAnswers>(() => {
+    if (initialAnswers) return initialAnswers
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY)
+        if (saved) return { ...EMPTY_ANSWERS, ...JSON.parse(saved) }
+      } catch {}
+    }
+    return EMPTY_ANSWERS
+  })
+  // 다시 작성 모드는 첫 단계 입력칸도 기존 답변으로 시작
+  const [input, setInput] = useState(() =>
+    prefill && initialAnswers && !(STEPS[0].kind === 'single' && STEPS[0].key === 'skills')
+      ? (STEPS[0].kind === 'list' ? initialAnswers[STEPS[0].key].join('\n') : initialAnswers[STEPS[0].key])
+      : ''
+  )
   // 스킬 단계 전용: 자동완성 칩 입력 상태
   const [skillList, setSkillList] = useState<string[]>([])
   const [errorMsg, setErrorMsg] = useState('')
   // "← 이전"으로 돌아온 단계: 리스트 단계도 줄바꿈 일괄 편집으로 처리 (prefill 모드와 동일)
   const [revisit, setRevisit] = useState(false)
 
-  const initialized = useRef(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const step: Step | undefined = STEPS[stepIndex]
@@ -55,37 +79,15 @@ export default function OnboardingChat({
     return s.kind === 'list' ? ans[s.key].join('\n') : ans[s.key]
   }
 
-  // 첫 마운트: 인트로 + 첫 질문 (localStorage 답변 복원)
-  useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
-
-    // 신규 작성만 localStorage 임시저장 복원. 다시 작성은 기존 프로필(initialAnswers) 사용.
-    if (!prefill) {
-      try {
-        const saved = localStorage.getItem(DRAFT_KEY)
-        if (saved) setAnswers({ ...EMPTY_ANSWERS, ...JSON.parse(saved) })
-      } catch {}
-    }
-
-    setMessages([
-      { role: 'ai', text: INTRO },
-      { role: 'ai', text: questionText(STEPS[0]) },
-    ])
-  }, [])
-
-  // 다시 작성: 각 단계에 도달하면 입력칸에 기존 답변을 미리 채운다
-  useEffect(() => {
-    if (!prefill) return
-    const s = STEPS[stepIndex]
-    if (!s) return
+  // 다시 작성 모드: 단계 진입 시 입력칸에 기존 답변 프리필 (단계 전환 핸들러에서 호출)
+  function fillInputsForStep(s: Step | undefined, ans: OnboardingAnswers) {
+    if (!prefill || !s) return
     if (s.kind === 'single' && s.key === 'skills') {
-      setSkillList(answers.skills.split(',').map(v => v.trim()).filter(Boolean))
+      setSkillList(ans.skills.split(',').map(v => v.trim()).filter(Boolean))
     } else {
-      setInput(stepInputValue(s, answers))
+      setInput(stepInputValue(s, ans))
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepIndex, prefill])
+  }
 
   // 메시지 추가 시 자동 스크롤
   useEffect(() => {
@@ -112,6 +114,7 @@ export default function OnboardingChat({
     if (nextIndex < STEPS.length) {
       setStepIndex(nextIndex)
       setMode('input')
+      fillInputsForStep(STEPS[nextIndex], nextAnswers) // 다시 작성 모드: 기존 답변 프리필
       pushAi(questionText(STEPS[nextIndex]))
     } else {
       finish(nextAnswers)

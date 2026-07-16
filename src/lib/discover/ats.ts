@@ -48,39 +48,66 @@ export function detectAtsType(url: string): { type: AtsType; board?: string } {
   return { type: 'generic' }
 }
 
-async function fetchJson(url: string, init?: RequestInit): Promise<any> {
+async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { ...init, headers: { ...FETCH_HEADERS, ...init?.headers }, cache: 'no-store' })
   if (!res.ok) throw new Error(`${res.status} ${res.statusText} — ${url}`)
-  return res.json()
+  return res.json() as Promise<T>
+}
+
+// 각 ATS 공개 API의 응답 중 실제로 사용하는 필드만 선언 (외부 응답이므로 전부 optional)
+interface GreenhouseJob {
+  title?: string
+  absolute_url?: string
+  location?: { name?: string }
+  departments?: { name?: string }[]
+}
+interface LeverJob {
+  text?: string
+  hostedUrl?: string
+  categories?: { location?: string; team?: string }
+}
+interface AshbyJob {
+  title?: string
+  jobUrl?: string
+  location?: string
+  department?: string
+}
+interface SmartRecruitersPosting {
+  name?: string
+  id?: string
+  location?: { city?: string; country?: string }
+  department?: { label?: string }
 }
 
 async function scrapeGreenhouse(board: string): Promise<DiscoveredPosting[]> {
-  const data = await fetchJson(`https://boards-api.greenhouse.io/v1/boards/${board}/jobs?content=false`)
-  return (data.jobs ?? []).map((j: any) => ({
-    title: j.title,
-    url: j.absolute_url,
+  const data = await fetchJson<{ jobs?: GreenhouseJob[] }>(
+    `https://boards-api.greenhouse.io/v1/boards/${board}/jobs?content=false`
+  )
+  return (data.jobs ?? []).map(j => ({
+    title: j.title ?? '',
+    url: j.absolute_url ?? '',
     location: j.location?.name,
     department: j.departments?.[0]?.name,
   }))
 }
 
 async function scrapeLever(board: string): Promise<DiscoveredPosting[]> {
-  const data = await fetchJson(`https://api.lever.co/v0/postings/${board}?mode=json`)
-  return (Array.isArray(data) ? data : []).map((j: any) => ({
-    title: j.text,
-    url: j.hostedUrl,
+  const data = await fetchJson<LeverJob[]>(`https://api.lever.co/v0/postings/${board}?mode=json`)
+  return (Array.isArray(data) ? data : []).map(j => ({
+    title: j.text ?? '',
+    url: j.hostedUrl ?? '',
     location: j.categories?.location,
     department: j.categories?.team,
   }))
 }
 
 async function scrapeAshby(board: string): Promise<DiscoveredPosting[]> {
-  const data = await fetchJson(
+  const data = await fetchJson<{ jobs?: AshbyJob[] }>(
     `https://api.ashbyhq.com/posting-api/job-board/${encodeURIComponent(board)}?includeCompensation=false`
   )
-  return (data.jobs ?? []).map((j: any) => ({
-    title: j.title,
-    url: j.jobUrl,
+  return (data.jobs ?? []).map(j => ({
+    title: j.title ?? '',
+    url: j.jobUrl ?? '',
     location: j.location,
     department: j.department,
   }))
@@ -91,14 +118,14 @@ async function scrapeSmartRecruiters(board: string): Promise<DiscoveredPosting[]
   let offset = 0
   // 최대 3페이지(300건)까지만
   for (let page = 0; page < 3; page++) {
-    const data = await fetchJson(
+    const data = await fetchJson<{ content?: SmartRecruitersPosting[] }>(
       `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(board)}/postings?limit=100&offset=${offset}`
     )
     const items = data.content ?? []
     for (const j of items) {
       postings.push({
-        title: j.name,
-        url: `https://jobs.smartrecruiters.com/${board}/${j.id}`,
+        title: j.name ?? '',
+        url: `https://jobs.smartrecruiters.com/${board}/${j.id ?? ''}`,
         location: [j.location?.city, j.location?.country].filter(Boolean).join(', '),
         department: j.department?.label,
       })

@@ -58,7 +58,6 @@ export default function TailoredResumeModal({ jobId, jobTitle, company, onClose 
   const [saved, setSaved] = useState(false)
   const [ragNote, setRagNote] = useState('')
 
-  const filename = `resume_${company.replace(/\s+/g, '_')}_${jobTitle.replace(/\s+/g, '_')}`.slice(0, 60)
   const isDirty = content !== savedContent
   const isLoading = state !== 'idle'
 

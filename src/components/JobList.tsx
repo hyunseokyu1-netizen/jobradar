@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -38,6 +38,10 @@ export interface JobItem {
   applied_resume_filename: string | null
   applied_at: string | null
   position: number | null
+}
+
+function daysElapsed(iso: string) {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
 }
 
 function timeAgo(dateStr: string): string {
@@ -150,10 +154,6 @@ function SortableJobCard({ job, draggable, onDelete, onUpdate }: { job: JobItem;
     await updateAppliedAt(job.id, iso)
     setAppliedAt(iso)
     setEditingDate(false)
-  }
-
-  function daysElapsed(iso: string) {
-    return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
   }
 
   function startEditTitle() {
@@ -531,8 +531,13 @@ export default function JobList({ initialJobs }: { initialJobs: JobItem[] }) {
   const [filter, setFilter] = useState('all')
   const [sortMode, setSortMode] = useState<SortMode>('score')
 
-  // 서버 재렌더링 시 최신 데이터 동기화
-  useEffect(() => { setJobs(initialJobs) }, [initialJobs])
+  // 서버 재렌더링(router.refresh 등) 시 최신 데이터 동기화 — effect 대신 렌더 중 비교로
+  // 캐스케이딩 리렌더를 피한다 (React 공식 "derived state from props" 패턴)
+  const [prevInitial, setPrevInitial] = useState(initialJobs)
+  if (initialJobs !== prevInitial) {
+    setPrevInitial(initialJobs)
+    setJobs(initialJobs)
+  }
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
